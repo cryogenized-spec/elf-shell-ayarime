@@ -13,7 +13,7 @@ Source and bundled images run locally. **No analytics, telemetry, advertisements
 
 **Temporary development add-ons disappear when Firefox restarts.** For permanent use, the extension must be signed by Mozilla. This build is **not yet signed or published on addons.mozilla.org**.
 
-The extension reads previous `elfshell-workspace-v3` and `elfshell-workspace-v2` settings automatically when Firefox retains the same extension storage. Temporary add-ons can lose that storage when unloaded; first export the old settings JSON, and then import it into v0.5.2 if needed.
+The extension reads previous `elfshell-workspace-v3` and `elfshell-workspace-v2` settings automatically when Firefox retains the same extension storage, then writes updated workspace values to separate local keys per field. This prevents one open dashboard's notes from overwriting another dashboard's newer settings or saved sessions. Simultaneous edits to the *same* field remain last-write-wins. Temporary add-ons can lose storage when unloaded; export settings before moving between different add-on identities or test profiles.
 
 ## New in v0.3
 

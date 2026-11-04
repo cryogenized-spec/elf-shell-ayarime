@@ -10,6 +10,13 @@ const defaults = [
 ];
 const dataKey="elfshell-workspace-v3";
 const previousKey="elfshell-workspace-v2";
+// Store each workspace field independently. A note save must never overwrite a
+// different tab's newer shortcuts, sessions, focus, or appearance settings.
+const workspaceFields=["links","note","focus","motion","contrast","bangs","sessions"];
+const fieldKey=field=>`${dataKey}:field:${field}`;
+const dirtyFields=new Set();
+const saveFailures=new Set();
+const saveTimers=new Map();
 const iconNames=["firefox","mail","calendar","drive","video","library","globe","code","tasks","terminal","notes","news"];
 const defaultBangs=[
   {key:"yt",url:"https://www.youtube.com/results?search_query={query}"},
@@ -25,7 +32,6 @@ let searchItems=[];
 let searchQuery="";
 let selected=0;
 let searchRevision=0;
-let saveTimer=null;
 let lastClosedDuplicates=[];
 
 const validUrl=(url)=>{try{let u=new URL(url);return u.protocol==="https:"||u.protocol==="http:";}catch{return false;}};
@@ -81,26 +87,70 @@ function imageUrl(icon){
   const name=iconNames.includes(icon)?icon:"globe";
   return "assets/shortcut-icons/"+name+(illustratedIcons.has(name)?".webp":".svg");
 }
-async function persist(){
+async function persist(fields){
+  // Writes for different fields use different storage keys, so simultaneous
+  // dashboard tabs cannot clobber one another's unrelated changes.
+  const changed=[...new Set(fields)];
+  if(!changed.length || changed.some(field=>!workspaceFields.includes(field)))throw Error("Invalid workspace save fields");
+  const values={};
+  for(const field of changed){
+    dirtyFields.add(field);
+    values[fieldKey(field)]=JSON.parse(JSON.stringify(state[field]));
+  }
   try {
-    if(ext)await browser.storage.local.set({[dataKey]:state});
-    else localStorage.setItem(dataKey,JSON.stringify(state));
-    $("archive-status").textContent="SAVED";
+    if(ext)await browser.storage.local.set(values);
+    else for(const [key,value] of Object.entries(values))localStorage.setItem(key,JSON.stringify(value));
+    for(const field of changed){
+      saveFailures.delete(field);
+      // Don't clear dirty state if the user typed something newer in the meantime.
+      if(JSON.stringify(state[field])===JSON.stringify(values[fieldKey(field)]))dirtyFields.delete(field);
+    }
+    $("archive-status").textContent=saveFailures.size?"SAVE ERROR":"SAVED";
     return true;
   } catch(error) {
     console.error("ELF//SHELL: local save failed",error);
+    for(const field of changed)saveFailures.add(field);
     $("archive-status").textContent="SAVE ERROR";
     return false;
   }
 }
-function queueSave(){
-  clearTimeout(saveTimer);
+function queueSave(field){
+  clearTimeout(saveTimers.get(field));
+  dirtyFields.add(field);
   $("note-status").textContent="EDITING";
-  saveTimer=setTimeout(async()=>{
-    const saved=await persist();
-    $("note-status").textContent=saved?"SAVED":"SAVE ERROR";
-    $("editor-note-status").textContent=saved?"SAVED LOCALLY":"SAVE ERROR — RETRY BY EDITING";
-  },380);
+  saveTimers.set(field,setTimeout(async()=>{
+    saveTimers.delete(field);
+    await persist([field]);
+    $("note-status").textContent=saveFailures.size?"SAVE ERROR":dirtyFields.size?"EDITING":"SAVED";
+    $("editor-note-status").textContent=saveFailures.size?"SAVE ERROR — RETRY BY EDITING":dirtyFields.size?"AUTOSAVING":"SAVED LOCALLY";
+  },380));
+}
+function applyWorkspaceStorageChanges(changes,areaName){
+  if(areaName!=="local")return;
+  let candidate={...state},changedFields=[];
+  for(const field of workspaceFields){
+    const change=changes[fieldKey(field)];
+    // Never replace a field with a remote value while this tab has unsaved edits.
+    if(!change || change.newValue===undefined || dirtyFields.has(field))continue;
+    candidate[field]=change.newValue;
+    changedFields.push(field);
+  }
+  if(!changedFields.length)return;
+  const cleaned=cleanWorkspace(candidate);
+  if(!cleaned)return;
+  state=cleaned;
+  if(changedFields.includes("links"))renderLinks();
+  if(changedFields.some(f=>["motion","contrast"].includes(f)))applyAppearance();
+  for(const field of ["focus","note"]){
+    if(!changedFields.includes(field))continue;
+    for(const input of document.querySelectorAll(field==="focus"?"#focus-input, #focus-editor":"#note-input, #note-editor"))input.value=state[field];
+  }
+  if(changedFields.includes("sessions") && $("sessions-dialog").open)renderWorkspaces();
+}
+async function freshestSessions(){
+  if(!ext)return state.sessions;
+  const stored=await browser.storage.local.get(fieldKey("sessions"));
+  return stored[fieldKey("sessions")]===undefined?state.sessions:cleanSessions(stored[fieldKey("sessions")]);
 }
 function applyAppearance(){document.body.classList.toggle("reduce-effects",state.motion);document.body.classList.toggle("high-contrast",state.contrast);}
 function renderLinks(){
@@ -346,7 +396,15 @@ async function saveSettings(event){
   if(bangs.some(b=>!safeBang(b)||used.has(b.key)||(used.add(b.key),false))){$("settings-message").textContent="Invalid search bang: use a unique short key and an HTTPS template containing {query}.";return;}
   const validated=cleanWorkspace({...state,links,bangs,motion:$("reduce-motion").checked,contrast:$("high-contrast").checked});
   if(!validated){$("settings-message").textContent="Check all six links. Web addresses must start with https:// or http://.";return;}
-  state=validated;await persist();applyAppearance();renderLinks();$("settings-dialog").close();
+  const before=state;
+  state=validated;
+  if(!await persist(["links","bangs","motion","contrast"])){
+    state=before;
+    for(const field of ["links","bangs","motion","contrast"])dirtyFields.delete(field);
+    $("settings-message").textContent="Save failed. Your edits remain in this dialog; please retry.";
+    return;
+  }
+  applyAppearance();renderLinks();$("settings-dialog").close();
 }
 function saveJSON(){
   const data={format:"elfshell-settings",version:5,exportedAt:new Date().toISOString(),...state,rss:window.elfFeeds?.snapshot(),memory:window.elfMemory?.snapshot()};
@@ -354,6 +412,7 @@ function saveJSON(){
   const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="elfshell-ayarime-settings.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function importJSON(file){
+  let workspaceCommitted=false;
   try{
     if(!file || file.size>131072)throw Error("File is too large");
     const raw=JSON.parse(await file.text());
@@ -363,8 +422,19 @@ async function importJSON(file){
     if(raw.rss!==undefined&&!feedImport)throw Error("Invalid RSS subscriptions in backup");
     const memoryImport=raw.memory===undefined?null:window.elfMemory?.validateSnapshot(raw.memory);
     if(raw.memory!==undefined&&!memoryImport)throw Error("Invalid Memory Trace settings in backup");
-    state=imported;applyAppearance();renderLinks();$("focus-input").value=state.focus;$("note-input").value=state.note;await persist();if(feedImport)await window.elfFeeds.applySnapshot(feedImport);if(memoryImport)await window.elfMemory.applySnapshot(memoryImport);buildSettings();$("settings-message").textContent="Settings imported successfully.";
-  }catch(error){$("settings-message").textContent="Import rejected: "+error.message;}
+    const before=state;
+    state=imported;
+    if(!await persist(workspaceFields)){
+      state=before;
+      for(const field of workspaceFields)dirtyFields.delete(field);
+      throw Error("Local storage rejected the import. Previous settings were retained; retry the file.");
+    }
+    workspaceCommitted=true;
+    applyAppearance();renderLinks();$("focus-input").value=state.focus;$("note-input").value=state.note;
+    if(feedImport)await window.elfFeeds.applySnapshot(feedImport);
+    if(memoryImport)await window.elfMemory.applySnapshot(memoryImport);
+    buildSettings();$("settings-message").textContent="Settings imported successfully.";
+  }catch(error){$("settings-message").textContent=(workspaceCommitted?"Import incomplete: ":"Import rejected: ")+error.message;}
 }
 function startPalette(){
   if(document.querySelector("dialog[open]"))return;
@@ -384,7 +454,7 @@ function commandSuggestions(term){
     action("Restore a closed tab","CURRENT SESSION",()=>$("recents-toggle").click(),"BROWSER"),
     action("Open tab housekeeping","DUPLICATES / DISCARD IDLE",showHousekeeping,"BROWSER"),
     action("Manage RSS subscriptions","SUBSTACK / RSS / ATOM",()=>window.elfFeeds?.show(),"NETWORK"),
-    action("Toggle reduced effects","LOW MOTION",async()=>{state.motion=!state.motion;applyAppearance();await persist();},"APPEARANCE"),
+    action("Toggle reduced effects","LOW MOTION",async()=>{const before=state.motion;state.motion=!before;applyAppearance();if(!await persist(["motion"])){state.motion=before;dirtyFields.delete("motion");applyAppearance();}},"APPEARANCE"),
     action("Export local settings","JSON BACKUP",saveJSON,"STATION")
   ];
   if(!term)return actions;
@@ -405,7 +475,17 @@ function renderWorkspaces(){
       catch(err){console.error(err);$("sessions-message").textContent="Could not restore this workspace.";}
     });
     const remove=document.createElement("button");remove.type="button";remove.textContent="DELETE";
-    remove.addEventListener("click",async()=>{if(!confirm(`Delete saved workspace “${item.name}”?`))return;state.sessions.splice(i,1);await persist();renderWorkspaces();});
+    remove.addEventListener("click",async()=>{
+      if(!confirm(`Delete saved workspace “${item.name}”?`))return;
+      const before=state.sessions;
+      try{
+        const latest=await freshestSessions();
+        // A saved item is identified by its timestamp, name, and list of URLs.
+        state.sessions=latest.filter(x=>!(x.created===item.created&&x.name===item.name&&JSON.stringify(x.urls)===JSON.stringify(item.urls)));
+        if(!await persist(["sessions"]))throw Error("Local storage rejected deletion");
+        renderWorkspaces();$("sessions-message").textContent="Workspace deleted locally.";
+      }catch(error){state.sessions=before;dirtyFields.delete("sessions");console.error(error);$("sessions-message").textContent="Delete was not saved. Please retry.";}
+    });
     row.append(info,open,remove);root.append(row);
   });
 }
@@ -417,8 +497,16 @@ async function saveWorkspace(){
     const tabs=await browser.tabs.query({currentWindow:true});
     const urls=tabs.filter(t=>!t.incognito && validUrl(t.url) && t.url.length<=2048).slice(0,40).map(t=>t.url);
     if(!urls.length){$("sessions-message").textContent="No web tabs to save. Internal Firefox tabs are skipped.";return;}
-    state.sessions.unshift({name,created:new Date().toISOString(),urls});
-    state.sessions=state.sessions.slice(0,10);await persist();renderWorkspaces();$("workspace-name").value="";
+    const before=state.sessions;
+    const latest=await freshestSessions();
+    state.sessions=cleanSessions([{name,created:new Date().toISOString(),urls},...latest]).slice(0,10);
+    if(!await persist(["sessions"])){
+      state.sessions=before;
+      dirtyFields.delete("sessions");
+      $("sessions-message").textContent="Save failed. Your workspace name is still here; retry when storage is available.";
+      return;
+    }
+    renderWorkspaces();$("workspace-name").value="";
     $("sessions-message").textContent=`Saved ${urls.length} tabs locally. URLs may contain sensitive query parameters; export with care.`;
   }catch(err){console.error(err);$("sessions-message").textContent="Unable to save workspace. Check Tabs permission.";}
 }
@@ -441,9 +529,10 @@ async function closeDuplicates(){
     if(!confirm(`Close ${ids.length} background duplicate tab(s) in this window? Unsaved page content may be lost.`))return;
     const chosen=tabs.filter(t=>ids.includes(t.id)).map(t=>({url:t.url,windowId:t.windowId,index:t.index}));
     await browser.tabs.remove(ids);
-    lastClosedDuplicates=chosen;
+    // Append to the pending recovery list; never discard failures from an older cleanup.
+    lastClosedDuplicates.push(...chosen);
     $("undo-duplicates").hidden=false;
-    $("housekeeping-message").textContent=`Closed ${ids.length} duplicate tabs. Reopen their URLs below if needed; page state is not saved.`;
+    $("housekeeping-message").textContent=`Closed ${ids.length} duplicate tabs; ${lastClosedDuplicates.length} address(es) available to reopen. Page state is not saved.`;
     await diagnostics();
   }catch(error){console.error(error);$("housekeeping-message").textContent="Duplicate cleanup failed.";}
 }
@@ -479,10 +568,22 @@ async function discardIdle(){
 async function init(){
   try{
     let data;
-    if(ext){let values=await browser.storage.local.get([dataKey,previousKey,legacyKey]);data=values[dataKey]||values[previousKey];if(!data && Array.isArray(values[legacyKey])){
-      let old=values[legacyKey];if(old.length===6) data={...state,links:defaults.map((link,i)=>({...link,url:validUrl(old[i]?.url)?old[i].url:link.url}))};
-    }}else data=JSON.parse(localStorage.getItem(dataKey)||localStorage.getItem(previousKey)||"null");
-    if(data)state=cleanWorkspace(data)||state;
+    let values={};
+    if(ext)values=await browser.storage.local.get([dataKey,previousKey,legacyKey,...workspaceFields.map(fieldKey)]);
+    else{
+      const old=localStorage.getItem(dataKey)||localStorage.getItem(previousKey);
+      values[dataKey]=old?JSON.parse(old):null;
+      for(const field of workspaceFields){const value=localStorage.getItem(fieldKey(field));if(value!==null)values[fieldKey(field)]=JSON.parse(value);}
+    }
+    data=values[dataKey]||values[previousKey];
+    if(!data && Array.isArray(values[legacyKey])){
+      const old=values[legacyKey];
+      if(old.length===6)data={...state,links:defaults.map((link,i)=>({...link,url:validUrl(old[i]?.url)?old[i].url:link.url}))};
+    }
+    const base=cleanWorkspace(data)||state;
+    const updated={...base};
+    for(const field of workspaceFields){const key=fieldKey(field);if(Object.prototype.hasOwnProperty.call(values,key))updated[field]=values[key];}
+    state=cleanWorkspace(updated)||base;
   }catch(error){console.warn("ELF//SHELL: could not load local configuration",error);}
   $("focus-input").value=state.focus;$("note-input").value=state.note;
   renderLinks();applyAppearance();renderClock();diagnostics();refreshAccessButtons();
@@ -548,9 +649,18 @@ document.addEventListener("click",event=>{
 document.addEventListener("keydown",event=>{
   if(event.key==="Escape" && $("station-menu").open)$("station-menu").open=false;
 });
-function bindMirror(id,key,mirrorId){$(id).addEventListener("input",event=>{state[key]=event.target.value.slice(0,key==="note"?6000:120);$(mirrorId).value=state[key];queueSave();if(key==="note")$("editor-note-status").textContent="AUTOSAVING";});}
+function bindMirror(id,key,mirrorId){$(id).addEventListener("input",event=>{state[key]=event.target.value.slice(0,key==="note"?6000:120);$(mirrorId).value=state[key];queueSave(key);if(key==="note")$("editor-note-status").textContent="AUTOSAVING";});}
 bindMirror("focus-input","focus","focus-editor");bindMirror("focus-editor","focus","focus-input");
 bindMirror("note-input","note","note-editor");bindMirror("note-editor","note","note-input");
 window.addEventListener("online",diagnostics);window.addEventListener("offline",diagnostics);
-if(ext){try{browser.tabs?.onCreated?.addListener(diagnostics);browser.tabs?.onRemoved?.addListener(diagnostics);browser.sessions?.onChanged?.addListener(loadRecents);}catch(error){console.warn("Optional live events not available",error);}}
+if(ext){try{
+  browser.tabs?.onCreated?.addListener(diagnostics);
+  browser.tabs?.onRemoved?.addListener(diagnostics);
+  browser.sessions?.onChanged?.addListener(loadRecents);
+  browser.storage?.onChanged?.addListener(applyWorkspaceStorageChanges);
+}catch(error){console.warn("Optional live events not available",error);}}
+else window.addEventListener("storage",event=>{
+  if(!event.key?.startsWith(`${dataKey}:field:`) || event.newValue===null)return;
+  try{applyWorkspaceStorageChanges({[event.key]:{newValue:JSON.parse(event.newValue)}},"local");}catch(error){console.warn("Invalid shared workspace change",error);}
+});
 init();

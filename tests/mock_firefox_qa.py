@@ -12,7 +12,7 @@ with sync_playwright() as p:
     page.set_content(html)
     mock='''(() => {
       const local={};let origins=['https://example.org/*'];
-      window.__mock={closed:[],created:[],removed:[],discarded:[],grants:()=>origins};
+      window.__mock={closed:[],created:[],removed:[],discarded:[],grants:()=>origins,addTab:tab=>tabs.push(tab)};
       let tabs=[{id:101,url:'https://example.org/abc',active:true,pinned:false,audible:false,incognito:false,windowId:1,index:0},
                 {id:102,url:'https://example.org/abc',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:1},
                 {id:103,url:'https://example.org/other',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:2},
@@ -50,11 +50,15 @@ with sync_playwright() as p:
     page.locator('#undo-duplicates').click()
     page.wait_for_timeout(100)
     assert page.locator('#undo-duplicates').is_visible(), 'undo must stay available after a failed attempt'
+    # A second cleanup must append, not discard, the first failed recovery record.
+    page.evaluate('''() => window.__mock.addTab({id:106,url:'https://example.org/other',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:3})''')
+    page.locator('#close-duplicates').click()
+    assert '106' in page.evaluate('window.__mock.removed.join(",")')
     page.evaluate('() => { window.browser.tabs.create=window.__originalCreate; }')
     page.locator('#undo-duplicates').click()
     page.wait_for_timeout(100)
-    assert page.evaluate('window.__mock.created.length')==1
-    assert page.evaluate('window.__mock.created[0].url')=='https://example.org/abc'
+    assert page.evaluate('window.__mock.created.length')==2
+    assert set(page.evaluate('window.__mock.created.map(x=>x.url)'))=={'https://example.org/abc','https://example.org/other'}
     assert page.locator('#undo-duplicates').is_hidden()
     page.locator('#close-housekeeping').click()
     # Persist must not misreport success when Firefox local storage rejects a write.
@@ -63,5 +67,14 @@ with sync_playwright() as p:
     page.wait_for_timeout(650)
     assert page.locator('#note-status').inner_text()=='SAVE ERROR'
     assert page.locator('#archive-status').inner_text()=='SAVE ERROR'
-    print('Mock Firefox API QA PASS: per-origin permission ledger/revocation, cross-window duplicate safety, retryable reopen recovery, and failed local storage status.')
+    # A failed saved-workspace operation must not clear the name or announce success.
+    page.evaluate('() => {document.getElementById("workspace-name").value="Retry this workspace";}')
+    page.evaluate('() => saveWorkspace()')
+    assert 'Save failed' in page.locator('#sessions-message').inner_text()
+    assert page.locator('#workspace-name').input_value()=='Retry this workspace'
+    # Importing settings must similarly report the rejected write, not success.
+    page.evaluate('''async () => {const backup={...state,format:'elfshell-settings',version:5};await importJSON({size:128,text:async()=>JSON.stringify(backup)});}''')
+    assert 'Import rejected' in page.locator('#settings-message').inner_text()
+    assert 'Settings imported successfully' not in page.locator('#settings-message').inner_text()
+    print('Mock Firefox API QA PASS: per-origin permission ledger/revocation, cross-window duplicate safety, multi-batch recovery, and truthful failed workspace/import saves.')
     browser.close()

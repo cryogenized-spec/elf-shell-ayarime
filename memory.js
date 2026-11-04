@@ -89,13 +89,17 @@
     if($("memory-dialog").open&&force)showDetail();
   }
   async function save(){
-    if(!prefs)return;
+    if(!prefs)return false;
     currentlySaving=true;
     try {
       if(hasStorage) await browser.storage.local.set({[key]:prefs});
       else localStorage.setItem(key,JSON.stringify(prefs));
-    }catch(error){console.error("AYARIME memory save failed",error);$("memory-message").textContent="Unable to save Memory Trace preferences.";}
-    finally{currentlySaving=false;}
+      return true;
+    }catch(error){
+      console.error("AYARIME memory save failed",error);
+      $("memory-message").textContent="Unable to save Memory Trace preferences.";
+      return false;
+    }finally{currentlySaving=false;}
   }
   async function step(amount,fromDetail=false){
     const pool=available();
@@ -196,7 +200,12 @@
   window.elfMemory={
     snapshot:()=>prefs?JSON.parse(JSON.stringify(prefs)):null,
     validateSnapshot:input=>quotes.length?validate(input):null,
-    applySnapshot:async input=>{const validated=validate(input);if(!validated)throw Error("Invalid memory archive preferences");prefs=validated;await save();render(true);}
+    applySnapshot:async input=>{
+      const validated=validate(input);if(!validated)throw Error("Invalid memory archive preferences");
+      const before=prefs;prefs=validated;
+      if(!await save()){prefs=before;throw Error("Memory Trace preferences could not be saved");}
+      render(true);
+    }
   };
   init();
 })();

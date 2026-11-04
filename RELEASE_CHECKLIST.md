@@ -35,7 +35,7 @@
 - [x] Reject non-Substack `/p/` URL rewrites and unsafe cached RSS links; block cross-site RSS redirects.
 - [x] Compare exact URLs during duplicate-tab cleanup to preserve fragment-based app states.
 - [x] Add a packaging script and release assertions.
-- [ ] Confirm Mozilla `web-ext lint` clean in a network-enabled environment or CI.
+- [x] Confirm Mozilla `web-ext lint` clean with warnings treated as errors in GitHub Actions (2026-11-04).
 - [ ] Complete real Firefox 142+ permission, search, RSS, theme, session and persistence acceptance tests.
 - [ ] AMO review and signing; perform signed XPI upgrade test.
 
