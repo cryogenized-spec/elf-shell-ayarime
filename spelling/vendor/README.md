@@ -42,5 +42,8 @@ must not be submitted to Mozilla.
 runtime ZIP at `dist/ELF-SHELL-Ayarime-v0.5.4-AMO.zip`.
 
 The source package for Mozilla must include this directory and the project
-source scripts. Never package `node_modules` or this build-input directory
-in the runtime extension.
+source scripts. Run `npm run package:amo:source` to create the separate
+`dist/ELF-SHELL-Ayarime-v0.5.4-source.zip` for the AMO source upload.
+Never package `node_modules` or this build-input directory in the runtime
+extension. When Mozilla's build automation runs `npm run build-for-amo`,
+only the distributable runtime ZIP should be produced.
