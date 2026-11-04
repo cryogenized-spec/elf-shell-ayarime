@@ -11,7 +11,7 @@ separately from the Firefox runtime package.
 - `nspell@2.1.5`: original MIT-licensed spellchecker by Titus Wormer,
   https://github.com/wooorm/nspell.
 - `browserify@17.0.1`: build-only bundler, installed by `npm ci`.
-- `is-buffer@2.0.5`: transitive runtime dependency of nspell (MIT);
+- `is-buffer@2.0.5`: nested runtime dependency of nspell (MIT);
   the bundled notice is in `../IS-BUFFER-LICENSE.txt`.
 
 The shipped `../nspell-bundle.js` is byte-for-byte identical to the
