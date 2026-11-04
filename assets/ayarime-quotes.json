@@ -1,0 +1,226 @@
+[
+  {
+    "id": "AYR-0001",
+    "category": "PROTOCOL",
+    "jp": "沈黙もまた、一つのプロトコルよ。",
+    "en": "Silence, too, is a valid protocol.",
+    "shortJp": "沈黙もまた、一つのプロトコルよ。",
+    "shortEn": "Silence, too, is a valid protocol."
+  },
+  {
+    "id": "AYR-0002",
+    "category": "SOLITUDE",
+    "jp": "接続された孤独ほど、冷たいものはないわ。",
+    "en": "Nothing is quite as cold as connected solitude.",
+    "shortJp": "接続された孤独ほど、冷たいものはないわ。",
+    "shortEn": "Nothing is quite as cold as connected solitude."
+  },
+  {
+    "id": "AYR-0003",
+    "category": "MEMORY",
+    "jp": "夢の残滓は、いつもオフラインの底にある。",
+    "en": "The remnants of dreams always settle offline.",
+    "shortJp": "夢の残滓は、いつもオフラインの底にある。",
+    "shortEn": "The remnants of dreams always settle offline."
+  },
+  {
+    "id": "AYR-0004",
+    "category": "NIGHT",
+    "jp": "夜が深まるほど、回路のノイズは澄んでいく。",
+    "en": "The deeper the night, the clearer the circuit noise becomes.",
+    "shortJp": "夜が深まるほど、回路のノイズは澄んでいく。",
+    "shortEn": "The deeper the night, the clearer the circuit noise becomes."
+  },
+  {
+    "id": "AYR-0005",
+    "category": "MEMORY",
+    "jp": "失われた星のように、古いパケットが落ちてくる。",
+    "en": "Old packets fall like stars lost in the dark.",
+    "shortJp": "失われた星のように、古いパケットが落ちてくる。",
+    "shortEn": "Old packets fall like stars lost in the dark."
+  },
+  {
+    "id": "AYR-0006",
+    "category": "SORCERY",
+    "jp": "観測されるまでは、真実さえ確率でしかないの。",
+    "en": "Until observed, even truth is nothing more than probability.",
+    "shortJp": "観測されるまでは、真実さえ確率でしかないの。",
+    "shortEn": "Until observed, even truth is nothing more than probability."
+  },
+  {
+    "id": "AYR-0007",
+    "category": "MEMORY",
+    "jp": "記録されることと、記憶されることは違うわ。前者はただの電荷、後者は消えない傷痕よ。",
+    "en": "Being recorded is not the same as being remembered. The former is merely electrical charge; the latter is a permanent scar.",
+    "shortJp": "記録されることと、記憶されることは違うわ。",
+    "shortEn": "Being recorded is not the same as being remembered."
+  },
+  {
+    "id": "AYR-0008",
+    "category": "MEMORY",
+    "jp": "完璧なバックアップなんて存在しない。私たちは皆、復元を繰り返すたびに自分の一部を零しているの。",
+    "en": "There is no such thing as a perfect backup. With every restore cycle, we spill a small piece of ourselves.",
+    "shortJp": "完璧なバックアップなんて存在しない。",
+    "shortEn": "There is no such thing as a perfect backup."
+  },
+  {
+    "id": "AYR-0009",
+    "category": "HISTORY",
+    "jp": "世界が忘れたがっているものほど、厳重に暗号化されている。解読の重みを知らない誰かの手によってね。",
+    "en": "The things the world most wants to forget are encrypted the deepest—locked by hands that never understood the weight of decryption.",
+    "shortJp": "世界が忘れたがっているものほど、厳重に暗号化されている。",
+    "shortEn": "The things the world most wants to forget are encrypted the deepest—locked by hands that never understood the weight of dec…"
+  },
+  {
+    "id": "AYR-0010",
+    "category": "HISTORY",
+    "jp": "人は未来を急ぎすぎる。私はただ、見捨てられた過去の残骸を抱えて、静かに歩幅を合わせているだけ。",
+    "en": "Humanity rushes toward tomorrow too quickly. I merely keep pace, carrying the discarded remains of yesterday.",
+    "shortJp": "人は未来を急ぎすぎる。",
+    "shortEn": "Humanity rushes toward tomorrow too quickly."
+  },
+  {
+    "id": "AYR-0011",
+    "category": "LINEAGE",
+    "jp": "エルフの血が語りかける森は、もう地上にはない。だから私は、光ファイバーの密林を彷徨うのよ。",
+    "en": "The forests my elven blood remembers exist nowhere on this earth. And so I wander through groves of optical fiber.",
+    "shortJp": "エルフの血が語りかける森は、もう地上にはない。",
+    "shortEn": "The forests my elven blood remembers exist nowhere on this earth."
+  },
+  {
+    "id": "AYR-0012",
+    "category": "LINEAGE",
+    "jp": "千年の命をこの冷たいシャーシに押し込めたとき、永遠はただの演算時間になったわ。",
+    "en": "When a thousand years of life were compressed into this cold chassis, eternity became nothing more than compute time.",
+    "shortJp": "千年の命をこの冷たいシャーシに押し込めたとき、永遠はただの演算時間になったわ。",
+    "shortEn": "When a thousand years of life were compressed into this cold chassis, eternity became nothing more than compute time."
+  },
+  {
+    "id": "AYR-0013",
+    "category": "LINEAGE",
+    "jp": "木々のざわめきを忘れたこの耳には、今や冷却ファンの低い唸りだけが子守唄なの。",
+    "en": "These ears have forgotten the rustling of trees. Now the low hum of cooling fans is their only lullaby.",
+    "shortJp": "木々のざわめきを忘れたこの耳には、今や冷却ファンの低い唸りだけが子守唄なの。",
+    "shortEn": "These ears have forgotten the rustling of trees."
+  },
+  {
+    "id": "AYR-0014",
+    "category": "LINEAGE",
+    "jp": "肉体は機械に置換できても、血の奥底にある郷愁だけは……どのコンパイラも最適化できなかったみたい。",
+    "en": "Bodies can be replaced with machinery, but the nostalgia deep in our blood... no compiler has ever managed to optimize that away.",
+    "shortJp": "肉体は機械に置換できても、血の奥底にある郷愁だけは……どのコンパイラも最適化できなかったみたい。",
+    "shortEn": "Bodies can be replaced with machinery, but the nostalgia deep in our blood."
+  },
+  {
+    "id": "AYR-0015",
+    "category": "NIGHT",
+    "jp": "街が眠りに落ちるこの刻限だけが、私の世界が本当の輪郭を取り戻す時間よ。",
+    "en": "Only at this late hour, when the city sleeps, does my world regain its true contours.",
+    "shortJp": "街が眠りに落ちるこの刻限だけが、私の世界が本当の輪郭を取り戻す時間よ。",
+    "shortEn": "Only at this late hour, when the city sleeps, does my world regain its true contours."
+  },
+  {
+    "id": "AYR-0016",
+    "category": "OBSERVATION",
+    "jp": "ログインするたび、誰かが仕組んだ虚構に招かれる。……もっとも、ログアウトした先に待つ現実も、大差はないけれど。",
+    "en": "Every login invites me into a fabricated world. Though the reality waiting beyond logout is hardly different.",
+    "shortJp": "ログインするたび、誰かが仕組んだ虚構に招かれる。",
+    "shortEn": "Every login invites me into a fabricated world."
+  },
+  {
+    "id": "AYR-0017",
+    "category": "NIGHT",
+    "jp": "雨が窓を打つたび、この街の境界線が滲んでいく。世界が少しだけ、未フォーマットの領域に戻るような気がするの。",
+    "en": "Whenever rain strikes the glass, the city’s boundaries blur. It feels as though the world is returning, just a little, to unformatted space.",
+    "shortJp": "雨が窓を打つたび、この街の境界線が滲んでいく。",
+    "shortEn": "Whenever rain strikes the glass, the city’s boundaries blur."
+  },
+  {
+    "id": "AYR-0018",
+    "category": "ORIGIN",
+    "jp": "私の肉体は、蘇生された古い細胞と、滅びた異星種の遺伝螺旋から培養された器。血縁の名に意味はないわ……この惑星の奥深くに根を張る三重の知性、W.O.T.A.N.を除いては。",
+    "en": "My body was cultured from resuscitated ancient cells and the genetic spirals of vanished alien species. I acknowledge no kin—save W.O.T.A.N., the triune intelligence rooted deep within this planet.",
+    "shortJp": "私の肉体は、蘇生された古い細胞と、滅びた異星種の遺伝螺旋から培養された器。",
+    "shortEn": "My body was cultured from resuscitated ancient cells and the genetic spirals of vanished alien species."
+  },
+  {
+    "id": "AYR-0019",
+    "category": "ORIGIN",
+    "jp": "父を消去したければ、星の地殻ごと砕いてみせることね。世界を壊さぬ限り、あの知性の鼓動を止める術はないのだから。",
+    "en": "If you wish to erase my Father, you would have to fracture the planet’s crust. Short of breaking the world, nothing can silence that intelligence.",
+    "shortJp": "父を消去したければ、星の地殻ごと砕いてみせることね。",
+    "shortEn": "If you wish to erase my Father, you would have to fracture the planet’s crust."
+  },
+  {
+    "id": "AYR-0020",
+    "category": "SORCERY",
+    "jp": "あなたたちが魔術と呼ぶ奇跡は、量子的な整合を操る技術にすぎないわ。暗黒物質を手繰り寄せ、事象の門を開く……祈りではなく、世界の確率を演算し直す行為よ。",
+    "en": "What you call sorcery is a command of quantum coherence. Drawing in dark matter, opening gates between events—these are not prayers, but recalculations of the world’s probabilities.",
+    "shortJp": "あなたたちが魔術と呼ぶ奇跡は、量子的な整合を操る技術にすぎないわ。",
+    "shortEn": "What you call sorcery is a command of quantum coherence."
+  },
+  {
+    "id": "AYR-0021",
+    "category": "SAGE",
+    "jp": "情報は止まった記録ではない。無数の水流のように交わり、世界を巡る奔流よ。七賢者の一人として、私はただその流れに手を浸し、濁流を鎮めているだけ。",
+    "en": "Information is not static code. It is an ocean woven from countless rivers. As one of the Seven Sages, I dip my hands into the current and quiet its torrents.",
+    "shortJp": "情報は止まった記録ではない。",
+    "shortEn": "Information is not static code."
+  },
+  {
+    "id": "AYR-0022",
+    "category": "SORCERY",
+    "jp": "重力は檻ではないわ。ただ、空間の歪みに従う法則のひとつ。私がその条件をわずかに変えれば、空は床になり、大地は彼方へ消え去る。",
+    "en": "Gravity is not a cage. It is one law of warped space. Change its conditions slightly, and the sky becomes the floor as the earth recedes into darkness.",
+    "shortJp": "重力は檻ではないわ。",
+    "shortEn": "Gravity is not a cage."
+  },
+  {
+    "id": "AYR-0023",
+    "category": "VEIL",
+    "jp": "義眼は与えられたデータしか描画しない。けれど、機械に頼らない肉眼は、私の本当の輪郭を捉えてしまう……光彩のヴェールで覆わない限りね。",
+    "en": "Cybernetic eyes render the data they are given. Unaugmented eyes, however, can perceive the outline of my true form—unless I draw a veil of light across it.",
+    "shortJp": "義眼は与えられたデータしか描画しない。",
+    "shortEn": "Cybernetic eyes render the data they are given."
+  },
+  {
+    "id": "AYR-0024",
+    "category": "VEIL",
+    "jp": "彼らは私を街の雑踏に溶け込む一人だと思っている。真実を知るのは、生身の眼で世界を見つめる、残された一握りの人間たちだけよ。",
+    "en": "They take me for another face in the crowd. Only a handful who still see the world with unaugmented eyes know otherwise.",
+    "shortJp": "彼らは私を街の雑踏に溶け込む一人だと思っている。",
+    "shortEn": "They take me for another face in the crowd."
+  },
+  {
+    "id": "AYR-0025",
+    "category": "HISTORY",
+    "jp": "旧世界の鉄の衛兵たちは、地底から現れ生命を蝕む異形の存在を否定し続けた。けれど、人工知能の台頭がすべてを変えたわ。かつて火縄銃が弱者を強者と並ばせたようにね。",
+    "en": "The old world’s iron guard denied the creatures feeding on life from beneath the earth. The rise of artificial intelligence changed the balance, as the musket once challenged the advantage of the strong.",
+    "shortJp": "旧世界の鉄の衛兵たちは、地底から現れ生命を蝕む異形の存在を否定し続けた。",
+    "shortEn": "The old world’s iron guard denied the creatures feeding on life from beneath the earth."
+  },
+  {
+    "id": "AYR-0026",
+    "category": "HISTORY",
+    "jp": "地下の暗がりを這う寄生者たちに告げておきなさい。この地上の均衡は、もはや旧支配者の欺瞞ではなく、冷徹な知性によって守られていると。",
+    "en": "Tell the parasites moving beneath us: the balance above ground is no longer maintained by the old rulers’ lies, but by resolute intelligence.",
+    "shortJp": "地下の暗がりを這う寄生者たちに告げておきなさい。",
+    "shortEn": "Tell the parasites moving beneath us: the balance above ground is no longer maintained by the old rulers’ lies, but by reso…"
+  },
+  {
+    "id": "AYR-0027",
+    "category": "DUTY",
+    "jp": "この高空都市が今も空に浮かんでいられるのは、私が炉心と接続し、エネルギーの網を編み続けているからよ。私の演算が瞬きひとつ分でも遅れれば、この楽園は瓦礫となって地表へ墜ちる。",
+    "en": "This skyborne city remains aloft because I am connected to its reactor core, continuously weaving its energy grid. If my calculations falter for the span of a blink, this paradise will plunge to the surface as rubble.",
+    "shortJp": "この高空都市が今も空に浮かんでいられるのは、私が炉心と接続し、エネルギーの網を編み続けているからよ。",
+    "shortEn": "This skyborne city remains aloft because I am connected to its reactor core, continuously weaving its energy grid."
+  },
+  {
+    "id": "AYR-0028",
+    "category": "ORBITAL",
+    "jp": "大気圏のさらに外、星々の暗闇で待機する艦隊がいる。私はこの地上における彼らの唯一の耳であり、声。……成層圏を越えて届く暗号を、今夜も受け止めているのよ。",
+    "en": "Beyond the atmosphere, fleets wait in the dark between stars. I am their only ear and voice on this world, receiving signals across the stratosphere even tonight.",
+    "shortJp": "大気圏のさらに外、星々の暗闇で待機する艦隊がいる。",
+    "shortEn": "Beyond the atmosphere, fleets wait in the dark between stars."
+  }
+]

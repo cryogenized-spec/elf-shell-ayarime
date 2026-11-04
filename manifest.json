@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "ELF//SHELL — Ayarime",
+  "version": "0.5.4",
+  "description": "Original 90s OVA Firefox cyber-elf dashboard with local shortcuts, command palette, bilingual rotating memory fragments, notes, and opt-in RSS/Atom subscriptions.",
+  "icons": {
+    "48": "assets/icon-48.png",
+    "96": "assets/icon-96.png",
+    "128": "assets/icon-128.png"
+  },
+  "permissions": [
+    "theme",
+    "search",
+    "storage"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "elf-shell-ayarime@local.theme",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "optional_permissions": [
+    "tabs",
+    "sessions",
+    "bookmarks",
+    "history"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https:; object-src 'none'; base-uri 'none'"
+  }
+}

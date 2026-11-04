@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ELF//SHELL — Ayarime</title>
+<link rel="icon" type="image/x-icon" sizes="any" href="favicon.ico">
+<link rel="stylesheet" href="styles.css">
+<script defer src="newtab.js"></script>
+<script defer src="memory.js"></script>
+<script defer src="feeds.js"></script>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+  <div class="scan" aria-hidden="true"></div>
+  <main class="shell">
+    <div id="palette-scrim" class="palette-scrim" aria-hidden="true" hidden></div>
+    <header class="masthead" aria-label="Project name">
+      <span class="logo-slashes" aria-hidden="true">///</span>
+      <div><h1>ELF<span>//</span>SHELL</h1><p>CYBER-ELF BROWSER MODULE <b>V.05.4</b></p></div>
+    </header>
+    <aside class="left-panels" aria-label="Workspace information">
+      <section id="memory-panel" class="frame module memory-panel" aria-label="Rotating Ayarime memory fragments">
+        <div class="memory-heading"><span class="label">// 01 · MEMORY TRACE</span><span class="memory-count" id="memory-counter">— / 28</span></div>
+        <div class="module-title">AYARIME <span>あやりめ</span></div>
+        <div class="memory-meta"><span id="memory-fragment-id">AYR-0001</span><span id="memory-category">PROTOCOL</span></div>
+        <button id="memory-open" class="memory-quote" type="button" aria-label="Open full memory fragment">
+          <span id="memory-compact-jp" class="memory-japanese" lang="ja">沈黙もまた、一つのプロトコルよ。</span>
+          <span id="memory-compact-en" class="memory-english" lang="en">Silence, too, is a valid protocol.</span>
+        </button>
+        <div class="memory-bottom"><span class="fine">綾理芽 / MEMORY REMAINS</span>
+          <div class="memory-nav"><button id="memory-prev" type="button" aria-label="Previous memory fragment" title="Previous fragment">‹</button><button id="memory-pause" type="button" aria-label="Pause memory rotation" title="Pause or resume">Ⅱ</button><button id="memory-next" type="button" aria-label="Next memory fragment" title="Next fragment">›</button></div>
+        </div>
+      </section>
+      <div class="frame indicators" aria-label="Browser diagnostics">
+        <span class="label">SYSTEM DIAGNOSTICS</span>
+        <div><span>NETWORK SIGNAL</span><strong id="network-status">—</strong></div>
+        <div><span>OPEN TABS</span><strong id="tab-count">—</strong></div>
+        <div><span>LOCAL ARCHIVE</span><strong id="archive-status">READY</strong></div>
+        <div><span>TELEMETRY</span><strong>NONE</strong></div>
+        <div class="signal" aria-hidden="true">▂ ▅ ▃ ▇ ▄ ▆ ▂ ▄ ▇ ▃ ▅ ▁ ▆</div>
+      </div>
+    </aside>
+    <aside class="right-panels" aria-label="Clock and personal workspace">
+      <div class="module-signature">MODULE / AYR-02 <i></i><br>NEURAL ARCHIVE<br>LOCAL INSTANCE</div>
+      <div class="timebox frame"><time id="time">--:--</time><span id="date">----</span><small>YOUR DEVICE LOCAL TIME</small></div>
+      <section class="archive frame" aria-label="Memory archive scratchpad">
+        <div class="archive-heading"><span class="label">MEMORY ARCHIVE // LOCAL</span><span id="note-status" aria-live="polite">READY</span></div>
+        <label class="sr-only" for="focus-input">Today's focus</label>
+        <input id="focus-input" type="text" maxlength="120" placeholder="TODAY'S FOCUS / ...">
+        <label class="sr-only" for="note-input">Private scratchpad</label>
+        <textarea id="note-input" rows="4" maxlength="6000" placeholder="A memory worth keeping..." spellcheck="true"></textarea>
+        <small>LOCAL TEXT · NOT ENCRYPTED</small>
+      </section>
+      <section class="frame recents" id="recents-panel" aria-label="Recently closed tabs">
+        <div class="archive-heading"><span class="label">RECENTLY CLOSED</span><button id="recent-refresh" type="button" class="inline-button" title="Refresh recently closed tabs">↻</button></div>
+        <div id="recent-list" class="recent-list"><p class="quiet">Enable session access to see recently closed tabs.</p></div>
+        <button type="button" class="access-button" id="session-permission">ENABLE SESSION ACCESS</button>
+      </section>
+    </aside>
+    <section class="center-controls" aria-label="Search and shortcuts">
+      <div class="coordinates" aria-hidden="true">N E T W O R K / E N T R Y P O I N T</div>
+      <div class="search-zone">
+        <form id="search-form" class="search" autocomplete="off">
+          <label class="sr-only" for="search-input">Search the web or enter a command</label>
+          <span aria-hidden="true" class="lens">⌕</span>
+          <input id="search-input" type="search" placeholder="Search · @ tabs · # bookmarks · ^ history · = calculate" spellcheck="false" aria-controls="search-results" aria-expanded="false" aria-autocomplete="list">
+          <button type="submit" aria-label="Run search or command">↗</button>
+        </form>
+        <div id="search-results" class="search-results" role="listbox" aria-label="Command suggestions" hidden></div>
+      </div>
+      <div class="launcher-caption"><span>QUICK LINKS / 1–6</span><span>PRESS / TO SEARCH</span></div>
+      <nav id="shortcuts" class="shortcuts" aria-label="Quick links"></nav>
+      <details id="station-menu" class="station-menu">
+        <summary aria-label="Station tools menu"><span class="station-menu-title">✧ STATION</span><span class="station-menu-hint">7 TOOLS · CTRL+K</span></summary>
+        <nav class="center-actions" aria-label="Station tools">
+          <button id="settings-toggle" class="settings-toggle" type="button">✧ CONFIGURE STATION</button>
+          <button id="notes-toggle" class="settings-toggle" type="button">▤ QUICK NOTES</button>
+          <button id="recents-toggle" class="settings-toggle" type="button">↶ CLOSED TABS</button>
+          <button id="permissions-toggle" class="settings-toggle" type="button">◇ BROWSER ACCESS</button>
+          <button id="sessions-toggle" class="settings-toggle" type="button">▣ SAVED WORKSPACES</button>
+          <button id="housekeeping-toggle" class="settings-toggle" type="button">⌁ TAB TOOLS</button>
+          <button id="feeds-toggle" class="settings-toggle" type="button">⌁ NET FEED / RSS</button>
+        </nav>
+      </details>
+    </section>
+    <footer class="footer net-footer" aria-label="Subscribed RSS headlines">
+      <span class="feed-tag">NET FEED</span>
+      <button type="button" id="feed-prev" title="Previous headline" aria-label="Previous headline">‹</button>
+      <a id="feed-headline-link" target="_blank" rel="noopener noreferrer" hidden><span id="feed-headline" aria-live="off"></span></a>
+      <span id="feed-placeholder">YOUR NETWORK · ADD A PUBLICATION</span>
+      <button type="button" id="feed-next" title="Next headline" aria-label="Next headline">›</button>
+      <button type="button" id="feed-manage" title="Manage RSS and Substack subscriptions">+ SUBSCRIBE</button>
+      <span class="footer-signature">あやりめ · AYARIME</span>
+    </footer>
+  </main>
+  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+    <form id="settings-form">
+      <h2 id="settings-title">// STATION CONFIGURATION</h2>
+      <p>Six editable launch links. Notes and preferences are stored locally in this Firefox profile, without encryption.</p>
+      <div class="shortcut-fields" id="shortcut-fields"></div>
+      <div class="bang-settings"><h3>// SEARCH BANGS</h3><p>Customisable search commands. Keep <code>{query}</code> in each URL template.</p><div id="bang-fields"></div></div>
+      <div class="setting-options">
+        <label><input type="checkbox" id="reduce-motion"> Reduce visual effects</label>
+        <label><input type="checkbox" id="high-contrast"> Increase interface contrast</label>
+      </div>
+      <div class="import-actions"><button type="button" id="export-settings">EXPORT JSON</button><button type="button" id="import-settings">IMPORT JSON</button><input type="file" id="import-file" accept="application/json,.json" hidden></div>
+      <p id="settings-message" class="message" role="status"></p>
+      <div class="dialog-actions"><button type="button" id="reset-links">RESET LINKS</button><button type="button" id="cancel-settings">CANCEL</button><button type="submit" id="save-settings">SAVE CONFIG</button></div>
+    </form>
+  </dialog>
+  <dialog id="notes-dialog" class="settings-dialog notes-dialog" aria-labelledby="notes-title">
+    <h2 id="notes-title">// MEMORY ARCHIVE</h2>
+    <p>Local notes and today's focus. Everything is saved automatically, without encryption.</p>
+    <label for="focus-editor">TODAY'S FOCUS</label><input id="focus-editor" type="text" maxlength="120" placeholder="One thing worth doing today...">
+    <label for="note-editor">SCRATCHPAD</label><textarea id="note-editor" rows="8" maxlength="6000" spellcheck="true" placeholder="A memory worth keeping..."></textarea>
+    <p id="editor-note-status" class="message" role="status">SAVED LOCALLY</p>
+    <div class="dialog-actions"><button type="button" id="close-notes">CLOSE</button></div>
+  </dialog>
+  <dialog id="recents-dialog" class="settings-dialog recents-dialog" aria-labelledby="recents-title">
+    <h2 id="recents-title">// RECENTLY CLOSED TABS</h2>
+    <p>Previously closed tabs and windows from your current Firefox browsing session.</p>
+    <div id="recent-modal-list" class="recent-list"><p class="quiet">Enable session access to show recently closed tabs.</p></div>
+    <div class="dialog-actions"><button type="button" id="recent-enable">BROWSER ACCESS</button><button type="button" id="close-recents">CLOSE</button></div>
+  </dialog>
+  <dialog id="access-dialog" class="settings-dialog access-dialog" aria-labelledby="access-title">
+    <h2 id="access-title">// PERMISSION GATEWAY</h2>
+    <p>Extra browser information stays on your device. Enable only what you need; no browsing data is uploaded by ELF//SHELL.</p>
+    <div class="ledger-required">REQUIRED / theme · search · storage <span>ALWAYS ACTIVE</span></div>
+    <p id="permission-ledger">OPTIONAL / reading granted permissions…</p>
+    <section class="host-permission-section" aria-label="Granted feed hosts">
+      <h3>// AUTHORISED FEED HOSTS</h3>
+      <div id="permission-host-list" class="permission-host-list"><p class="quiet">Reading host permissions…</p></div>
+    </section>
+    <div class="permission-list">
+      <div><span><b>Open tabs</b><small>Show tab titles and switch between tabs using @</small></span><button type="button" data-permission="tabs">ENABLE</button></div>
+      <div><span><b>Closed tabs</b><small>Restore recently closed tabs</small></span><button type="button" data-permission="sessions">ENABLE</button></div>
+      <div><span><b>Bookmarks</b><small>Search your bookmarks using #</small></span><button type="button" data-permission="bookmarks">ENABLE</button></div>
+      <div><span><b>History</b><small>Search browsing history using ^</small></span><button type="button" data-permission="history">ENABLE</button></div>
+    </div>
+    <p id="access-message" class="message" role="status"></p>
+    <div class="dialog-actions"><button type="button" id="close-access">CLOSE</button></div>
+  </dialog>
+  <dialog id="sessions-dialog" class="settings-dialog sessions-dialog" aria-labelledby="sessions-title">
+    <h2 id="sessions-title">// SAVED WORKSPACES</h2>
+    <p>Capture and restore sets of public web addresses. Stored locally, without encryption. Private tabs and browser-internal pages are never saved.</p>
+    <div class="workspace-add"><label for="workspace-name">WORKSPACE NAME</label><input id="workspace-name" type="text" maxlength="48" placeholder="DEV / RESEARCH / WORK"><button id="save-workspace" type="button">SAVE CURRENT WINDOW</button></div>
+    <div id="workspace-list" class="workspace-list"></div>
+    <p id="sessions-message" class="message" role="status"></p>
+    <div class="dialog-actions"><button type="button" id="close-sessions">CLOSE</button></div>
+  </dialog>
+  <dialog id="housekeeping-dialog" class="settings-dialog" aria-labelledby="housekeeping-title">
+    <h2 id="housekeeping-title">// TAB HOUSEKEEPING</h2>
+    <p>All actions are manual, require confirmation, and preserve your active or pinned tabs.</p>
+    <div class="housekeeping-actions"><button id="close-duplicates" type="button">CLOSE DUPLICATES IN THIS WINDOW</button><button id="discard-inactive" type="button">DISCARD IDLE TABS IN THIS WINDOW (30+ MIN)</button></div>
+    <button id="undo-duplicates" class="undo-duplicates" type="button" hidden>REOPEN JUST-CLOSED DUPLICATE URLS</button>
+    <p class="quiet">Reopen restores addresses only, not unsaved form contents or full page state. Use Firefox's Recently Closed panel if available for fuller session recovery.</p>
+    <p class="quiet">Discarding unloads background pages to save memory; tabs reopen when selected. Pages with unsaved data may prevent closing or discarding.</p>
+    <p id="housekeeping-message" class="message" role="status"></p>
+    <div class="dialog-actions"><button type="button" id="close-housekeeping">CLOSE</button></div>
+  </dialog>
+  <dialog id="feeds-dialog" class="settings-dialog feeds-dialog" aria-labelledby="feeds-title">
+    <h2 id="feeds-title">// NET FEED · SUBSCRIPTION ARCHIVE</h2>
+    <p>Add public Substack publications or direct RSS/Atom addresses. News arrives straight from the sites you authorise, never through an ELF//SHELL server.</p>
+    <form id="feed-add-form" class="feed-add-form">
+      <label>PUBLICATION / RSS ADDRESS<input id="feed-url" type="text" maxlength="2048" autocomplete="url" required placeholder="publication.substack.com or https://example.org/rss.xml"></label>
+      <label>DISPLAY NAME (OPTIONAL)<input id="feed-label" type="text" maxlength="72" placeholder="Publication name"></label>
+      <label>GROUP<input id="feed-group" type="text" maxlength="28" placeholder="GENERAL / TECH / WRITING"></label>
+      <button type="submit">+ SUBSCRIBE</button>
+    </form>
+    <div class="feed-options">
+      <label><input id="feed-enabled" type="checkbox" checked> Show ticker / enable feed checks</label>
+      <label>REFRESH WHEN NEW TAB OPENS <select id="feed-frequency">
+        <option value="15">Every 15 min</option><option value="30" selected>Every 30 min</option>
+        <option value="60">Hourly</option><option value="180">Every 3 hours</option><option value="360">Every 6 hours</option>
+      </select></label>
+    </div>
+    <h3>// MY SUBSCRIPTIONS</h3>
+    <div id="feed-subscriptions" class="feed-subscriptions"></div>
+    <div class="feed-toolbar">
+      <button id="feed-refresh" type="button">REFRESH AUTHORISED FEEDS</button>
+      <button id="feed-export-opml" type="button">EXPORT OPML</button>
+      <button id="feed-import-opml" type="button">IMPORT OPML</button>
+      <input type="file" id="feed-opml-file" accept=".opml,application/xml,text/xml" hidden>
+    </div>
+    <p class="feed-explainer">Each source requests site access individually. You can revoke that access here. Imported lists never trigger permission requests or automatic downloads until allowed. Headlines are cached locally; paid Substack posts may only include a preview.</p>
+    <p id="feed-message" class="message" role="status"></p>
+    <h3>// LATEST SIGNALS</h3>
+    <div id="feed-articles" class="feed-articles"></div>
+    <div class="dialog-actions"><button id="feed-close" type="button">RETURN TO STATION</button></div>
+  </dialog>
+  <dialog id="memory-dialog" class="settings-dialog memory-dialog" aria-labelledby="memory-title">
+    <div class="memory-dialog-header"><span class="label">THE SEVEN SAGES // AYARIME ARCHIVE</span><span id="memory-detail-category">PROTOCOL</span></div>
+    <h2 id="memory-title">// MEMORY FRAGMENT <span id="memory-detail-id">AYR-0001</span></h2>
+    <div class="memory-full" aria-live="polite">
+      <p id="memory-detail-jp" class="memory-full-jp" lang="ja"></p>
+      <p id="memory-detail-en" class="memory-full-en" lang="en"></p>
+    </div>
+    <div class="memory-detail-actions">
+      <button type="button" id="memory-detail-prev">‹ PREVIOUS</button><button type="button" id="memory-detail-next">NEXT ›</button>
+      <button type="button" id="memory-detail-favourite" aria-pressed="false">☆ FAVOURITE</button>
+      <button type="button" id="memory-detail-pin" aria-pressed="false">PIN FRAGMENT</button>
+      <button type="button" id="memory-view-favourites" aria-pressed="false">★ FAVOURITES ONLY</button>
+    </div>
+    <div class="memory-preferences">
+      <label>DISPLAY LANGUAGE<select id="memory-detail-language"><option value="both">日本語 + English</option><option value="jp">日本語 ONLY</option><option value="en">ENGLISH ONLY</option></select></label>
+      <label>ROTATION SPEED<select id="memory-detail-interval"><option value="30">30 SECONDS</option><option value="90" selected>90 SECONDS</option><option value="180">3 MINUTES</option><option value="300">5 MINUTES</option><option value="0">OFF / MANUAL</option></select></label>
+    </div>
+    <div class="memory-category-heading">VISIBLE MEMORY CHANNELS</div>
+    <div id="memory-categories" class="memory-category-grid" role="group" aria-label="Included memory categories"></div>
+    <p class="message" id="memory-message" role="status"></p>
+    <div class="dialog-actions"><button type="button" id="memory-detail-close">RETURN TO STATION</button></div>
+  </dialog>
+</body>
+</html>

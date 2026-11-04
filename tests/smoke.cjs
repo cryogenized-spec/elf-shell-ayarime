@@ -1,0 +1,57 @@
+'use strict';
+const fs=require('node:fs');
+const path=require('node:path');
+const assert=require('node:assert/strict');
+const vm=require('node:vm');
+const root=path.resolve(__dirname,'..');
+const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
+assert.equal(manifest.version,'0.5.4');
+assert.equal(manifest.browser_specific_settings.gecko.id,'elf-shell-ayarime@local.theme');
+assert.equal(manifest.browser_specific_settings.gecko.strict_min_version,'140.0');
+assert.deepEqual(manifest.browser_specific_settings.gecko.data_collection_permissions,{required:['none']});
+assert(manifest.content_security_policy.extension_pages.includes("script-src 'self'"));
+assert(manifest.content_security_policy.extension_pages.includes("object-src 'none'"));
+assert.deepEqual(manifest.permissions.sort(),['search','storage','theme']);
+assert.deepEqual(manifest.optional_permissions.sort(),['bookmarks','history','sessions','tabs']);
+assert.deepEqual(manifest.optional_host_permissions,['https://*/*']);
+const code=fs.readFileSync(path.join(root,'newtab.js'),'utf8');
+const feedsCode=fs.readFileSync(path.join(root,'feeds.js'),'utf8');
+const dom=fs.readFileSync(path.join(root,'newtab.html'),'utf8');
+const ids=[...dom.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
+assert.equal(ids.length,new Set(ids).size,'duplicate HTML IDs');
+for(const m of code.matchAll(/\$\("([a-zA-Z0-9-]+)"\)/g)) assert(ids.includes(m[1]),'missing HTML ID: '+m[1]);
+const pure=code.slice(0,code.indexOf('$("search-form").addEventListener'));
+const ctx={URL,Date,Intl,console,setTimeout,clearTimeout};
+vm.createContext(ctx);
+vm.runInContext(pure,ctx,{timeout:1000});
+const run=(x)=>vm.runInContext(x,ctx,{timeout:1000});
+assert.equal(run('calcExpression("15% of 2400")'),360);
+assert.equal(run('calcExpression("(12+8)*3")'),60);
+assert.equal(run('calcExpression("3/0")'),null);
+assert.equal(run('calcExpression("alert(123)")'),null);
+assert.equal(run('safeBang({key:"gh",url:"https://github.com/search?q={query}"}).key'),'gh');
+assert.equal(run('safeBang({key:"bad",url:"javascript:alert({query})"})'),null);
+assert.equal(run('bangUrl("gh","two words")'),'https://github.com/search?q=two%20words');
+assert.equal(run('cleanWorkspace({links:defaults,note:"",focus:"",motion:false,contrast:false}).links[0].icon'),'firefox');
+assert.equal(run('cleanWorkspace({links:defaults.map(x=>({...x,url:"javascript:bad"}))})'),null);
+assert.equal(run('cleanSessions([{name:"Work",urls:["https://example.org","javascript:bad"]}])[0].urls.length'),1);
+assert.equal(run('commandSuggestions("saved workspace").length'),1);
+const icons=run('iconNames');
+for(const id of ['firefox','mail','calendar','drive','video','library']){
+ assert(fs.statSync(path.join(root,'assets','shortcut-icons',id+'.webp')).size>3000,'missing PNG-derived icon '+id);
+ assert.equal(run('imageUrl("'+id+'")'),'assets/shortcut-icons/'+id+'.webp');
+}
+assert.equal(run('imageUrl("news")'),'assets/shortcut-icons/news.svg');
+for(const id of icons){
+ const svg=fs.readFileSync(path.join(root,'assets','shortcut-icons',id+'.svg'),'utf8');
+ assert(svg.includes('xmlns="http://www.w3.org/2000/svg"'),'bad SVG: '+id);
+ assert(!svg.includes('<script'),'executable SVG: '+id);
+}
+assert(!/\beval\s*\(/.test(code),'no eval');
+assert(!/fetch\s*\(/.test(code),'main module does not fetch');
+assert(/credentials:"omit"/.test(feedsCode),'feed requests omit site credentials');
+assert(/permissions\.request\(\{origins:/.test(feedsCode),'feed access must be requested per domain');
+assert(!/https?:\/\/[^'"\s]+\.(?:js|css|woff|ttf)\b/.test(dom+code),'no remote scripts/styles/fonts');
+assert(code.includes('const key=t.url; // A fragment'),'exact fragment-safe duplicate-tab matching');
+assert(code.includes('$("search-input").value="";endPalette();'),'escape clears the search field');
+console.log(`ELF//SHELL v0.5.4: all smoke tests passed (${icons.length} icons, manifest, DOM, math, commands, search templates, migration and privacy).`);
