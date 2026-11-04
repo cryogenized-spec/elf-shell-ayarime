@@ -51,7 +51,14 @@ async function toggle(){
           runAt:"document_idle",persistAcrossSessions:true
         }]);
       }
+      // The active tab might navigate while its host grant is being
+      // requested. Never inject into a different origin by cached tab ID.
+      const live=await browser.tabs.get(tab.id);
+      if(new URL(live.url||"").origin!==origin)
+        throw Error("Tab changed site during permission setup. Spelling is enabled only for the original site.");
       await browser.scripting.insertCSS({target:{tabId:tab.id},files:["spelling/content.css"]});
+      // The content script independently asks the background to authorize
+      // its actual sender origin before reading any editor.
       await browser.scripting.executeScript({target:{tabId:tab.id},files:["spelling/content.js"]});
       setStatus("Enabled. Click a misspelled word in a supported rich-text editor.");
     }

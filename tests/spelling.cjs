@@ -21,6 +21,16 @@ assert(popup.includes('tabs.query({url:origin+"/*"})')&&popup.includes('tabs.sen
 assert(content.includes('if(!scan.complete)')&&content.includes('root.removeAttribute("spellcheck")'),
   "incomplete editor scan must restore Firefox native spelling");
 assert(bg.includes("spellWordChain=mutation.then"),"dictionary updates must be serialized across tabs");
+assert(popup.includes("browser.tabs.get(tab.id)")&&popup.includes('!==origin'),"do not immediately inject into a navigated tab");
+assert(bg.includes("spellingSenderAllowed(sender)")&&bg.includes('browser.permissions.contains({origins:[origin]})'),"all spelling messages must verify actual sender and permission");
+assert(bg.includes('message.type==="elfshell:spelling:authorize"'),"spelling initialization requires background authorization");
+assert(bg.includes('type:"elfshell:spell:revalidate"'),"revocation must revalidate existing tabs");
+assert(content.includes('if(!enabled||!event.isTrusted)return;'),"synthetic site clicks may not open correction controls");
+assert(content.includes('if(!e.isTrusted)return;'),"synthetic clicks may not activate dictionary buttons");
+assert(content.includes('attachShadow({mode:"closed"})'),"correction controls must be hidden from host scripts");
+assert(content.includes("menuRange.toString()!==menuWord"),"stale replacement ranges must be rejected");
+assert(content.includes('"beforeinput"')&&content.includes("closeMenu();++revision"),"typing invalidates correction menus");
+
 
 assert(!popup.includes("matches:[\"<all_urls>\"]"),"no automatic broad injection");
 assert(content.includes('root.setAttribute("spellcheck","false")'),"native spelling must be disabled only after successful checker");

@@ -4,6 +4,23 @@ const SPELL_WORDS_KEY="elfshell:spelling:personal-words:v1";
 let spellWorker=null, spellInit=null, spellCounter=0;
 const spellPending=new Map();
 let spellWordChain=Promise.resolve();
+// Content-script messages are accepted only from an actively enabled site.
+// Having the same origin's host permission for RSS is not spelling opt-in.
+const spellingSiteId=origin=>"elfspell-"+[...origin].map(ch=>ch.charCodeAt(0).toString(16).padStart(2,"0")).join("");
+async function spellingSenderAllowed(sender){
+  if(!sender?.tab?.id||!sender.url||sender.frameId!==0)return false;
+  let url,tabUrl;
+  try{url=new URL(sender.url);tabUrl=new URL(sender.tab.url||sender.url);}
+  catch{return false;}
+  if(url.protocol!=="https:"||url.origin!==tabUrl.origin)return false;
+  const origin=url.origin+"/*";
+  const [permission,registered]=await Promise.all([
+    browser.permissions.contains({origins:[origin]}),
+    browser.scripting.getRegisteredContentScripts()
+  ]);
+  return !!permission && registered.some(item=>item.id===spellingSiteId(url.origin)&&
+    Array.isArray(item.matches)&&item.matches.includes(origin));
+}
 function spellReset(error){
   if(spellWorker)spellWorker.terminate();
   spellWorker=null;spellInit=null;
@@ -37,10 +54,12 @@ async function spellReady(){
   }
   await spellInit;
 }
-browser.runtime.onMessage.addListener(message=>{
+browser.runtime.onMessage.addListener((message,sender)=>{
   if(!message||typeof message.type!=="string"||!message.type.startsWith("elfshell:spelling:"))return undefined;
   return (async()=>{
     try{
+      if(!await spellingSenderAllowed(sender))return {ok:false,error:"Spelling is disabled or site permission has been revoked"};
+      if(message.type==="elfshell:spelling:authorize")return {ok:true};
       await spellReady();
       if(message.type==="elfshell:spelling:check"){
         const words=Array.isArray(message.words)?message.words.filter(w=>typeof w==="string"&&/^[A-Za-z][A-Za-z'’\-]*$/.test(w)).slice(0,500):[];
@@ -75,18 +94,25 @@ browser.runtime.onMessage.addListener(message=>{
   })();
 });
 
- // If the user revokes a site's host permission from Firefox Settings, stop
- // registering the spelling script for that origin. No background polling.
+ // Revoked host access must stop currently injected scripts, not only
+ // prevent future registrations. Every spelling message also checks access.
  browser.permissions.onRemoved.addListener(async permissions=>{
    for(const pattern of permissions.origins||[]){
      if(!pattern.startsWith("https://")||!pattern.endsWith("/*"))continue;
      const origin=pattern.slice(0,-2);
-     const id="elfspell-"+[...origin].map(ch=>ch.charCodeAt(0).toString(16).padStart(2,"0")).join("");
+     const id=spellingSiteId(origin);
      try{
        const registered=await browser.scripting.getRegisteredContentScripts();
-       if(registered.some(entry=>entry.id===id)){
+       if(registered.some(entry=>entry.id===id))
          await browser.scripting.unregisterContentScripts({ids:[id]});
-       }
-     }catch(error){console.warn("ELF//SHELL: could not revoke spelling script",error);}
+     }catch(error){console.warn("ELF//SHELL: cannot unregister revoked spelling script",error);}
    }
+   // Query by tab ID without reading tab URLs; this works even when the
+   // revoked origin no longer allows us to inspect addresses.
+   try{
+     const tabs=await browser.tabs.query({});
+     await Promise.all(tabs.map(tab=>
+       browser.tabs.sendMessage(tab.id,{type:"elfshell:spell:revalidate"}).catch(()=>undefined)
+     ));
+   }catch(error){console.warn("ELF//SHELL: cannot notify every spelling tab",error);}
  });

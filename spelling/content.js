@@ -3,12 +3,13 @@
    only; keeps Firefox's native spellchecker on unsupported fields. */
 (() => {
   if(globalThis.__elfshellSpelling){
-    globalThis.__elfshellSpelling.enable();
+    // Reuse an injected instance only after a fresh background authorization.
+    globalThis.__elfshellSpelling.reauthorize();
     return;
   }
   const MARK="elfshell-spelling-errors-v1";
   const ignored=new Set();
-  let enabled=true, editor=null, originalSpell=null, revision=0, composing=false, timer=0;
+  let enabled=false, editor=null, originalSpell=null, revision=0, composing=false, timer=0;
   let mistakes=new Set(), menu=null, menuRange=null, menuWord="";
   const WORD=/[A-Za-z]+(?:['’\-][A-Za-z]+)*/g;
   const request=(type,extra={})=>browser.runtime.sendMessage({type:"elfshell:spelling:"+type,...extra});
@@ -116,7 +117,9 @@
     return null;
   }
   function replace(choice){
-    if(!editor||!menuRange||!menuRange.startContainer.isConnected)return closeMenu();
+    if(!editor||!menuRange||!menuRange.startContainer.isConnected||
+       !editor.contains(menuRange.startContainer)||menuRange.toString()!==menuWord)
+      return closeMenu();
     const root=editor,range=menuRange.cloneRange();
     closeMenu();
     try{
@@ -137,16 +140,25 @@
     pane.className="elfshell-spell-menu";
     pane.setAttribute("role","menu");
     pane.setAttribute("aria-label","Spelling suggestions for "+word);
+    // Closed shadow root prevents page scripts from reaching extension menu
+    // buttons. No untrusted DOM click can authorize dictionary changes.
+    const shadow=pane.attachShadow({mode:"closed"});
+    const style=document.createElement("style");
+    style.textContent=':host{position:fixed;z-index:2147483647;display:block;padding:5px;min-width:180px;max-width:285px;border:1px solid #64656d;border-radius:7px;background:#303136;color:#f2f2f3;box-shadow:0 6px 20px #0005;font:13px/1.35 system-ui,sans-serif;color-scheme:dark}button{display:block;width:100%;border:0;border-radius:4px;padding:7px 12px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:default}button:hover,button:focus-visible{outline:none;background:#53545c}.elfshell-spell-separator{border-top:1px solid #55565b;margin:4px 5px}@media(prefers-color-scheme:light){:host{background:#f8f8f9;color:#161719;border-color:#c7c8ce;color-scheme:light}button:hover,button:focus-visible{background:#e5e6eb}.elfshell-spell-separator{border-color:#dddee2}}';
+    shadow.append(style);
     const add=(label,fn)=>{
       const b=document.createElement("button");
       b.type="button";b.setAttribute("role","menuitem");b.textContent=label;
       b.addEventListener("pointerdown",e=>e.preventDefault());
-      b.addEventListener("click",e=>{e.preventDefault();fn();});
-      pane.append(b);
+      b.addEventListener("click",e=>{
+        if(!e.isTrusted)return;
+        e.preventDefault();fn();
+      });
+      shadow.append(b);
     };
     for(const suggestion of suggestions) add(suggestion,()=>replace(suggestion));
     if(suggestions.length){
-      const divider=document.createElement("div");divider.className="elfshell-spell-separator";pane.append(divider);
+      const divider=document.createElement("div");divider.className="elfshell-spell-separator";shadow.append(divider);
     }
     add("Ignore",()=>{ignored.add(word);closeMenu();schedule();});
     add("Add to Dictionary",async()=>{
@@ -160,7 +172,7 @@
     pane.style.top=Math.max(5,Math.min(evt.clientY+9,innerHeight-rect.height-5))+"px";
     menu=pane;
     pane.addEventListener("keydown",e=>{
-      const items=[...pane.querySelectorAll("button")],idx=items.indexOf(document.activeElement);
+      const items=[...shadow.querySelectorAll("button")],idx=items.indexOf(shadow.activeElement);
       if(e.key==="Escape"){e.preventDefault();closeMenu();editor?.focus();}
       if(e.key==="ArrowDown"||e.key==="ArrowUp"){
         e.preventDefault();items[(idx+items.length+(e.key==="ArrowDown"?1:-1))%items.length].focus();
@@ -168,7 +180,7 @@
     });
   }
   async function onClick(event){
-    if(!enabled)return;
+    if(!enabled||!event.isTrusted)return;
     if(menu&&menu.contains(event.target))return;
     closeMenu();
     if(!editor||!editor.contains(event.target)||editor.getAttribute("spellcheck")!=="false")return;
@@ -184,16 +196,26 @@
   }
   function disable(){enabled=false;restore();}
   function enable(){enabled=true;selectEditor(closestEditor(document.activeElement));}
-  globalThis.__elfshellSpelling={disable,enable};
+  async function reauthorize(){
+    // A tab ID and a previously injected script do not confer continued
+    // permission. Background independently checks the exact sender origin,
+    // site registration and current host permission before enabling.
+    const result=await request("authorize").catch(()=>null);
+    if(!result?.ok){disable();return;}
+    if(!enabled)enable();
+  }
+  globalThis.__elfshellSpelling={disable,reauthorize};
   document.addEventListener("focusin",e=>{if(!menu?.contains(e.target))selectEditor(closestEditor(e.target));},true);
   document.addEventListener("click",onClick,true);
-  document.addEventListener("input",e=>{if(editor?.contains(e.target))schedule();},true);
-  document.addEventListener("compositionstart",()=>{composing=true;},true);
-  document.addEventListener("compositionend",()=>{composing=false;schedule();},true);
+  document.addEventListener("beforeinput",e=>{if(editor?.contains(e.target)){closeMenu();++revision;}},true);
+  document.addEventListener("input",e=>{if(editor?.contains(e.target)){closeMenu();++revision;schedule();}},true);
+  document.addEventListener("compositionstart",()=>{composing=true;closeMenu();++revision;},true);
+  document.addEventListener("compositionend",()=>{composing=false;closeMenu();++revision;schedule();},true);
   document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu();},true);
   document.addEventListener("scroll",()=>closeMenu(),true);
   browser.runtime.onMessage.addListener(msg=>{
     if(msg?.type==="elfshell:spell:disable")disable();
+    if(msg?.type==="elfshell:spell:revalidate")reauthorize();
   });
-  enable();
+  reauthorize();
 })();
