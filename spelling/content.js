@@ -162,9 +162,10 @@
     if(!editor||!editor.contains(event.target)||editor.getAttribute("spellcheck")!=="false")return;
     const hit=clickedToken(event);
     if(!hit)return;
+    const targetEditor=editor, targetRevision=revision;
     try{
       const response=await request("suggest",{word:hit.word});
-      if(!response?.ok||!enabled||editor?.getAttribute("spellcheck")!=="false")return;
+      if(!response?.ok||!enabled||editor!==targetEditor||revision!==targetRevision||editor?.getAttribute("spellcheck")!=="false")return;
       const options=(response.suggestions||[]).filter(w=>typeof w==="string"&&w!==hit.word).slice(0,6);
       placeMenu(event,hit.word,hit.range,options);
     }catch(error){console.warn("ELF//SHELL suggestion unavailable",error);}
@@ -172,7 +173,7 @@
   function disable(){enabled=false;restore();}
   function enable(){enabled=true;selectEditor(closestEditor(document.activeElement));}
   globalThis.__elfshellSpelling={disable,enable};
-  document.addEventListener("focusin",e=>selectEditor(closestEditor(e.target)),true);
+  document.addEventListener("focusin",e=>{if(!menu?.contains(e.target))selectEditor(closestEditor(e.target));},true);
   document.addEventListener("click",onClick,true);
   document.addEventListener("input",e=>{if(editor?.contains(e.target))schedule();},true);
   document.addEventListener("compositionstart",()=>{composing=true;},true);
