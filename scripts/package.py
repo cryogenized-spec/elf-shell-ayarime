@@ -18,7 +18,13 @@ SOURCES = [
     'LICENSE', 'LICENSE_SCOPE.md', 'LICENSES/MIT-legacy.txt', 'ARTWORK_LICENSE.md',
     'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
     'memory.js', 'feeds.js', 'styles.css', 'typography.css',
-    *[str(p.relative_to(ROOT)) for p in (ROOT / 'spelling').rglob('*') if p.is_file()],
+    # Runtime whitelist: never ship npm/vendor source or node_modules to AMO.
+    *['spelling/' + name for name in (
+        'DICTIONARY-LICENSE.txt', 'NSPELL-LICENSE.txt', 'IS-BUFFER-LICENSE.txt',
+        'README.md', 'background.js', 'content.css', 'content.js',
+        'en.aff', 'en.dic', 'nspell-bundle.js',
+        'popup.css', 'popup.html', 'popup.js', 'worker.js'
+    )],
 ]
 
 def sources():
