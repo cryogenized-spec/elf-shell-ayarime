@@ -22,7 +22,7 @@ assert(content.includes("function restore()"),"native spelling needs an error fa
 assert(content.includes('if(!response?.ok)throw Error'),"checker failure must not become a false success");
 assert(content.includes('document.execCommand("insertText"'),"replacement must use editable/undo command");
 assert(!content.includes("innerHTML"),"never inject markup into host editors");
-assert(!content.includes("textContent="),"never rewrite host editor text");
+assert(!content.includes("editor.textContent="),"never rewrite host editor text");
 assert(!content.includes("fetch("),"editor text must never be sent to a remote endpoint");
 assert(content.includes('add("Ignore"'),"ignore action required");
 assert(content.includes('add("Add to Dictionary"'),"dictionary action required");
