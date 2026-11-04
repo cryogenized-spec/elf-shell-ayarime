@@ -28,8 +28,18 @@ SOURCES = [
 ]
 
 def sources():
-    root_files = [ROOT / path for path in SOURCES]
-    return sorted(root_files + [p for p in (ROOT / 'assets').rglob('*') if p.is_file()])
+    # Use exactly the same reviewed source inventory as Mozilla's source ZIP.
+    # In a clean checkout it comes from git ls-files; in the extracted reviewer
+    # source archive it comes from AMO-SOURCE-MANIFEST.json. No recursive
+    # filesystem scan may add untracked .env files or local build artifacts.
+    from package_source import inventory
+    tracked = set(inventory())
+    required = set(SOURCES)
+    missing = required - tracked
+    if missing:
+        raise ValueError('Untracked or missing required runtime file(s): ' + repr(sorted(missing)))
+    asset_names = sorted(name for name in tracked if name.startswith('assets/'))
+    return [ROOT / name for name in sorted(required | set(asset_names))]
 
 def verify():
     if not OUTPUT.is_file() or not STAGING.is_dir():
