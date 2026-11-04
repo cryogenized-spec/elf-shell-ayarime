@@ -1,0 +1,56 @@
+"use strict";
+const $=id=>document.getElementById(id);
+let tab=null,origin=null,scriptId=null,active=false;
+const idForOrigin=url=>"elfspell-"+[...url].map(ch=>ch.charCodeAt(0).toString(16).padStart(2,"0")).join("");
+function setStatus(message){$("status").textContent=message;}
+async function readState(){
+  const registrations=await browser.scripting.getRegisteredContentScripts();
+  active=registrations.some(item=>item.id===scriptId);
+  $("toggle").textContent=active?"Disable spelling on this site":"Enable spelling on this site";
+  $("toggle").disabled=false;
+}
+async function init(){
+  try{
+    [tab]=await browser.tabs.query({active:true,currentWindow:true});
+    const url=new URL(tab?.url);
+    if(url.protocol!=="https:")throw Error("Only HTTPS websites are supported.");
+    origin=url.origin;scriptId=idForOrigin(origin);
+    $("site").textContent=origin;
+    await readState();
+  }catch(error){
+    $("site").textContent="This page cannot use the spelling module.";
+    setStatus(String(error.message||error));
+  }
+}
+async function toggle(){
+  $("toggle").disabled=true;setStatus("");
+  try{
+    if(active){
+      try{await browser.tabs.sendMessage(tab.id,{type:"elfshell:spell:disable"});}catch{/* Tab may have navigated */}
+      await browser.scripting.unregisterContentScripts({ids:[scriptId]});
+      // Do not revoke the host grant: RSS subscriptions may share it.
+      setStatus("Disabled. Host access is retained for other ELF//SHELL features.");
+    }else{
+      const permission=await browser.permissions.request({origins:[origin+"/*"]});
+      if(!permission)throw Error("Site access was not granted.");
+      const existing=await browser.scripting.getRegisteredContentScripts();
+      if(!existing.some(item=>item.id===scriptId)){
+        await browser.scripting.registerContentScripts([{
+          id:scriptId,
+          matches:[origin+"/*"],
+          js:["spelling/content.js"],css:["spelling/content.css"],
+          runAt:"document_idle",persistAcrossSessions:true
+        }]);
+      }
+      await browser.scripting.insertCSS({target:{tabId:tab.id},files:["spelling/content.css"]});
+      await browser.scripting.executeScript({target:{tabId:tab.id},files:["spelling/content.js"]});
+      setStatus("Enabled. Click a misspelled word in a supported rich-text editor.");
+    }
+    await readState();
+  }catch(error){
+    setStatus("Could not change spelling access: "+String(error.message||error));
+    try{await readState();}catch{$("toggle").disabled=false;}
+  }
+}
+$("toggle").addEventListener("click",toggle);
+init();
