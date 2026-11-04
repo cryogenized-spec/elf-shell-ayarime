@@ -13,6 +13,9 @@ const previousKey="elfshell-workspace-v2";
 // Store each workspace field independently. A note save must never overwrite a
 // different tab's newer shortcuts, sessions, focus, or appearance settings.
 const workspaceFields=["links","note","focus","motion","contrast","cursor","typography","bangs","sessions"];
+// One bound for exports and imports. The supported 10 × 40 sessions can
+// legitimately exceed 128 KiB when tab URLs contain long query parameters.
+const MAX_SETTINGS_BACKUP_BYTES=2*1024*1024;
 const fieldKey=field=>`${dataKey}:field:${field}`;
 const dirtyFields=new Set();
 const saveFailures=new Set();
@@ -520,12 +523,16 @@ async function saveSettings(event){
 function saveJSON(){
   const data={format:"elfshell-settings",version:5,exportedAt:new Date().toISOString(),...state,rss:window.elfFeeds?.snapshot(),memory:window.elfMemory?.snapshot()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  if(blob.size>MAX_SETTINGS_BACKUP_BYTES){
+    $("settings-message").textContent="Backup exceeds the 2 MiB export/import limit. Shorten or remove unusually long saved URLs before exporting.";
+    return;
+  }
   const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="elfshell-ayarime-settings.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function importJSON(file){
   let workspaceCommitted=false;
   try{
-    if(!file || file.size>131072)throw Error("File is too large");
+    if(!file || file.size>MAX_SETTINGS_BACKUP_BYTES)throw Error("File is too large (2 MiB maximum)");
     const raw=JSON.parse(await file.text());
     if(raw.format!=="elfshell-settings"||![2,3,4,5].includes(raw.version))throw Error("Not an ELF//SHELL v2–v5 settings file");
     const imported=cleanWorkspace(raw);if(!imported)throw Error("Invalid settings or URL");
