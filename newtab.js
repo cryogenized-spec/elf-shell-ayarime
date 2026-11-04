@@ -18,7 +18,7 @@ const dirtyFields=new Set();
 const saveFailures=new Set();
 const saveTimers=new Map();
 const iconNames=["firefox","mail","calendar","drive","video","library","globe","code","tasks","terminal","notes","news"];
-const cursorChoices=["system","classic-spearhead","crystal-tech-shard","elven-feather","hollow-frame","rune-edged","minimal-precision"];
+const cursorChoices=["system","classic-spearhead","crystal-tech-shard","elven-feather","hollow-frame","rune-edged","minimal-precision","ayarime-core"];
 const cleanCursor=value=>cursorChoices.includes(value)?value:"system";
 
 const defaultTypography=Object.freeze({preset:"original",scale:100,display:"preset",ui:"preset",mono:"preset",japanese:"preset"});
@@ -251,7 +251,10 @@ function applyAppearance(){
   document.body.dataset.cursor=choice;
   // Only names in cursorChoices can enter a CSS URL; never trust imported URLs.
   if(choice==="system")document.body.style.removeProperty("--elf-custom-cursor");
-  else document.body.style.setProperty("--elf-custom-cursor",`url("assets/cursors/${choice}.png") 2 2, auto`);
+  else document.body.style.setProperty("--elf-custom-cursor",
+    choice==="ayarime-core"?
+      'url("assets/cursors/states/pointer-48.png") 6 2, default':
+      'url("assets/cursors/'+choice+'.png") 2 2, auto');
   applyTypography(document.body,state.typography);
 }
 function renderLinks(){

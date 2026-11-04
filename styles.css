@@ -366,11 +366,34 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,2.85vw,54px)
 .cursor-option img{display:block;width:60px;height:60px;object-fit:contain}
 .cursor-system-preview{display:grid;place-items:center;width:60px;height:60px;font:45px Georgia,serif;color:#eeecf2}
 .cursor-option span:last-child{max-width:120px}
-body[data-cursor]:not([data-cursor="system"]){cursor:var(--elf-custom-cursor,auto)}
-body[data-cursor]:not([data-cursor="system"]) :is(a,button,summary,[role="button"]){
-  cursor:var(--elf-custom-cursor,pointer);
+/* Six functional states derived from the Ayarime concept sheet.
+   Firefox may show only the first frame of animated CSS cursors, therefore
+   the Busy artwork is static. Native fallback and explicit opt-in apply. */
+body[data-cursor]:not([data-cursor="system"]){
+  --elf-link-cursor:url("assets/cursors/states/link-48.png") 12 2, pointer;
+  --elf-text-cursor:url("assets/cursors/states/ibeam-48.png") 24 24, text;
+  --elf-busy-cursor:url("assets/cursors/states/busy-48.png") 24 24, progress;
+  --elf-crosshair-cursor:url("assets/cursors/states/crosshair-48.png") 24 24, crosshair;
+  --elf-resize-cursor:url("assets/cursors/states/resize-48.png") 24 24, nwse-resize;
+  cursor:var(--elf-custom-cursor,auto);
 }
-body[data-cursor]:not([data-cursor="system"]) :is(input[type="text"],input[type="search"],input[type="url"],textarea,[contenteditable]){
-  cursor:text;
+body[data-cursor]:not([data-cursor="system"]) :is(a,button,summary,select,label,[role="button"],[data-cursor-state="link"]){
+  cursor:var(--elf-link-cursor,pointer);
 }
+body[data-cursor]:not([data-cursor="system"]) :is(input[type="text"],input[type="search"],input[type="url"],input[type="email"],textarea,[contenteditable],[role="textbox"],[data-cursor-state="text"]){
+  cursor:var(--elf-text-cursor,text);
+}
+body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="crosshair"],.precision-select){
+  cursor:var(--elf-crosshair-cursor,crosshair);
+}
+body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="resize"],[data-cursor-state="resize-diagonal"],.resize-handle){
+  cursor:var(--elf-resize-cursor,nwse-resize);
+}
+body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="busy"],[aria-busy="true"]){
+  cursor:var(--elf-busy-cursor,progress);
+}
+.cursor-preview-note{font-size:11px;line-height:1.5;color:#cfc0d3;margin:12px 0 7px}
+.cursor-state-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.cursor-state-preview span{display:grid;place-items:center;min-height:34px;border:1px solid #716276;background:#221c30b8;color:#f1e3f2;border-radius:4px;font:11px ui-monospace,monospace}
+@media(max-width:430px){.cursor-state-preview{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:430px){.cursor-gallery{grid-template-columns:repeat(2,minmax(0,1fr));}}
