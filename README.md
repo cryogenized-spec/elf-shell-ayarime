@@ -192,3 +192,26 @@ Open **Station Configuration → Pointer Design** to select one, or retain
 ELF//SHELL new-tab dashboard**, never the operating system or other websites.
 See [the cursor gallery](assets/cursors/README.md) for previews, asset details,
 and native Firefox QA limitations.
+
+
+## Typography presets (PR #4, experimental)
+
+In **Station Configuration → Typography**, choose **Original / System**
+(the unchanged default), **Ayarime Classic**, **Neural Interface**, or
+**The Archive**. A live sample shows the selected roles before saving.
+Small diagnostic text can be scaled to 90%, 100%, 110%, 120% or 125%.
+Advanced controls independently override display, interface, monospace
+and Japanese font roles; set each override back to **Follow preset**
+to recover the coordinated palette.
+
+The Latin WOFF2 fonts are bundled in `assets/fonts/` and loaded only from
+this extension; font licences are in `assets/fonts/licenses/`.
+Noto Serif JP and Noto Sans JP are resolved from locally installed
+fonts (or Firefox's Japanese fallback) rather than requiring a huge
+download. The selected typography is stored in its own
+`elfshell-workspace-v3:field:typography` key, participates in
+settings export/import and cross-tab sync, and never changes typography
+on other sites, Firefox's native menus or the OS.
+
+The new type system remains part of draft PR #4 until native Firefox
+visual and regression checks are completed.
