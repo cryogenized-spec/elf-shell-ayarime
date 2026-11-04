@@ -6,6 +6,9 @@ const vm=require("node:vm");
 const root=path.resolve(__dirname,"..");
 const read=p=>fs.readFileSync(path.join(root,p),"utf8");
 const html=read("newtab.html"),js=read("newtab.js"),css=read("styles.css");
+const feeds=read("feeds.js");
+assert(feeds.includes('$("feed-refresh").setAttribute("aria-busy","true")'),"real RSS refresh must announce busy state");
+assert(feeds.includes('$("feed-refresh").removeAttribute("aria-busy")'),"busy state must clear after refresh");
 const states=["pointer","ibeam","busy","crosshair","resize","link"];
 for(const state of states){
   for(const size of [48,64]){
