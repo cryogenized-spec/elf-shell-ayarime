@@ -16,7 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # Match Mozilla AMO's published reviewer environment (Node 24).
+          node-version: '24.14.0'
       - name: Source and behaviour tests
         run: npm test
       - name: Verify locked source reproduces the shipped spelling bundle
