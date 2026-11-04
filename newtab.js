@@ -12,12 +12,14 @@ const dataKey="elfshell-workspace-v3";
 const previousKey="elfshell-workspace-v2";
 // Store each workspace field independently. A note save must never overwrite a
 // different tab's newer shortcuts, sessions, focus, or appearance settings.
-const workspaceFields=["links","note","focus","motion","contrast","bangs","sessions"];
+const workspaceFields=["links","note","focus","motion","contrast","cursor","bangs","sessions"];
 const fieldKey=field=>`${dataKey}:field:${field}`;
 const dirtyFields=new Set();
 const saveFailures=new Set();
 const saveTimers=new Map();
 const iconNames=["firefox","mail","calendar","drive","video","library","globe","code","tasks","terminal","notes","news"];
+const cursorChoices=["system","classic-spearhead","crystal-tech-shard","elven-feather","hollow-frame","rune-edged","minimal-precision"];
+const cleanCursor=value=>cursorChoices.includes(value)?value:"system";
 const defaultBangs=[
   {key:"yt",url:"https://www.youtube.com/results?search_query={query}"},
   {key:"gh",url:"https://github.com/search?q={query}"},
@@ -27,7 +29,7 @@ const defaultBangs=[
 const legacyKey="elfshell-shortcuts-v1";
 const $=id=>document.getElementById(id);
 const ext=typeof browser!=="undefined" && !!browser.storage;
-let state={links:defaults.map(x=>({...x})),note:"",focus:"",motion:false,contrast:false,bangs:defaultBangs.map(x=>({...x})),sessions:[]};
+let state={links:defaults.map(x=>({...x})),note:"",focus:"",motion:false,contrast:false,cursor:"system",bangs:defaultBangs.map(x=>({...x})),sessions:[]};
 let searchItems=[];
 let searchQuery="";
 let selected=0;
@@ -66,7 +68,7 @@ function cleanWorkspace(x){
   if(links.some(x=>!x))return null;
   const bangs=cleanBangs(x.bangs);
   const sessions=cleanSessions(x.sessions);
-  return {links,note:cleanString(x.note,6000),focus:cleanString(x.focus,120),motion:!!x.motion,contrast:!!x.contrast,bangs,sessions};
+  return {links,note:cleanString(x.note,6000),focus:cleanString(x.focus,120),motion:!!x.motion,contrast:!!x.contrast,cursor:cleanCursor(x.cursor),bangs,sessions};
 }
 function safeBang(x){
   if(!x || typeof x!=="object")return null;
@@ -156,7 +158,7 @@ function applyWorkspaceStorageChanges(changes,areaName){
   if(!cleaned)return;
   state=cleaned;
   if(changedFields.includes("links"))renderLinks();
-  if(changedFields.some(f=>["motion","contrast"].includes(f)))applyAppearance();
+  if(changedFields.some(f=>["motion","contrast","cursor"].includes(f)))applyAppearance();
   for(const field of ["focus","note"]){
     if(!changedFields.includes(field))continue;
     for(const input of document.querySelectorAll(field==="focus"?"#focus-input, #focus-editor":"#note-input, #note-editor"))input.value=state[field];
@@ -193,7 +195,15 @@ async function mutateSessions(action,data={}){
   dirtyFields.delete("sessions");saveFailures.delete("sessions");
   return state.sessions;
 }
-function applyAppearance(){document.body.classList.toggle("reduce-effects",state.motion);document.body.classList.toggle("high-contrast",state.contrast);}
+function applyAppearance(){
+  document.body.classList.toggle("reduce-effects",state.motion);
+  document.body.classList.toggle("high-contrast",state.contrast);
+  const choice=cleanCursor(state.cursor);
+  document.body.dataset.cursor=choice;
+  // Only names in cursorChoices can enter a CSS URL; never trust imported URLs.
+  if(choice==="system")document.body.style.removeProperty("--elf-custom-cursor");
+  else document.body.style.setProperty("--elf-custom-cursor",`url("assets/cursors/${choice}.png") 2 2, auto`);
+}
 function renderLinks(){
   const nav=$("shortcuts");nav.replaceChildren();
   state.links.forEach((item,i)=>{
@@ -424,7 +434,9 @@ function buildSettings(){
       label.append(input);row.append(label);
     }rootBangs.append(row);
   });
-  $("reduce-motion").checked=state.motion;$("high-contrast").checked=state.contrast;$("settings-message").textContent="";
+  $("reduce-motion").checked=state.motion;$("high-contrast").checked=state.contrast;
+  for(const radio of document.querySelectorAll('input[name="cursor-choice"]'))radio.checked=radio.value===cleanCursor(state.cursor);
+  $("settings-message").textContent="";
 }
 function showSettings(){buildSettings();$("settings-dialog").showModal();}
 async function saveSettings(event){
@@ -435,13 +447,14 @@ async function saveSettings(event){
   for(const input of $("bang-fields").querySelectorAll("input"))bangs[Number(input.dataset.bangIndex)][input.dataset.bangField]=input.value.trim();
   const used=new Set();
   if(bangs.some(b=>!safeBang(b)||used.has(b.key)||(used.add(b.key),false))){$("settings-message").textContent="Invalid search bang: use a unique short key and an HTTPS template containing {query}.";return;}
-  const validated=cleanWorkspace({...state,links,bangs,motion:$("reduce-motion").checked,contrast:$("high-contrast").checked});
+  const cursor=document.querySelector('input[name="cursor-choice"]:checked')?.value||"system";
+  const validated=cleanWorkspace({...state,links,bangs,motion:$("reduce-motion").checked,contrast:$("high-contrast").checked,cursor});
   if(!validated){$("settings-message").textContent="Check all six links. Web addresses must start with https:// or http://.";return;}
   const before=state;
   state=validated;
-  if(!await persist(["links","bangs","motion","contrast"])){
+  if(!await persist(["links","bangs","motion","contrast","cursor"])){
     state=before;
-    for(const field of ["links","bangs","motion","contrast"])dirtyFields.delete(field);
+    for(const field of ["links","bangs","motion","contrast","cursor"])dirtyFields.delete(field);
     $("settings-message").textContent="Save failed. Your edits remain in this dialog; please retry.";
     return;
   }
