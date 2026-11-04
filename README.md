@@ -173,7 +173,7 @@ The remaining release gates are a disposable-profile Firefox 142+ test (includin
 ## Experimental left-click spelling and theme (draft PR #4)
 
 The feature branch `feature/spell-left-click-window-theme` adds a user-enabled,
-offline spelling module for supported rich-text editors. Click the ELF//SHELL
+offline British-English spelling module for supported rich-text editors. Click the ELF//SHELL
 toolbar button on an HTTPS site to opt in, then left-click a misspelled word
 to choose a correction, ignore it, or add it to an extension-owned personal
 dictionary. Unsupported fields retain Firefox's native spelling UI. The
