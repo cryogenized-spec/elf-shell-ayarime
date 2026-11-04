@@ -39,6 +39,7 @@ const nspell=require("../spelling/nspell-bundle.js");
 assert.equal(typeof nspell,"function");
 const spell=nspell({aff:read("spelling/en.aff"),dic:read("spelling/en.dic")});
 assert.equal(spell.correct("receive"),true);
+assert.equal(spell.correct("colour"),true);
 assert.equal(spell.correct("recieve"),false);
 assert(spell.suggest("recieve").includes("receive"));
 spell.add("Ayarime");
