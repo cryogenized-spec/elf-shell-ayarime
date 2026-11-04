@@ -169,3 +169,18 @@ The v0.5.4 review branch also incorporates the observations recorded in [GitHub 
 **Tab recovery now persists.** After confirming a duplicate-tab cleanup, ELF//SHELL saves the URLs in Firefox extension-local storage *before* closing each duplicate. The recovery panel can reopen them after navigating away or restarting Firefox, or delete the recovery history manually. This data is not encrypted; URLs can contain login tokens or other sensitive parameters. Recovery restores the web addresses only, never unsaved form data. No stored recovery URLs are included in the regular station JSON export.
 
 The remaining release gates are a disposable-profile Firefox 142+ test (including restarts and real RSS feeds), the Codex review of issue #2's changes, and Mozilla signing. Do not describe a source ZIP as a permanently installable add-on.
+
+## Experimental left-click spelling and theme (draft PR #4)
+
+The feature branch `feature/spell-left-click-window-theme` adds a user-enabled,
+offline spelling module for supported rich-text editors. Click the ELF//SHELL
+toolbar button on an HTTPS site to opt in, then left-click a misspelled word
+to choose a correction, ignore it, or add it to an extension-owned personal
+dictionary. Unsupported fields retain Firefox's native spelling UI. The
+extension **does not** rewrite Firefox's native personal dictionary.
+See [spelling/README.md](spelling/README.md) for limitations and testing.
+
+ELF//SHELL also coordinates sidebar, popup, and inactive-window colours and
+requests dark-colour browser chrome. Native Linux Mint window themes and
+system pointers are outside WebExtension control. The proposed optional
+spearhead cursor is a separate design concept, not part of the draft build.
