@@ -65,3 +65,19 @@ browser.runtime.onMessage.addListener(message=>{
     }catch(e){return {ok:false,error:String(e.message||e)};}
   })();
 });
+
+ // If the user revokes a site's host permission from Firefox Settings, stop
+ // registering the spelling script for that origin. No background polling.
+ browser.permissions.onRemoved.addListener(async permissions=>{
+   for(const pattern of permissions.origins||[]){
+     if(!pattern.startsWith("https://")||!pattern.endsWith("/*"))continue;
+     const origin=pattern.slice(0,-2);
+     const id="elfspell-"+[...origin].map(ch=>ch.charCodeAt(0).toString(16).padStart(2,"0")).join("");
+     try{
+       const registered=await browser.scripting.getRegisteredContentScripts();
+       if(registered.some(entry=>entry.id===id)){
+         await browser.scripting.unregisterContentScripts({ids:[id]});
+       }
+     }catch(error){console.warn("ELF//SHELL: could not revoke spelling script",error);}
+   }
+ });
