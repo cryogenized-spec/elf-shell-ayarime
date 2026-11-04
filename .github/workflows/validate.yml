@@ -30,3 +30,5 @@ jobs:
         run: python3 scripts/package.py --verify-only
       - name: Assemble Mozilla reviewer source archive
         run: npm run package:amo:source
+      - name: Verify reviewer source excludes untracked files and rebuilds without Git
+        run: python3 tests/source_archive_safety.py
