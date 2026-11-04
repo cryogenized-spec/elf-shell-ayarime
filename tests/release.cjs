@@ -7,7 +7,7 @@ const m=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
 assert.equal(m.version,'0.5.4');
 assert.equal(m.manifest_version,3);
 assert.deepEqual(m.browser_specific_settings.gecko.data_collection_permissions,{required:['none']});
-assert.equal(m.browser_specific_settings.gecko.strict_min_version,'140.0');
+assert.equal(m.browser_specific_settings.gecko.strict_min_version,'142.0');
 assert(m.content_security_policy.extension_pages.includes("script-src 'self'"));
 assert(m.content_security_policy.extension_pages.includes("object-src 'none'"));
 assert.deepEqual(m.permissions.slice().sort(),['search','storage','theme']);

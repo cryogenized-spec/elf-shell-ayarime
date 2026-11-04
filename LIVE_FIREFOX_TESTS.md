@@ -1,6 +1,6 @@
 # ELF//SHELL — v0.5.1 release-acceptance tests
 
-Do **not** test tab deletion/discarding with irreplaceable work or unsaved forms. Use a separate Firefox profile or harmless example tabs. The source tests are automated; the following items require a real Firefox **140+** installation.
+Do **not** test tab deletion/discarding with irreplaceable work or unsaved forms. Use a separate Firefox profile or harmless example tabs. The source tests are automated; the following items require a real Firefox **142+** installation.
 
 ## A. Install, startup and console
 

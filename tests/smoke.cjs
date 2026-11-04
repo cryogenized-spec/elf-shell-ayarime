@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
 assert.equal(manifest.version,'0.5.4');
 assert.equal(manifest.browser_specific_settings.gecko.id,'elf-shell-ayarime@local.theme');
-assert.equal(manifest.browser_specific_settings.gecko.strict_min_version,'140.0');
+assert.equal(manifest.browser_specific_settings.gecko.strict_min_version,'142.0');
 assert.deepEqual(manifest.browser_specific_settings.gecko.data_collection_permissions,{required:['none']});
 assert(manifest.content_security_policy.extension_pages.includes("script-src 'self'"));
 assert(manifest.content_security_policy.extension_pages.includes("object-src 'none'"));

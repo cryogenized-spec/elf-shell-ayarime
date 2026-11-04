@@ -114,7 +114,7 @@ The user-supplied fictional dialogue has received **minor Japanese wording adjus
 
 ## 0.5.1 — release hardening
 
-- Firefox **140+** is required. Gecko ID remains `elf-shell-ayarime@local.theme`, preserving the existing extension identity across updates.
+- Firefox **142+** is required. Gecko ID remains `elf-shell-ayarime@local.theme`, preserving the existing extension identity across updates.
 - Mozilla's built-in **no developer data collection** disclosure is declared in the manifest. This means no developer-controlled analytics or data transmission. Optional RSS requests still contact the **publications selected by the user**, revealing normal connection information to those publications; details are in `PRIVACY.md`.
 - RSS URLs belonging to other domains are no longer silently rewritten when their paths start `/p/`; custom-domain Substack feeds can be added as explicit `https://example.com/feed` addresses.
 - Feed redirects are refused to avoid silently contacting an unauthorised site. If a publisher has moved, subscribe to its canonical HTTPS feed address.

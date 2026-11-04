@@ -39,7 +39,7 @@ def verify():
             raise ValueError('ZIP CRC check failed')
     if MANIFEST.get('browser_specific_settings',{}).get('gecko',{}).get('data_collection_permissions') != {'required': ['none']}:
         raise ValueError('Mozilla data declaration missing')
-    if MANIFEST['browser_specific_settings']['gecko']['strict_min_version'] != '140.0':
+    if MANIFEST['browser_specific_settings']['gecko']['strict_min_version'] != '142.0':
         raise ValueError('Incorrect Firefox minimum version')
     if not MANIFEST.get('content_security_policy',{}).get('extension_pages'):
         raise ValueError('Missing restrictive CSP')

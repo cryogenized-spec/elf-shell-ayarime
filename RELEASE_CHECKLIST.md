@@ -30,13 +30,13 @@
 
 
 ### 0.5.1 hardening checks
-- [x] Declare Firefox 140+ and Mozilla built-in no-developer-data-collection disclosure.
+- [x] Declare Firefox 142+ and Mozilla built-in no-developer-data-collection disclosure.
 - [x] Restrict packaged scripts/styles to local resources via CSP.
 - [x] Reject non-Substack `/p/` URL rewrites and unsafe cached RSS links; block cross-site RSS redirects.
 - [x] Compare exact URLs during duplicate-tab cleanup to preserve fragment-based app states.
 - [x] Add a packaging script and release assertions.
 - [ ] Confirm Mozilla `web-ext lint` clean in a network-enabled environment or CI.
-- [ ] Complete real Firefox 140+ permission, search, RSS, theme, session and persistence acceptance tests.
+- [ ] Complete real Firefox 142+ permission, search, RSS, theme, session and persistence acceptance tests.
 - [ ] AMO review and signing; perform signed XPI upgrade test.
 
 ## v0.5.2 visual and packaging regression checklist
