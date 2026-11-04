@@ -37,27 +37,39 @@
   }
   function tokens(root){
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-    const result=[];let chars=0;
-    while(walker.nextNode()&&result.length<350&&chars<4500){
-      const node=walker.currentNode;
-      const parent=node.parentElement;
+    const result=[];let chars=0,complete=true;
+    while(walker.nextNode()){
+      const node=walker.currentNode,parent=node.parentElement;
       if(!parent||parent.closest('code,pre,[contenteditable="false"],[data-elfshell-spelling-off]'))continue;
+      // Full editor coverage is required before disabling Firefox's native
+      // checker. An incomplete prefix is not a safe replacement.
+      if(chars+node.data.length>4500){complete=false;break;}
       chars+=node.data.length;
       for(const match of node.data.matchAll(WORD)){
         if(match[0].length<3||match[0].length>78)continue;
+        if(result.length>=350){complete=false;break;}
         const range=document.createRange();
         range.setStart(node,match.index);range.setEnd(node,match.index+match[0].length);
         result.push({word:match[0],range});
-        if(result.length>=350)break;
       }
+      if(!complete)break;
     }
-    return result;
+    return {found:result,complete};
   }
   async function refresh(){
     const root=editor;
     if(!enabled||!root||composing)return;
     const thisRevision=++revision;
-    const found=tokens(root);
+    const scan=tokens(root);
+    if(!scan.complete){
+      // Restore native checking for ALL words when our bounded scan cannot
+      // cover the entire editor. Re-evaluate after subsequent edits.
+      clearMark();
+      if(originalSpell===null)root.removeAttribute("spellcheck");
+      else root.setAttribute("spellcheck",originalSpell);
+      return;
+    }
+    const found=scan.found;
     const words=[...new Set(found.map(x=>x.word).filter(w=>!ignored.has(w)))];
     try{
       const response=await request("check",{words});

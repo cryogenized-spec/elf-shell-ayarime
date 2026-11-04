@@ -26,10 +26,19 @@ async function toggle(){
   $("toggle").disabled=true;setStatus("");
   try{
     if(active){
-      try{await browser.tabs.sendMessage(tab.id,{type:"elfshell:spell:disable"});}catch{/* Tab may have navigated */}
+      // Unregister first, so a newly opened tab will not receive the
+      // spelling content script while existing instances are being disabled.
       await browser.scripting.unregisterContentScripts({ids:[scriptId]});
+      const matching=await browser.tabs.query({url:origin+"/*"});
+      let unreachable=0;
+      for(const other of matching){
+        try{await browser.tabs.sendMessage(other.id,{type:"elfshell:spell:disable"});}
+        catch{unreachable++;} // A page without an injected receiver is safe.
+      }
       // Do not revoke the host grant: RSS subscriptions may share it.
-      setStatus("Disabled. Host access is retained for other ELF//SHELL features.");
+      setStatus(unreachable?
+        "Disabled for the site. Some tabs may need a reload to restore native spelling.":
+        "Disabled across open site tabs. Host access is retained for other ELF//SHELL features.");
     }else{
       const permission=await browser.permissions.request({origins:[origin+"/*"]});
       if(!permission)throw Error("Site access was not granted.");

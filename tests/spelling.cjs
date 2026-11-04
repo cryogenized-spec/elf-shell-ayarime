@@ -16,6 +16,12 @@ const bg=read("spelling/background.js");
 assert(popup.includes("permissions.request"),"per-site opt-in required");
 assert(popup.includes("scripting.registerContentScripts"),"dynamic site scripts required");
 assert(popup.includes("scripting.unregisterContentScripts"),"site opt-out required");
+assert(popup.includes('tabs.query({url:origin+"/*"})')&&popup.includes('tabs.sendMessage(other.id'),
+  "site opt-out must notify all matching open tabs, not just the popup tab");
+assert(content.includes('if(!scan.complete)')&&content.includes('root.removeAttribute("spellcheck")'),
+  "incomplete editor scan must restore Firefox native spelling");
+assert(bg.includes("spellWordChain=mutation.then"),"dictionary updates must be serialized across tabs");
+
 assert(!popup.includes("matches:[\"<all_urls>\"]"),"no automatic broad injection");
 assert(content.includes('root.setAttribute("spellcheck","false")'),"native spelling must be disabled only after successful checker");
 assert(content.includes("function restore()"),"native spelling needs an error fallback");

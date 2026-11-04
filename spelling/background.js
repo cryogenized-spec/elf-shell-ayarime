@@ -3,6 +3,7 @@
 const SPELL_WORDS_KEY="elfshell:spelling:personal-words:v1";
 let spellWorker=null, spellInit=null, spellCounter=0;
 const spellPending=new Map();
+let spellWordChain=Promise.resolve();
 function spellReset(error){
   if(spellWorker)spellWorker.terminate();
   spellWorker=null;spellInit=null;
@@ -53,13 +54,21 @@ browser.runtime.onMessage.addListener(message=>{
       if(message.type==="elfshell:spelling:add"){
         const word=String(message.word||"").trim();
         if(!/^[A-Za-z][A-Za-z'’\-]{1,78}$/.test(word))return {ok:false,error:"Invalid word"};
-        const existing=await browser.storage.local.get(SPELL_WORDS_KEY);
-        const list=Array.isArray(existing[SPELL_WORDS_KEY])?existing[SPELL_WORDS_KEY].filter(w=>typeof w==="string"):[];
-        if(!list.includes(word)){
-          if(list.length>=2000)return {ok:false,error:"Personal word list limit reached"};
-          await browser.storage.local.set({[SPELL_WORDS_KEY]:[...list,word]});
-        }
-        await spellCall("add",{word});return {ok:true};
+        // Browser storage does not provide atomic array append. Serialize
+        // the entire read/write so simultaneous tabs cannot lose each
+        // other's acknowledged dictionary additions.
+        const mutation=spellWordChain.then(async()=>{
+          const existing=await browser.storage.local.get(SPELL_WORDS_KEY);
+          const list=Array.isArray(existing[SPELL_WORDS_KEY])?existing[SPELL_WORDS_KEY].filter(w=>typeof w==="string"):[];
+          if(!list.includes(word)){
+            if(list.length>=2000)return {ok:false,error:"Personal word list limit reached"};
+            await browser.storage.local.set({[SPELL_WORDS_KEY]:[...list,word]});
+          }
+          await spellCall("add",{word});
+          return {ok:true};
+        });
+        spellWordChain=mutation.then(()=>undefined,()=>undefined);
+        return await mutation;
       }
       return {ok:false,error:"Unknown spelling request"};
     }catch(e){return {ok:false,error:String(e.message||e)};}
