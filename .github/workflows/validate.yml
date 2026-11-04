@@ -32,3 +32,5 @@ jobs:
         run: npm run package:amo:source
       - name: Verify reviewer source excludes untracked files and rebuilds without Git
         run: python3 tests/source_archive_safety.py
+      - name: Verify runtime ZIP excludes untracked assets and rebuilds from source archive
+        run: python3 tests/runtime_asset_safety.py
