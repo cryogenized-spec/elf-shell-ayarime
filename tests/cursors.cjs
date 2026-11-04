@@ -24,7 +24,7 @@ assert(js.includes('const cleanCursor=value=>'),"imported cursor values need str
 assert(js.includes('document.body.style.setProperty("--elf-custom-cursor"'),"cursor must be applied only from allowlist");
 assert(js.includes('persist(["links","bangs","motion","contrast","cursor","typography"])'),"cursor setting must persist with typography and other settings");
 assert(css.includes('body[data-cursor]:not([data-cursor="system"])'),"cursor must remain opt-in");
-assert(css.includes("cursor:text;"),"editing text must retain I-beam caret");
+assert(css.includes("cursor:var(--elf-text-cursor,text)"),"editing text must retain native I-beam fallback");
 const pure=js.slice(0,js.indexOf('$("search-form").addEventListener'));
 const context={URL,Date,Intl,console,setTimeout,clearTimeout};
 vm.createContext(context);
