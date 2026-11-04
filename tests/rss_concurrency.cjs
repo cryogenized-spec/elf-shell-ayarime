@@ -26,6 +26,22 @@ const item=url=>({items:[{title:'Article',url,date:Date.now()}],checkedAt:Date.n
  const [cachedA,cachedB]=await Promise.all([req('cache',{url:a,entry:item('https://alpha.org/article')}),req('cache',{url:b,entry:item('https://beta.org/article')})]);
  assert.equal(cachedA.ok,true);assert.equal(cachedB.ok,true);
  assert(data[cacheKey][a]?.items.length===1&&data[cacheKey][b]?.items.length===1,'simultaneous independent cached feeds must survive');
+ // A second dashboard may complete an older fetch after a newer one.
+ // Its late cache write must not roll back the latest persisted headlines.
+ const baseline=data[cacheKey][b].attemptedAt;
+ const newer={...item('https://beta.org/new-headlines'),checkedAt:baseline+20,attemptedAt:baseline+20};
+ const stale={...item('https://beta.org/obsolete-headlines'),checkedAt:baseline+10,attemptedAt:baseline+10};
+ const newerResult=await req('cache',{url:b,entry:newer});
+ const staleResult=await req('cache',{url:b,entry:stale});
+ assert(newerResult.ok&&staleResult.ok);
+ assert.equal(data[cacheKey][b].items[0].url,'https://beta.org/new-headlines','older RSS refresh must not replace later headline data');
+ // A newer failed attempt may update error status, but must keep a successful
+ // headline batch from another dashboard rather than an old local snapshot.
+ const failedEntry={...item('https://beta.org/stale-copy'),attemptedAt:baseline+30,checkedAt:baseline+5,error:'Timeout'};
+ await req('cache',{url:b,entry:failedEntry});
+ assert.equal(data[cacheKey][b].items[0].url,'https://beta.org/new-headlines','failed refresh must retain newer cached articles');
+ assert.equal(data[cacheKey][b].error,'Timeout');
+
  const [remove,add]=await Promise.all([req('remove',{url:a}),req('add',{feed:feed(c)})]);
  assert.equal(remove.ok,true);assert.equal(add.ok,true);
  assert.deepEqual(new Set(data[settingsKey].feeds.map(f=>f.url)),new Set([b,c]));
@@ -47,5 +63,22 @@ const item=url=>({items:[{title:'Article',url,date:Date.now()}],checkedAt:Date.n
    const invalid=await req('add',{feed:feed(url)});
    assert.equal(invalid.ok,false,'background rejects '+url);
  }
- console.log('RSS concurrency QA PASS: concurrent add/cache, remove+add, no deleted-cache resurrection, config/edit, write failure/retry, unsafe hosts.');
+ // The dashboard must only submit cache entries it fetched itself, even
+ // when its memory still includes an older entry for some other publication.
+ const feedSource=fs.readFileSync(path.resolve(__dirname,'../feeds.js'),'utf8');
+ const instrumentation='globalThis.__rssCacheQa={setPrefs(value){prefs=value;},seed(url,value){cache[url]=value;},mark(url,value){cache[url]=value;pendingCacheWrites.set(url,value);},save:()=>saveCache()};';
+ const sourceForQa=feedSource.replace('  if(typeof module!=="undefined"', '  '+instrumentation+'\n  if(typeof module!=="undefined"');
+ assert(sourceForQa!==feedSource,'RSS test hook must be inserted');
+ const calls=[];
+ const qa={URL,console,globalThis:null,browser:{storage:{local:{}},runtime:{sendMessage:async msg=>{calls.push(msg);return {ok:true,prefs: {enabled:true,interval:30,feeds:[feed(a),feed(b)]},cache: data[cacheKey]};}}}};
+ qa.globalThis=qa;
+ vm.runInNewContext(sourceForQa,qa,{timeout:2000});
+ qa.__rssCacheQa.setPrefs({enabled:true,interval:30,feeds:[feed(a),feed(b)]});
+ qa.__rssCacheQa.seed(b,item('https://beta.org/old-data-from-my-dashboard'));
+ qa.__rssCacheQa.mark(a,item('https://alpha.org/the-feed-i-actually-refreshed'));
+ await qa.__rssCacheQa.save();
+ assert.equal(calls.length,1,'only one changed feed must be saved');
+ assert.equal(calls[0].url,a,'other feeds from a stale snapshot must not be resent');
+
+ console.log('RSS concurrency QA PASS: changed-only dashboard cache writes, concurrent add/cache, remove+add, no deleted-cache resurrection, config/edit, write failure/retry, unsafe hosts.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

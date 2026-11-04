@@ -12,7 +12,7 @@ with sync_playwright() as p:
     page.set_content(html)
     mock='''(() => {
       const local={};let origins=['https://example.org/*'];
-      window.__mock={closed:[],created:[],removed:[],discarded:[],grants:()=>origins,addTab:tab=>tabs.push(tab),localStorage:local};
+      window.__mock={closed:[],created:[],removed:[],discarded:[],grants:()=>origins,addTab:tab=>tabs.push(tab),updateTab:(id,patch)=>Object.assign(tabs.find(t=>t.id===id),patch),localStorage:local};
       let tabs=[{id:101,url:'https://example.org/abc',active:true,pinned:false,audible:false,incognito:false,windowId:1,index:0},
                 {id:102,url:'https://example.org/abc',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:1},
                 {id:103,url:'https://example.org/other',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:2},
@@ -23,7 +23,7 @@ with sync_playwright() as p:
         storage:{local:{get:async keys=>Object.fromEntries([].concat(keys).map(k=>[k,local[k]])),set:async value=>Object.assign(local,value)}},
         theme:{update:async()=>{}},
         permissions:{contains:async ({permissions,origins:orig})=>permissions?permissions.every(x=>x==='tabs'):orig.every(x=>origins.includes(x)),getAll:async()=>({permissions:['tabs'],origins}),remove:async obj=>{if(obj.origins){origins=origins.filter(x=>!obj.origins.includes(x));return true;}return false;},request:async()=>true},
-        tabs:{query:async opts=>opts?.currentWindow?tabs.filter(t=>t.windowId===1):tabs,remove:async ids=>{window.__mock.removed.push(...ids);tabs=tabs.filter(t=>!ids.includes(t.id));},create:async data=>{window.__mock.created.push(data);return {...data,id:104}},discard:async ids=>{window.__mock.discarded.push(...ids);return [];}} ,
+        tabs:{query:async opts=>opts?.currentWindow?tabs.filter(t=>t.windowId===1):Number.isInteger(opts?.windowId)?tabs.filter(t=>t.windowId===opts.windowId):tabs,get:async id=>{const tab=tabs.find(t=>t.id===id);if(!tab)throw Error('Tab not found');return {...tab};},remove:async ids=>{window.__mock.removed.push(...ids);tabs=tabs.filter(t=>!ids.includes(t.id));},create:async data=>{window.__mock.created.push(data);return {...data,id:104}},discard:async ids=>{window.__mock.discarded.push(...ids);return [];}} ,
         runtime:{onInstalled:{addListener:()=>{}},onStartup:{addListener:()=>{}},onMessage:{addListener:listener=>{window.__sessionListener=listener;}},sendMessage:msg=>window.__sessionListener(msg)},
         sessions:{getRecentlyClosed:async()=>[]}
       };
@@ -41,6 +41,15 @@ with sync_playwright() as p:
     assert page.locator('.permission-host-row').count()==0
     assert page.evaluate('window.__mock.grants().length')==0
     page.locator('#close-access').click()
+    # Denied site permission must never create a subscription.
+    page.locator('#station-menu summary').click()
+    page.locator('#feeds-toggle').click()
+    page.locator('#feed-url').fill('https://news.example.org/rss')
+    page.evaluate('() => {window.browser.permissions.request=async()=>false;}')
+    page.locator('#feed-add-form button[type=submit]').click()
+    page.wait_for_function("document.getElementById('feed-message').textContent.includes('declined')")
+    assert page.evaluate('window.elfFeeds.snapshot().feeds.length')==0
+    page.locator('#feed-close').click()
     page.locator('#station-menu summary').click()
     page.locator('#housekeeping-toggle').click()
     # A recovery reservation must succeed before any tab is removed.
@@ -91,6 +100,40 @@ with sync_playwright() as p:
     assert page.evaluate('lastClosedDuplicates.length')==1
     page.locator('#undo-duplicates').click()
     assert page.locator('#undo-duplicates').is_hidden()
+    # Codex P2: a tab that navigates during the recovery reservation must NOT
+    # be closed. Its old duplicate URL can no longer recover the new page.
+    page.evaluate('''() => {
+      window.__mock.addTab({id:109,url:'https://example.org/abc',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:5});
+      window.__saveBeforeNavigation=window.browser.storage.local.set;
+      window.__navigationRaceTriggered=false;
+      window.browser.storage.local.set=async values=>{
+        if(values['elfshell-duplicate-recovery-v1']&&!window.__navigationRaceTriggered){
+          window.__navigationRaceTriggered=true;
+          window.__mock.updateTab(109,{url:'https://example.org/important-work',active:true});
+        }
+        return window.__saveBeforeNavigation(values);
+      };
+    }''')
+    page.locator('#close-duplicates').click()
+    page.wait_for_function('window.__navigationRaceTriggered')
+    assert 109 not in page.evaluate('window.__mock.removed'), 'navigation during recovery reservation must block tab removal'
+    assert page.evaluate('window.__mock.localStorage["elfshell-duplicate-recovery-v1"].length')==0, 'unused recovery reservation must be acknowledged'
+    # A moved tab must not be removed from another browser window.
+    page.evaluate('''() => {
+      window.__mock.addTab({id:110,url:'https://example.org/abc',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:6});
+      window.__navigationRaceTriggered=false;
+      window.browser.storage.local.set=async values=>{
+        if(values['elfshell-duplicate-recovery-v1']&&!window.__navigationRaceTriggered){
+          window.__navigationRaceTriggered=true;
+          window.__mock.updateTab(110,{windowId:2});
+        }
+        return window.__saveBeforeNavigation(values);
+      };
+    }''')
+    page.locator('#close-duplicates').click()
+    page.wait_for_function('window.__navigationRaceTriggered')
+    assert 110 not in page.evaluate('window.__mock.removed'), 'window move during recovery reservation must block tab removal'
+    page.evaluate('() => {window.browser.storage.local.set=window.__saveBeforeNavigation;}')
     page.locator('#close-housekeeping').click()
     # Persist must not misreport success when Firefox local storage rejects a write.
     page.evaluate('() => { window.browser.storage.local.set=async()=>{throw Error("simulated disk or quota error")}; }')

@@ -41,3 +41,11 @@ All GitHub CI results must be checked on the new commit. This is still a **relea
 - Added `tests/recovery_persistence.cjs`, `tests/rss_concurrency.cjs`, and browser-side `tests/rss_render_qa.py`. Expanded the static, URL, privacy and mock-Firefox checks. These do not replace live Firefox permission, RSS, and signing acceptance tests.
 
 Source review and automated validation are still distinct from the **native Firefox 142+** release gate. Import of a multi-component settings backup can still report `Import incomplete` if one later component fails; backup restoration is not an all-or-nothing transaction.
+
+### Codex Issue #2 follow-up: two further race-condition guards
+
+- A dashboard now tracks cache entries that its own RSS fetch changed and submits **only those entries**. Cached headlines from other publications no longer get replayed as stale writes by another dashboard. The background RSS mutation queue also rejects an older `attemptedAt` value and preserves newer successfully checked headlines when a later fetch attempt fails.
+- Duplicate-tab cleanup rechecks each tab’s current URL, window and protected status after the recovery reservation is stored and immediately before removal. A tab that navigated, moved, became active/pinned/audible, or ceased to be a duplicate is **not closed**. Unused reservations are acknowledged; any uncertain state retains its recovery record for manual inspection.
+- Expanded tests for stale RSS writes, failed-refresh item preservation, changed-only dashboard cache writes, and a tab navigating/moving mid-cleanup.
+
+These changes are source fixes pending GitHub CI and Codex's follow-up review. Firefox-native acceptance and AMO signing remain **not complete**.

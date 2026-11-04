@@ -219,7 +219,15 @@ async function mutateRSS(message){
   }else if(message.action==="cache"){
     if(!prefs.feeds.some(x=>x.url===target))return {ok:true,prefs,cache,added};
     const entry=safeRSSCacheEntry(message.entry);if(!entry)throw Error("Invalid feed cache update.");
-    cache[target]=entry;
+    const previous=cache[target];
+    // A delayed request from another dashboard cannot replace more recent
+    // headlines or timestamps. Failed refreshes may update the attempt/error
+    // metadata but must retain newer, successfully checked article content.
+    if(!previous||entry.attemptedAt>previous.attemptedAt){
+      cache[target]=(previous&&entry.checkedAt<previous.checkedAt)
+        ?{...entry,items:previous.items,checkedAt:previous.checkedAt}
+        :entry;
+    }
   }else throw Error("Unknown RSS operation.");
   await browser.storage.local.set({[RSS_PREFS_KEY]:prefs,[RSS_CACHE_KEY]:cache});
   return {ok:true,prefs,cache,added};

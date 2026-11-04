@@ -15,3 +15,6 @@ Local notes and browser state are unencrypted; avoid claiming otherwise. Never r
 
 
 Issue #2 review priorities: reject local/reserved RSS hostnames including dotted `localhost.`, atom namespace links cannot impersonate RSS item links, generation-guard async feed renders, background-serialize subscription/cache changes across dashboard instances, and reserve duplicate-recovery addresses in unencrypted local storage *before* closing tabs. Check failed browser-storage writes and explicit recovery-history clearing. Native Firefox confirmation remains mandatory before release.
+
+### Additional cache and tab race safety
+Do not replay every RSS cache entry when only one feed changed; send only changed records and protect successful headlines from older background writes. After any async recovery reservation, recheck the actual browser tab URL/window/protected status before closing it. Tests must simulate tab navigation and window moves while storage is pending.

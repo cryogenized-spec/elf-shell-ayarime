@@ -65,3 +65,12 @@
 - [x] Run the Node tests, simulated Firefox interactions, Chromium XML parser and responsive UI checks.
 - [ ] Have Codex review the issue #2 patch and address any new findings.
 - [ ] Validate grant/revoke, real-world RSS, workspace and recovery after restart in Firefox 142+.
+
+### Codex follow-up on `f348050` (RSS cache + navigation safety)
+
+- [x] Prevent stale per-feed cache submissions from overwriting unrelated dashboard updates.
+- [x] Reject older feed attempt timestamps; preserve later successful headlines when a subsequent request fails.
+- [x] Revalidate tab URL, window and active/pinned/audible/incognito status after reserving a recovery URL.
+- [x] Add simulated race tests for in-flight navigation, window moves and stale RSS cache writes.
+- [ ] Confirm GitHub Actions and a fresh Codex review on the updated review branch.
+- [ ] Complete native Firefox 142+ permissions, RSS, sessions, recovery and dynamic theme checks.

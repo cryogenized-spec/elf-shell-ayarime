@@ -15,6 +15,9 @@
   let tickerPaused = false;
   let fetching = false;
   let feedRenderGeneration = 0;
+  // Track only fetched/changed entries. A refresh in another dashboard must
+  // not be overwritten by unrelated entries from this tab's old cache.
+  const pendingCacheWrites = new Map();
 
   
   const $ = id => document.getElementById(id);
@@ -166,13 +169,22 @@
     return result;
   }
   async function saveCache(){
-    if(!bgMode())return storageSet(cacheKey,cache);
-    // Update each feed independently. A second dashboard's cached articles
-    // for a different feed must not be deleted by our stale local snapshot.
-    const snapshot=Object.entries(cache);
-    for(const [url,entry] of snapshot){
-      if(!prefs.feeds.some(f=>f.url===url))continue;
+    const changed=[...pendingCacheWrites.entries()];
+    if(!changed.length)return;
+    if(!bgMode()){
+      await storageSet(cacheKey,cache);
+      for(const [url,entry] of changed)if(pendingCacheWrites.get(url)===entry)pendingCacheWrites.delete(url);
+      return;
+    }
+    // Each submitted value must come from a fetch performed by *this* tab.
+    // Persisting an unrelated cached feed can roll back another tab's refresh.
+    for(const [url,entry] of changed){
+      if(!prefs.feeds.some(f=>f.url===url)){
+        if(pendingCacheWrites.get(url)===entry)pendingCacheWrites.delete(url);
+        continue;
+      }
       await mutateFeeds("cache",{url,entry});
+      if(pendingCacheWrites.get(url)===entry)pendingCacheWrites.delete(url);
     }
   }
   async function hasHost(url) {
@@ -276,11 +288,14 @@
         xml+=decoder.decode();
       } else {xml=await response.text();if(xml.length>1500000)throw Error("Feed too large");}
       const parsed=parseFeedXml(xml,response.url||feed.url);
-      cache[feed.url]={items:parsed.slice(0,36),checkedAt:Date.now(),attemptedAt:Date.now(),error:""};
+      const timestamp=Date.now();
+      const entry={items:parsed.slice(0,36),checkedAt:timestamp,attemptedAt:timestamp,error:""};
+      cache[feed.url]=entry;pendingCacheWrites.set(feed.url,entry);
       return {count:parsed.length};
     } catch(error) {
-      cache[feed.url]={items:cached?.items||[],checkedAt:cached?.checkedAt||0,attemptedAt:Date.now(),error:(error.name==="AbortError"?"Timed out":error instanceof TypeError?"Fetch blocked, unavailable, or redirected; check the canonical HTTPS feed URL and site permission.":error.message||"Unknown error").slice(0,150)};
-      return {error:cache[feed.url].error};
+      const entry={items:cached?.items||[],checkedAt:cached?.checkedAt||0,attemptedAt:Date.now(),error:(error.name==="AbortError"?"Timed out":error instanceof TypeError?"Fetch blocked, unavailable, or redirected; check the canonical HTTPS feed URL and site permission.":error.message||"Unknown error").slice(0,150)};
+      cache[feed.url]=entry;pendingCacheWrites.set(feed.url,entry);
+      return {error:entry.error};
     } finally {clearTimeout(timeout);}
   }
   async function refreshFeeds(force=false) {

@@ -564,18 +564,43 @@ async function closeDuplicates(){
     if(!ids.length){$("housekeeping-message").textContent="No safe duplicate tabs found.";return;}
     if(!confirm(`Close ${ids.length} background duplicate tab(s) in this window? Unsaved page content may be lost.`))return;
     const chosen=tabs.filter(t=>ids.includes(t.id)).map(t=>({tabId:t.id,url:t.url,windowId:t.windowId,index:t.index}));
-    let closed=0;
+    let closed=0,skipped=0;
     for(const item of chosen){
       // Reserve each recovery URL in storage BEFORE closing its tab. If a
       // storage write fails, this tab remains open, never silently lost.
-      if(ext)await recoveryAction("append",{entries:[item]});
-      else{lastClosedDuplicates.push({...item,id:"preview-"+item.tabId});$("undo-duplicates").hidden=false;}
+      let reservedId;
+      if(ext){const reservation=await recoveryAction("append",{entries:[item]});reservedId=reservation.added[0]?.id;}
+      else{reservedId="preview-"+item.tabId;lastClosedDuplicates.push({...item,id:reservedId});$("undo-duplicates").hidden=false;}
+      // Tabs can navigate, become pinned/active, or move between windows while
+      // a recovery reservation is being saved. Revalidate as near as possible
+      // to removal, or we could close a page different from the saved URL.
+      let live,otherTabs;
+      try{
+        otherTabs=await browser.tabs.query({windowId:item.windowId});
+        live=await browser.tabs.get(item.tabId);
+      }catch(error){
+        skipped++;console.warn("Tab changed or disappeared during duplicate cleanup; recovery reserved",error);
+        continue; // Uncertain state: never remove, and retain the recovery record.
+      }
+      const stillDuplicate=otherTabs.some(t=>t.id!==item.tabId && t.url===item.url && t.windowId===item.windowId && !t.incognito);
+      const safeToClose=live?.url===item.url&&live.windowId===item.windowId&&
+        !live.active&&!live.pinned&&!live.audible&&!live.incognito&&stillDuplicate;
+      if(!safeToClose){
+        skipped++;
+        // We did not touch this tab. Remove its unnecessary reservation;
+        // a failed cleanup leaves the address visible for manual review.
+        try{
+          if(ext)await recoveryAction("complete",{ids:[reservedId]});
+          else lastClosedDuplicates=lastClosedDuplicates.filter(x=>x.id!==reservedId);
+        }catch(error){console.warn("Could not discard an unused recovery reservation",error);}
+        continue;
+      }
       // Handle tabs individually: a failure partway through a batch must not
       // prevent earlier successfully closed tabs from being recoverable.
       try{await browser.tabs.remove([item.tabId]);closed++;}
       catch(error){console.warn("Duplicate tab removal may not have completed",error);throw Error("A tab could not be closed; its recovery address has been kept in case it was removed. " + error.message);}
     }
-    $("housekeeping-message").textContent=`Closed ${closed} duplicate tabs; ${lastClosedDuplicates.length} address(es) available to reopen after refresh or restart. Page state is not saved.`;
+    $("housekeeping-message").textContent=`Closed ${closed} duplicate tabs${skipped?`; skipped ${skipped} changed tab(s)`:""}; ${lastClosedDuplicates.length} address(es) available to reopen after refresh or restart. Page state is not saved.`;
     await diagnostics();
   }catch(error){console.error(error);$("housekeeping-message").textContent="Duplicate cleanup failed.";}
 }
