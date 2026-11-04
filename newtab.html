@@ -106,6 +106,19 @@
         <label><input type="checkbox" id="reduce-motion"> Reduce visual effects</label>
         <label><input type="checkbox" id="high-contrast"> Increase interface contrast</label>
       </div>
+      <fieldset class="cursor-settings" aria-label="Cursor style for the ELF SHELL new tab">
+        <legend>POINTER DESIGN // AYARIME</legend>
+        <p>Choose a cursor for this dashboard only. Your browser and desktop keep their normal pointer. The system default is recommended until you choose another.</p>
+        <div class="cursor-gallery" role="group" aria-label="Optional cursor designs">
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="system" checked><span class="cursor-system-preview" aria-hidden="true">↖</span><span>System Default</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="classic-spearhead"><img src="assets/cursors/classic-spearhead.png" width="64" height="64" alt="" loading="lazy"><span>Classic Spearhead</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="crystal-tech-shard"><img src="assets/cursors/crystal-tech-shard.png" width="64" height="64" alt="" loading="lazy"><span>Crystal-Tech Shard</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="elven-feather"><img src="assets/cursors/elven-feather.png" width="64" height="64" alt="" loading="lazy"><span>Elven Feather</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="hollow-frame"><img src="assets/cursors/hollow-frame.png" width="64" height="64" alt="" loading="lazy"><span>Hollow Frame</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="rune-edged"><img src="assets/cursors/rune-edged.png" width="64" height="64" alt="" loading="lazy"><span>Rune-Edged</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="minimal-precision"><img src="assets/cursors/minimal-precision.png" width="64" height="64" alt="" loading="lazy"><span>Minimal Precision</span></label>
+        </div>
+      </fieldset>
       <div class="import-actions"><button type="button" id="export-settings">EXPORT JSON</button><button type="button" id="import-settings">IMPORT JSON</button><input type="file" id="import-file" accept="application/json,.json" hidden></div>
       <p id="settings-message" class="message" role="status"></p>
       <div class="dialog-actions"><button type="button" id="reset-links">RESET LINKS</button><button type="button" id="cancel-settings">CANCEL</button><button type="submit" id="save-settings">SAVE CONFIG</button></div>
