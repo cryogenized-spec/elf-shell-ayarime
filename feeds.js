@@ -301,6 +301,9 @@
   async function refreshFeeds(force=false) {
     if(fetching || !prefs.enabled)return;
     fetching=true;
+    // Expose real RSS network activity to the opt-in Ayarime busy cursor.
+    $("feed-refresh").setAttribute("aria-busy","true");
+    $("feed-refresh").disabled=true;
     const pending=prefs.feeds.filter(f=>f.enabled);
     let count=0,errors=0;
     status("Refreshing authorised subscriptions…");
@@ -310,7 +313,7 @@
     try {await Promise.all(Array.from({length:Math.min(3,pending.length)},worker));await saveCache();rebuildHeadlines();await renderFeeds();
       status(`Feed check complete · ${count} entries retrieved · ${errors} errors · ${headlines.length} cached headlines`);
     } catch(error){status("Feed refresh or cache save failed: "+error.message);console.error("RSS refresh failed",error);}
-    finally {fetching=false;}
+    finally {fetching=false;$("feed-refresh").removeAttribute("aria-busy");$("feed-refresh").disabled=false;}
   }
   async function addFeed(event) {
     event.preventDefault();
