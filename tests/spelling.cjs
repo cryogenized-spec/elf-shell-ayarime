@@ -1,0 +1,46 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const root=path.resolve(__dirname,"..");
+const read=f=>fs.readFileSync(path.join(root,f),"utf8");
+const manifest=JSON.parse(read("manifest.json"));
+assert(manifest.permissions.includes("scripting"));
+assert(manifest.permissions.includes("activeTab"));
+assert.equal(manifest.action.default_popup,"spelling/popup.html");
+assert(manifest.background.scripts.includes("spelling/background.js"));
+assert(manifest.optional_host_permissions.includes("https://*/*"));
+const popup=read("spelling/popup.js"),content=read("spelling/content.js");
+const css=read("spelling/content.css"),worker=read("spelling/worker.js");
+const bg=read("spelling/background.js");
+assert(popup.includes("permissions.request"),"per-site opt-in required");
+assert(popup.includes("scripting.registerContentScripts"),"dynamic site scripts required");
+assert(popup.includes("scripting.unregisterContentScripts"),"site opt-out required");
+assert(!popup.includes("matches:[\"<all_urls>\"]"),"no automatic broad injection");
+assert(content.includes('root.setAttribute("spellcheck","false")'),"native spelling must be disabled only after successful checker");
+assert(content.includes("function restore()"),"native spelling needs an error fallback");
+assert(content.includes('if(!response?.ok)throw Error'),"checker failure must not become a false success");
+assert(content.includes('document.execCommand("insertText"'),"replacement must use editable/undo command");
+assert(!content.includes("innerHTML"),"never inject markup into host editors");
+assert(!content.includes("textContent="),"never rewrite host editor text");
+assert(!content.includes("fetch("),"editor text must never be sent to a remote endpoint");
+assert(content.includes('add("Ignore"'),"ignore action required");
+assert(content.includes('add("Add to Dictionary"'),"dictionary action required");
+assert(css.includes("::highlight(elfshell-spelling-errors-v1)"));
+assert(!content.includes("overrideContext"),"leave Firefox's ordinary context menu intact");
+assert(bg.includes("browser.storage.local.set"),"persistent custom word list required");
+assert(worker.includes('importScripts("nspell-bundle.js")'),"local checker must be bundled");
+assert(!worker.includes("https://"),"worker may load extension resources only");
+for(const file of ["spelling/en.aff","spelling/en.dic","spelling/DICTIONARY-LICENSE.txt","spelling/NSPELL-LICENSE.txt","spelling/nspell-bundle.js"]){
+  assert(fs.statSync(path.join(root,file)).size>200,file);
+}
+// Smoke-check the actual bundled Hunspell engine, not only source strings.
+const nspell=require("../spelling/nspell-bundle.js");
+assert.equal(typeof nspell,"function");
+const spell=nspell({aff:read("spelling/en.aff"),dic:read("spelling/en.dic")});
+assert.equal(spell.correct("receive"),true);
+assert.equal(spell.correct("recieve"),false);
+assert(spell.suggest("recieve").includes("receive"));
+spell.add("Ayarime");
+assert.equal(spell.correct("Ayarime"),true);
+console.log("Offline spelling engine, permissions, fallbacks, UI and packaging checks passed.");
