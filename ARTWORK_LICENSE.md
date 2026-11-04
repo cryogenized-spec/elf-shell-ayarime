@@ -6,7 +6,7 @@ This dedication does not establish copyright where none exists, claim rights in 
 
 The Ayarime background was produced using an image generation system. Its copyright status and reusability may vary by jurisdiction. The project seeks to permit the broadest lawful reuse, including modification and redistribution, without royalties or attribution requirements.
 
-Code is under the separate MIT licence.
+Project-owned source code is covered by the Mozilla Public License 2.0 (`LICENSE`), with historical MIT grant notices preserved separately in `LICENSES/MIT-legacy.txt`. These terms do not replace third-party licences.
 
 ### v0.4.1 icon artwork
 

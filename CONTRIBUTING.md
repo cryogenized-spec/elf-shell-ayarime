@@ -11,3 +11,7 @@ ELF//SHELL is intended as a freely usable, modifiable, shareable community proje
 Please do not commit private session exports, customer information, passwords or tokens. For any issue reporting a security vulnerability, avoid posting private data publicly.
 
 Please do not add remote RSS proxies, tracking pixels, remote article thumbnails, auto-subscriptions or non-opt-in host permissions. RSS content is untrusted XML; display only safe text and use DOM node creation rather than injecting feed HTML.
+
+## Source code licence
+
+New contributions to the project-owned source files are accepted under MPL-2.0 (see `LICENSE` and `LICENSE_SCOPE.md`). Do not remove the third-party MIT/BSD/OFL notices or the previously distributed MIT grant.
