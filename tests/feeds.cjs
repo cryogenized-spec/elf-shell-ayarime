@@ -11,6 +11,13 @@ assert.equal(normaliseFeedUrl('https://thebrowser.substack.com/about'), 'https:/
 assert.equal(normaliseFeedUrl('http://example.org/rss'),null,'HTTP not supported');
 assert.equal(normaliseFeedUrl('https://127.0.0.1/rss'),null,'no private address');
 assert.equal(normaliseFeedUrl('https://x.local/rss'),null,'no local hostname');
+for(const host of ['localhost.','router','nas','printer.lan','gateway.internal','device.home.arpa','local.test','anything.invalid','a.example']) {
+  assert.equal(normaliseFeedUrl(`https://${host}/feed`),null,`reject non-public hostname ${host}`);
+}
+assert.equal(normaliseFeedUrl('https://example.org./feed'),null,'reject trailing-dot hostname');
+assert.equal(normaliseFeedUrl('https://127.1/rss'),null,'URL parser canonicalises shorthand IPv4');
+assert.equal(normaliseFeedUrl('https://0x7f000001/rss'),null,'URL parser canonicalises hexadecimal IPv4');
+assert.equal(normaliseFeedUrl('https://example.org/feed'), 'https://example.org/feed','keep ordinary public feed URLs');
 assert.equal(normaliseFeedUrl('javascript:alert(1)'),null);
 assert.equal(originPattern('https://my.example.org/rss'), 'https://my.example.org/*');
 assert.equal(validFeedUrl('https://example.org/rss'),true);

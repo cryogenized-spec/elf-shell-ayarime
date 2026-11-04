@@ -13,7 +13,7 @@ Source and bundled images run locally. **No analytics, telemetry, advertisements
 
 **Temporary development add-ons disappear when Firefox restarts.** For permanent use, the extension must be signed by Mozilla. This build is **not yet signed or published on addons.mozilla.org**.
 
-The extension reads previous `elfshell-workspace-v3` and `elfshell-workspace-v2` settings automatically when Firefox retains the same extension storage, then writes updated workspace values to separate local keys per field. This prevents one open dashboard's notes from overwriting another dashboard's newer settings or saved sessions. Simultaneous edits to the *same* field remain last-write-wins. Temporary add-ons can lose storage when unloaded; export settings before moving between different add-on identities or test profiles.
+The extension reads previous `elfshell-workspace-v3` and `elfshell-workspace-v2` settings automatically when Firefox retains the same extension storage, then writes updated workspace values to separate local keys per field. This prevents one open dashboard's notes from overwriting another dashboard's newer settings. Saved-workspace additions, deletions and imported session sets are additionally serialized by the Firefox background service; the background service first migrates legacy session lists instead of silently dropping them. Simultaneous edits to the *same non-session* field remain last-write-wins. Temporary add-ons can lose storage when unloaded; export settings before moving between different add-on identities or test profiles.
 
 ## New in v0.3
 
@@ -64,13 +64,13 @@ npx --yes web-ext@10.8.0 lint --source-dir dist/amo --warnings-as-errors
 
 This step requires an npm network connection (or a previously installed copy of `web-ext`) and **must pass before AMO submission**. See `LIVE_FIREFOX_TESTS.md` for real-browser acceptance steps.
 
-The project uses no npm runtime dependencies; `package.json` exists for repeatable tests and public contributions. A small GitHub Actions workflow runs `npm test` on pushes and pull requests.
+The project uses no npm runtime dependencies; `package.json` exists for repeatable tests and public contributions. A small GitHub Actions workflow runs `npm test`, builds the AMO candidate and runs strict Mozilla `web-ext lint` on pushes and pull requests. The release-review pull request has reached green CI, but real Firefox acceptance and Mozilla signing are still open.
 
 ## Licence and publishing
 
 - Source code: **MIT** (`LICENSE`).
 - Generated Ayarime artwork and locally authored SVG icon assets: permissive project dedication detailed in `ARTWORK_LICENSE.md` (to the extent the contributor has rights to license them). Names and third-party trademarks remain with their respective owners.
-- Intended public repository: `cryogenized-spec/elf-shell-ayarime` (not created yet).
+- Public source repository (created by the project owner): [cryogenized-spec/elf-shell-ayarime](https://github.com/cryogenized-spec/elf-shell-ayarime); [release-review PR #1](https://github.com/cryogenized-spec/elf-shell-ayarime/pull/1) remains unmerged.
 - Planned Firefox distribution: signed Firefox Add-ons (AMO) extension, after live testing, Mozilla linting and review. The new-tab override makes it an extension, even though it also themes the browser frame.
 
 **Contributions welcome.** See `CONTRIBUTING.md` for the lightweight workflow.
@@ -88,7 +88,7 @@ Feed metadata (titles, published dates and links) is cached in Firefox local sto
 
 **Supported feeds:** Public Substack RSS and ordinary public HTTPS RSS 2.0 / Atom / RDF feeds. Private or paid newsletter bodies do not become publicly accessible through RSS; a paid article may only offer a preview, as published by the source. Hosts that block extensions, redirect to an unapproved domain, or require authentication may not load.
 
-**Development status:** RSS logic has passed local Node syntax, URL-permission, settings, OPML and archive integrity checks. Real Firefox WebExtension testing and Mozilla `web-ext lint` still need to be completed before AMO release.
+**Development status:** RSS logic has passed local Node syntax, URL-permission, settings, OPML and archive integrity checks. Real Firefox WebExtension testing is still required before AMO release. GitHub Actions has passed strict Mozilla `web-ext lint` for this release candidate.
 
 ## v0.4.1 — Illustrated default launcher icons
 
@@ -110,7 +110,7 @@ The small left-hand quotation panel is now a compact bilingual carousel drawing 
 
 The user-supplied fictional dialogue has received **minor Japanese wording adjustments** for clarity and narrative consistency. The full archive is inspectable and editable in `assets/ayarime-quotes.json` for future releases. No story or literary quotation is scraped or fetched from outside sources.
 
-**Development status:** JSON structure, local module, source syntax, DOM IDs, version metadata, and existing station tests are automated. Live Firefox integration and Mozilla AMO lint are still required before public release.
+**Development status:** JSON structure, local module, source syntax, DOM IDs, version metadata, and existing station tests are automated. Live Firefox integration is still required before public release; Mozilla AMO lint has passed in GitHub Actions.
 
 ## 0.5.1 — release hardening
 
@@ -124,7 +124,7 @@ The user-supplied fictional dialogue has received **minor Japanese wording adjus
 - Source tests and Mozilla validation are separate gates. Run `npm test` and `npx --yes web-ext@10.8.0 lint --source-dir dist/amo --warnings-as-errors` before submission (after running the packaging script).
 - To build the AMO-specific ZIP without development files, run `python3 scripts/package.py`. The source distribution is not the same as the AMO upload package.
 
-This is a **release candidate**, not a signed Mozilla release. Complete the manual Firefox acceptance checklist before calling it production-stable.
+This is a **release candidate**, not a signed Mozilla release. Strict Mozilla lint passes in CI. Complete the manual Firefox acceptance checklist and Mozilla signing before calling it production-stable.
 
 ### Release checklist
 
@@ -154,8 +154,18 @@ The Station control uses a two-line centered heading and hint, with a larger gap
 - Makes the reopen-URL recovery action retryable if tab creation temporarily fails. This still does not restore unsaved page state.
 - Corrects the note-save indicator: rejected storage writes now show **SAVE ERROR**, not **SAVED**.
 - Chromium/mock regressions cover cross-window protection, failed-reopen recovery, and storage-write errors.
-- **Not final**: requires native Firefox tests, Mozilla `web-ext lint`, and signing.
+- Saved-workspace mutations are serialized through a Firefox background message queue; old saved session lists are migrated on first use. Concurrent saves and deletes are tested with delayed storage writes.
+- Duplicate-tab recovery removes only successfully reopened records from the live queue, retaining new records added while a reopen is pending.
+- **Not final**: strict Mozilla lint passes in CI; native Firefox tests and Mozilla signing remain required.
 
 #### Concurrency and recovery behaviour (v0.5.4 review)
 
 Firefox processes saved-workspace add/delete/import operations in the background extension event page, in order. Multiple open new-tab dashboards therefore cannot overwrite one another's concurrent workspace changes; newer background reads also load older-format saved sessions during the upgrade. The list has a maximum of ten entries, and saving a new one at capacity reports an error rather than silently dropping an old entry. Notes, focus and other unrelated preferences remain independent storage fields. Duplicate-tab recovery retains new cleanup entries appended during an in-flight reopen, but reopening a URL cannot recover unsaved form contents.
+
+### Issue #2 privacy and concurrency hardening
+
+The v0.5.4 review branch also incorporates the observations recorded in [GitHub issue #2](https://github.com/cryogenized-spec/elf-shell-ayarime/issues/2). The RSS manager disallows local/reserved DNS suffixes and missing article links, and handles overlapping subscription renders without duplicate rows. Feed subscriptions and their per-publication caches are modified through a serialized background handler, so two open new-tab instances cannot overwrite each other's unrelated feeds. This is a source-level design and simulated-API verification; DNS configuration and real Firefox permissions still require live testing.
+
+**Tab recovery now persists.** After confirming a duplicate-tab cleanup, ELF//SHELL saves the URLs in Firefox extension-local storage *before* closing each duplicate. The recovery panel can reopen them after navigating away or restarting Firefox, or delete the recovery history manually. This data is not encrypted; URLs can contain login tokens or other sensitive parameters. Recovery restores the web addresses only, never unsaved form data. No stored recovery URLs are included in the regular station JSON export.
+
+The remaining release gates are a disposable-profile Firefox 142+ test (including restarts and real RSS feeds), the Codex review of issue #2's changes, and Mozilla signing. Do not describe a source ZIP as a permanently installable add-on.

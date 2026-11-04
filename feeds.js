@@ -14,6 +14,7 @@
   let tickerTimer = null;
   let tickerPaused = false;
   let fetching = false;
+  let feedRenderGeneration = 0;
 
   
   const $ = id => document.getElementById(id);
@@ -22,8 +23,13 @@
     try {
       const url = new URL(value);
       if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.port || value.length > 2048) return false;
-      if (url.hostname === "localhost" || url.hostname.endsWith(".localhost") || url.hostname.endsWith(".local")) return false;
-      if (/^\d+\.\d+\.\d+\.\d+$/.test(url.hostname) || url.hostname.startsWith("[")) return false;
+      // Do not grant network access to local or non-public hostnames, even
+      // when browsers normalize disguised IP addresses or a trailing dot.
+      const host = url.hostname.toLowerCase();
+      if (host.endsWith(".") || !host.includes(".") || host.startsWith("[")) return false;
+      if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return false;
+      if (["localhost", "local", "lan", "internal", "home.arpa", "test", "invalid", "example"].some(suffix => host === suffix || host.endsWith("." + suffix))) return false;
+      if (host.split(".").some(label => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) return false;
       return true;
     } catch { return false; }
   }
@@ -91,9 +97,15 @@
       if (!title) continue;
       let link = "";
       if (atom) {
-        const links = [...entry.children].filter(x => x.localName === "link");
-        link = (links.find(x => !x.getAttribute("rel") || x.getAttribute("rel") === "alternate") || links[0])?.getAttribute("href") || "";
-      } else link = child(entry, "link")?.textContent?.trim() || "";
+        const links = [...entry.children].filter(x => x.localName === "link" && (!x.namespaceURI || x.namespaceURI === "http://www.w3.org/2005/Atom"));
+        link = links.find(x => !x.getAttribute("rel") || x.getAttribute("rel") === "alternate")?.getAttribute("href") || "";
+      } else {
+        // An RSS item may contain an Atom extension's <atom:link>.
+        // Do not mistake that for the actual RSS article <link>.
+        const rssLink = [...entry.children].find(x => x.localName === "link" && (!x.namespaceURI || x.namespaceURI === "http://purl.org/rss/1.0/"));
+        link = rssLink?.textContent?.trim() || "";
+      }
+      if (!link.trim()) continue; // Empty hrefs otherwise resolve to the feed URL.
       let article;
       try { article = new URL(link, sourceUrl).href; } catch { continue; }
       if (!validArticleUrl(article)) continue;
@@ -140,8 +152,29 @@
     if (typeof browser !== "undefined" && browser.storage) await browser.storage.local.set({[key]:data});
     else localStorage.setItem(key, JSON.stringify(data));
   }
-  function savePrefs() {return storageSet(settingsKey,prefs);}
-  function saveCache() {return storageSet(cacheKey,cache);}
+  const bgMode = () => typeof browser!=="undefined" && !!browser.storage && !!browser.runtime?.sendMessage;
+  async function mutateFeeds(action,details={}) {
+    if(!bgMode()) { // Standalone web preview, never a Firefox permission grant.
+      await storageSet(settingsKey,prefs);
+      await storageSet(cacheKey,cache);
+      return {ok:true,prefs,cache,added:0};
+    }
+    const result=await browser.runtime.sendMessage({type:"elfshell:rss:mutate:v1",action,...details});
+    if(!result?.ok)throw Error(result?.error||"RSS storage unavailable.");
+    prefs=validateSnapshot(result.prefs)||prefs;
+    cache=result.cache||{};
+    return result;
+  }
+  async function saveCache(){
+    if(!bgMode())return storageSet(cacheKey,cache);
+    // Update each feed independently. A second dashboard's cached articles
+    // for a different feed must not be deleted by our stale local snapshot.
+    const snapshot=Object.entries(cache);
+    for(const [url,entry] of snapshot){
+      if(!prefs.feeds.some(f=>f.url===url))continue;
+      await mutateFeeds("cache",{url,entry});
+    }
+  }
   async function hasHost(url) {
     if (typeof browser === "undefined" || !browser.permissions) return false;
     try { return await browser.permissions.contains({origins:[originPattern(url)]}); } catch {return false;}
@@ -187,9 +220,12 @@
     }
   }
   async function renderFeeds() {
-    const root=$("feed-subscriptions");root.replaceChildren();
-    if (!prefs.feeds.length) {const p=document.createElement("p");p.className="quiet";p.textContent="No subscriptions yet. Add a Substack address or an RSS/Atom URL above.";root.append(p);return;}
-    for(const feed of prefs.feeds) {
+    // Build off-DOM and commit only the newest render. Permission checks yield
+    // to other event handlers; a stale render must not append duplicate rows.
+    const generation = ++feedRenderGeneration;
+    const root=$("feed-subscriptions"), fragment=document.createDocumentFragment();
+    if (!prefs.feeds.length) {const p=document.createElement("p");p.className="quiet";p.textContent="No subscriptions yet. Add a Substack address or an RSS/Atom URL above.";fragment.append(p);root.replaceChildren(fragment);return;}
+    for(const feed of [...prefs.feeds]) {
       const row=document.createElement("div");row.className="feed-subscription";
       const details=document.createElement("div");details.className="feed-description";
       const title=document.createElement("strong");title.textContent=feed.title;
@@ -199,7 +235,8 @@
       details.append(title,url,hint);
       const actions=document.createElement("div");actions.className="feed-sub-actions";
       const checked=await hasHost(feed.url);
-      const toggle=makeButton(feed.enabled?"ON":"OFF",async()=>{feed.enabled=!feed.enabled;await savePrefs();rebuildHeadlines();renderFeeds();},feed.enabled?"feed-active":"");toggle.title="Include or exclude this publication";
+      if (generation !== feedRenderGeneration) return;
+      const toggle=makeButton(feed.enabled?"ON":"OFF",async()=>{try{if(bgMode())await mutateFeeds("toggle",{url:feed.url});else{feed.enabled=!feed.enabled;await mutateFeeds("preview");}rebuildHeadlines();await renderFeeds();}catch(error){status("Subscription change was not saved: "+error.message);}},feed.enabled?"feed-active":"");toggle.title="Include or exclude this publication";
       const permission=makeButton(checked?"REVOKE HOST":"ALLOW HOST",()=>{
         if(!checked) {
           // Do not await before triggering permissions.request: Firefox requires user activation.
@@ -212,12 +249,15 @@
       const edit=makeButton("EDIT",()=>{
         const name=prompt("Publication label",feed.title);if(name===null)return;
         const group=prompt("Subscription group",feed.group);if(group===null)return;
-        feed.title=String(name).trim().slice(0,72)||feed.title;feed.group=String(group).trim().slice(0,28)||"GENERAL";
-        savePrefs().then(()=>{rebuildHeadlines();renderFeeds();});
+        const title=String(name).trim().slice(0,72)||feed.title;
+        const groupName=String(group).trim().slice(0,28)||"GENERAL";
+        if(!bgMode()){feed.title=title;feed.group=groupName;}
+        mutateFeeds("edit",{url:feed.url,title,group:groupName}).then(()=>{rebuildHeadlines();renderFeeds();}).catch(error=>status("Edit not saved: "+error.message));
       });
-      const remove=makeButton("REMOVE",async()=>{if(!confirm("Remove "+feed.title+" from ELF//SHELL?"))return;prefs.feeds=prefs.feeds.filter(x=>x.url!==feed.url);delete cache[feed.url];await Promise.all([savePrefs(),saveCache()]);rebuildHeadlines();renderFeeds();});
-      actions.append(toggle,permission,edit,remove);row.append(details,actions);root.append(row);
+      const remove=makeButton("REMOVE",async()=>{if(!confirm("Remove "+feed.title+" from ELF//SHELL?"))return;try{if(bgMode())await mutateFeeds("remove",{url:feed.url});else{prefs.feeds=prefs.feeds.filter(x=>x.url!==feed.url);delete cache[feed.url];await mutateFeeds("preview");}rebuildHeadlines();await renderFeeds();}catch(error){status("Removal was not saved: "+error.message);}});
+      actions.append(toggle,permission,edit,remove);row.append(details,actions);fragment.append(row);
     }
+    if (generation === feedRenderGeneration) root.replaceChildren(fragment);
   }
   async function fetchOne(feed, force) {
     if (!feed.enabled || !await hasHost(feed.url)) return {skipped:true};
@@ -234,7 +274,7 @@
         const reader=response.body.getReader(),decoder=new TextDecoder();let count=0;
         while(true){const {done,value}=await reader.read();if(done)break;count+=value.byteLength;if(count>1500000){await reader.cancel();throw Error("Feed too large");}xml+=decoder.decode(value,{stream:true});}
         xml+=decoder.decode();
-      } else {xml=await response.text();}
+      } else {xml=await response.text();if(xml.length>1500000)throw Error("Feed too large");}
       const parsed=parseFeedXml(xml,response.url||feed.url);
       cache[feed.url]={items:parsed.slice(0,36),checkedAt:Date.now(),attemptedAt:Date.now(),error:""};
       return {count:parsed.length};
@@ -254,7 +294,8 @@
     const worker=async()=>{while(next<pending.length){const feed=pending[next++];const result=await fetchOne(feed,force);if(result.count!==undefined)count+=result.count;if(result.error)errors++;}};
     try {await Promise.all(Array.from({length:Math.min(3,pending.length)},worker));await saveCache();rebuildHeadlines();await renderFeeds();
       status(`Feed check complete · ${count} entries retrieved · ${errors} errors · ${headlines.length} cached headlines`);
-    } finally {fetching=false;}
+    } catch(error){status("Feed refresh or cache save failed: "+error.message);console.error("RSS refresh failed",error);}
+    finally {fetching=false;}
   }
   async function addFeed(event) {
     event.preventDefault();
@@ -271,7 +312,7 @@
     try {
       const accepted=await permission;
       if (!accepted){status("Host access declined. Nothing was subscribed.");return;}
-      prefs.feeds.push(feed);await savePrefs();
+      if(bgMode())await mutateFeeds("add",{feed});else{prefs.feeds.push(feed);await mutateFeeds("preview");}
       $("feed-url").value="";$("feed-label").value="";
       status("Subscription saved. Fetching the publication feed…");await renderFeeds();
       const result=await fetchOne(feed,true);await saveCache();rebuildHeadlines();await renderFeeds();
@@ -282,9 +323,10 @@
     try {
       if(!file||file.size>350000)throw Error("OPML exceeds 350 KB");
       const additions=parseOpml(await file.text());if(!additions.length)throw Error("No supported HTTPS RSS feeds found");
-      let count=0;const current=new Set(prefs.feeds.map(f=>f.url));
-      for(const f of additions){if(prefs.feeds.length>=maxFeeds)break;if(current.has(f.url))continue;current.add(f.url);prefs.feeds.push(f);count++;}
-      await savePrefs();await renderFeeds();rebuildHeadlines();
+      let count=0;
+      if(bgMode()){const outcome=await mutateFeeds("import",{feeds:additions});count=outcome.added;}
+      else{const current=new Set(prefs.feeds.map(f=>f.url));for(const f of additions){if(prefs.feeds.length>=maxFeeds)break;if(current.has(f.url))continue;current.add(f.url);prefs.feeds.push(f);count++;}await mutateFeeds("preview");}
+      await renderFeeds();rebuildHeadlines();
       status(`Imported ${count} subscriptions. Grant host access to each source before fetching; no external requests were made.`);
     }catch(error){status("OPML import rejected: "+error.message);}
   }
@@ -309,6 +351,25 @@
     catch(error){console.warn("ELF//SHELL: RSS settings unavailable",error);}
 
     $("feed-enabled").checked=prefs.enabled;$("feed-frequency").value=String(prefs.interval);
+    if(typeof browser!=="undefined"&&browser.storage?.onChanged){
+      browser.storage.onChanged.addListener((changes,area)=>{
+        if(area!=="local")return;
+        let updated=false;
+        if(changes[settingsKey]){
+          prefs=validateSnapshot(changes[settingsKey].newValue)||initial();
+          $("feed-enabled").checked=prefs.enabled;$("feed-frequency").value=String(prefs.interval);
+          updated=true;
+        }
+        if(changes[cacheKey]){
+          const fresh=changes[cacheKey].newValue;
+          if(fresh&&typeof fresh==="object"&&!Array.isArray(fresh)){
+            cache=Object.fromEntries(prefs.feeds.filter(f=>fresh[f.url]).map(f=>[f.url,fresh[f.url]]));
+          }else cache={};
+          updated=true;
+        }
+        if(updated){rebuildHeadlines();renderFeeds();}
+      });
+    }
     rebuildHeadlines();
     $("feed-headline").addEventListener("mouseenter",()=>{tickerPaused=true;});
     $("feed-headline").addEventListener("mouseleave",()=>{tickerPaused=false;});
@@ -321,7 +382,7 @@
   window.elfFeeds={
     snapshot:()=>({...prefs,feeds:prefs.feeds.map(x=>({...x}))}),
     validateSnapshot,
-    applySnapshot:async value=>{const clean=validateSnapshot(value);if(!clean)throw Error("Invalid RSS settings");prefs=clean;await savePrefs();$("feed-enabled").checked=prefs.enabled;$("feed-frequency").value=String(prefs.interval);await renderFeeds();rebuildHeadlines();},
+    applySnapshot:async value=>{const clean=validateSnapshot(value);if(!clean)throw Error("Invalid RSS settings");if(bgMode())await mutateFeeds("replace",{snapshot:clean});else{prefs=clean;await mutateFeeds("preview");}$("feed-enabled").checked=prefs.enabled;$("feed-frequency").value=String(prefs.interval);await renderFeeds();rebuildHeadlines();},
     show,
   };
   $("feeds-toggle").addEventListener("click",show);
@@ -329,8 +390,8 @@
   $("feed-add-form").addEventListener("submit",addFeed);
   $("feed-close").addEventListener("click",()=>$("feeds-dialog").close());
   $("feed-refresh").addEventListener("click",()=>refreshFeeds(true));
-  $("feed-enabled").addEventListener("change",async e=>{prefs.enabled=e.target.checked;await savePrefs();renderTicker();if(prefs.enabled)refreshFeeds(false);});
-  $("feed-frequency").addEventListener("change",async e=>{prefs.interval=validMinutes.includes(Number(e.target.value))?Number(e.target.value):30;await savePrefs();});
+  $("feed-enabled").addEventListener("change",async e=>{try{if(bgMode())await mutateFeeds("config",{enabled:e.target.checked});else{prefs.enabled=e.target.checked;await mutateFeeds("preview");}renderTicker();if(prefs.enabled)refreshFeeds(false);}catch(error){status("Ticker setting not saved: "+error.message);$("feed-enabled").checked=prefs.enabled;}});
+  $("feed-frequency").addEventListener("change",async e=>{const interval=validMinutes.includes(Number(e.target.value))?Number(e.target.value):30;try{if(bgMode())await mutateFeeds("config",{interval});else{prefs.interval=interval;await mutateFeeds("preview");}}catch(error){status("Refresh interval not saved: "+error.message);$("feed-frequency").value=String(prefs.interval);}});
   $("feed-export-opml").addEventListener("click",()=>fileDownload(exportOpml(prefs.feeds),"elfshell-subscriptions.opml","text/xml"));
   $("feed-import-opml").addEventListener("click",()=>$("feed-opml-file").click());
   $("feed-opml-file").addEventListener("change",e=>{const f=e.target.files?.[0];if(f)importOpml(f);e.target.value="";});

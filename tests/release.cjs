@@ -17,7 +17,7 @@ for(const fn of ['LICENSE','ARTWORK_LICENSE.md','PRIVACY.md','RELEASE_CHECKLIST.
 for(const fn of ['favicon.ico','background.js','newtab.js','memory.js','feeds.js','styles.css','newtab.html','assets/ayarime-background.webp','assets/ayarime-quotes.json']) assert(fs.existsSync(path.join(root,fn)),fn+' missing');
 const html=fs.readFileSync(path.join(root,'newtab.html'),'utf8');
 assert(html.includes('href="favicon.ico"'),'local favicon must be declared');
-for(const id of ['station-menu','permission-host-list','undo-duplicates'])assert(html.includes('id="'+id+'"'),id+' missing');
+for(const id of ['station-menu','permission-host-list','undo-duplicates','clear-duplicate-recovery'])assert(html.includes('id="'+id+'"'),id+' missing');
 assert(html.includes('Station tools menu'),'Station menu must be discoverable');
 const mainJs=fs.readFileSync(path.join(root,'newtab.js'),'utf8');
 assert(mainJs.includes('event.key.toLowerCase()==="k"'),'Ctrl+K palette shortcut missing');
@@ -25,9 +25,9 @@ assert(mainJs.includes('$("search-input").value=">"'),'Ctrl+K must open actions'
 assert(mainJs.includes('permission-host-row'),'permission ledger must list origins');
 assert(mainJs.includes('permissions.remove({origins:[origin]})'),'host revoke action missing');
 assert(mainJs.includes('REOPEN JUST-CLOSED DUPLICATE URLS')===false,'reopen button text should live in HTML');
-assert(mainJs.includes('lastClosedDuplicates.push(...chosen);'),'consecutive duplicate cleanups must preserve existing recovery entries');
+assert(mainJs.includes('await recoveryAction("append"'),'each cleanup must persist recovery addresses BEFORE closing the tab');
 assert.equal((mainJs.match(/browser\.tabs\.query\(\{currentWindow:true\}\)/g)||[]).length,3,'saved workspace and both destructive housekeeping actions must be current-window scoped');
-assert(mainJs.includes('lastClosedDuplicates.indexOf(item)'),'successful reopen must remove only the actual entry from the live recovery queue');
+assert(mainJs.includes('await recoveryAction("complete",{ids:[item.id]})'),'successful reopen must acknowledge only the reopened record by ID');
 assert(mainJs.includes('reopeningDuplicates'),'duplicate recovery must prevent simultaneous reopen operations');
 assert(mainJs.includes('saveFailures.size?"SAVE ERROR"'), 'note save status must reflect storage write failures');
 assert(mainJs.includes('values[fieldKey(field)]'), 'workspace writes must be per-field');
@@ -39,6 +39,8 @@ assert(mainJs.includes('await persist(regularFields)'), 'import must check persi
 assert(mainJs.includes('await mutateSessions("replace",{sessions:imported.sessions})'),'session imports must use serialised background handler');
 assert(fs.readFileSync(path.join(root,'background.js'),'utf8').includes('sessionsChain=operation.then'), 'background must serialise saved workspace changes');
 assert(fs.readFileSync(path.join(root,'background.js'),'utf8').includes('browser.theme.update'),'browser chrome tint missing');
+assert(fs.readFileSync(path.join(root,'background.js'),'utf8').includes('recoveryChain=operation.then'),'persistent recovery queue operations must be serialised');
+assert(mainJs.includes('refreshRecovery();'),'saved recovery queue must reload with the dashboard');
 
 const ico=fs.readFileSync(path.join(root,'favicon.ico'));
 assert.equal(ico.readUInt16LE(0),0);assert.equal(ico.readUInt16LE(2),1,'ICO file header');
@@ -55,6 +57,8 @@ assert(!feed.includes('innerHTML'),'untrusted feed content must never enter inne
 assert(feed.includes('row.rel="noopener noreferrer"'),'article links must be isolated');
 assert(feed.includes('12000'),'feed fetch timeout must be bounded');
 assert(feed.includes('1500000'),'feed download size must be capped');
+assert(feed.includes('feedRenderGeneration'),'overlapping subscription renders must be generation guarded');
+assert(fs.readFileSync(path.join(root,'background.js'),'utf8').includes('rssChain=operation.then'),'feed changes must use a serialised background queue');
 
 assert(feed.includes('credentials:"omit"'),'no RSS cookies');
 assert(feed.includes('referrerPolicy:"no-referrer"'),'no RSS referrer');

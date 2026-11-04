@@ -86,10 +86,161 @@ async function changeSavedSessions(message){
   await browser.storage.local.set({[SESSIONS_KEY]:updated});
   return {ok:true,sessions:updated};
 }
+// Recovery metadata is retained across new-tab navigation and browser restarts.
+// It contains URLs, which can include private query parameters, and is never
+// transmitted off the machine. This queue is serialized just like saved sessions
+// so multiple open dashboard tabs cannot lose each other's recovery entries.
+const RECOVERY_KEY="elfshell-duplicate-recovery-v1";
+let recoveryChain=Promise.resolve();
+let recoverySerial=0;
+function safeRecovery(value){
+  if(!Array.isArray(value))return [];
+  return value.slice(0,100).map(item=>{
+    if(!item||typeof item!=="object"||typeof item.id!=="string"||
+       item.id.length>80||!validSessionURL(item.url))return null;
+    const windowId=Number.isInteger(item.windowId)&&item.windowId>=1?item.windowId:undefined;
+    const index=Number.isInteger(item.index)&&item.index>=0&&item.index<100000?item.index:undefined;
+    return {id:item.id,url:item.url,windowId,index};
+  }).filter(Boolean);
+}
+async function mutateRecovery(message){
+  const stored=await browser.storage.local.get(RECOVERY_KEY);
+  const pending=safeRecovery(stored[RECOVERY_KEY]);
+  if(message.action==="list")return {ok:true,entries:pending};
+  let updated=pending,added=[];
+  if(message.action==="append"){
+    if(!Array.isArray(message.entries)||!message.entries.length||message.entries.length>100||
+       pending.length+message.entries.length>100)throw Error("100 recovery addresses are already stored. Reopen or clear some before closing more tabs.");
+    added=message.entries.map(item=>{
+      if(!item||!validSessionURL(item.url)||
+         !Number.isInteger(item.windowId)||item.windowId<1||
+         !Number.isInteger(item.index)||item.index<0||item.index>=100000)throw Error("Unsafe duplicate recovery record.");
+      let id;
+      do{id=Date.now().toString(36)+"-"+(++recoverySerial).toString(36);}while(pending.some(x=>x.id===id)||added.some(x=>x.id===id));
+      return {id,url:item.url,windowId:item.windowId,index:item.index};
+    });
+    updated=[...pending,...added];
+  }else if(message.action==="complete"){
+    if(!Array.isArray(message.ids)||message.ids.length>100||
+       message.ids.some(id=>typeof id!=="string"||id.length>80))throw Error("Invalid recovery completion.");
+    const completed=new Set(message.ids);
+    updated=pending.filter(item=>!completed.has(item.id));
+  }else if(message.action==="clear"){
+    updated=[];
+  }else throw Error("Unknown recovery operation.");
+  await browser.storage.local.set({[RECOVERY_KEY]:updated});
+  return {ok:true,entries:updated,added};
+}
+// Feed subscriptions and caches are also shared by multiple new-tab instances.
+// Serialize edits per URL in the background to prevent stale snapshots from
+// dropping other dashboards' additions or cached headlines.
+const RSS_PREFS_KEY="elfshell-rss-settings-v1";
+const RSS_CACHE_KEY="elfshell-rss-cache-v1";
+let rssChain=Promise.resolve();
+function publicFeedURL(raw){
+  if(typeof raw!=="string"||raw.length>2048)return null;
+  try{
+    const u=new URL(raw),host=u.hostname.toLowerCase();
+    if(u.protocol!=="https:"||!host.includes(".")||host.endsWith(".")||host.startsWith("[")||u.username||u.password||u.port)return null;
+    if(/^\d+\.\d+\.\d+\.\d+$/.test(host))return null;
+    if(["localhost","local","lan","internal","home.arpa","test","invalid","example"].some(s=>host===s||host.endsWith("."+s)))return null;
+    if(host.split(".").some(label=>!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)))return null;
+    return u.href;
+  }catch{return null;}
+}
+function safeRSSFeed(value){
+  if(!value||typeof value!=="object"||!publicFeedURL(value.url))return null;
+  const title=typeof value.title==="string"?value.title.slice(0,72).trim():"";
+  const group=typeof value.group==="string"?value.group.slice(0,28).trim():"";
+  return {url:publicFeedURL(value.url),title:title||new URL(value.url).hostname,group:group||"GENERAL",enabled:value.enabled!==false};
+}
+function safeRSSPrefs(value){
+  const base={enabled:true,interval:30,feeds:[]};
+  if(!value||typeof value!=="object")return base;
+  const list=Array.isArray(value.feeds)?value.feeds:[],seen=new Set();
+  for(const item of list.slice(0,32)){
+    const feed=safeRSSFeed(item);
+    if(feed&&!seen.has(feed.url)){seen.add(feed.url);base.feeds.push(feed);}
+  }
+  return {enabled:value.enabled!==false,interval:[15,30,60,180,360].includes(value.interval)?value.interval:30,feeds:base.feeds};
+}
+function safeRSSCacheEntry(value){
+  if(!value||typeof value!=="object")return null;
+  const items=Array.isArray(value.items)?value.items.slice(0,36).map(x=>{
+    if(!x||typeof x.title!=="string"||typeof x.url!=="string"||x.url.length>2048)return null;
+    try{const u=new URL(x.url);if(!["https:","http:"].includes(u.protocol)||u.username||u.password)return null;}catch{return null;}
+    return {title:x.title.slice(0,240),url:x.url,date:Number.isFinite(x.date)?x.date:0};
+  }).filter(Boolean):[];
+  return {items,checkedAt:Number.isFinite(value.checkedAt)?value.checkedAt:0,attemptedAt:Number.isFinite(value.attemptedAt)?value.attemptedAt:0,error:typeof value.error==="string"?value.error.slice(0,150):""};
+}
+async function mutateRSS(message){
+  const stored=await browser.storage.local.get([RSS_PREFS_KEY,RSS_CACHE_KEY]);
+  const prefs=safeRSSPrefs(stored[RSS_PREFS_KEY]);
+  const cache={};
+  const oldCache=stored[RSS_CACHE_KEY];
+  if(oldCache&&typeof oldCache==="object"&&!Array.isArray(oldCache)){
+    for(const feed of prefs.feeds){const entry=safeRSSCacheEntry(oldCache[feed.url]);if(entry)cache[feed.url]=entry;}
+  }
+  let added=0;
+  const target=message.url;
+  if(message.action==="add"){
+    const f=safeRSSFeed(message.feed);
+    if(!f)throw Error("Invalid public HTTPS feed address.");
+    if(prefs.feeds.some(x=>x.url===f.url))throw Error("Already subscribed to this publication.");
+    if(prefs.feeds.length>=32)throw Error("Subscription limit reached.");
+    prefs.feeds.push(f);added=1;
+  }else if(message.action==="toggle"){
+    const f=prefs.feeds.find(x=>x.url===target);if(!f)throw Error("Subscription no longer exists.");
+    f.enabled=!f.enabled;
+  }else if(message.action==="edit"){
+    const f=prefs.feeds.find(x=>x.url===target);if(!f)throw Error("Subscription no longer exists.");
+    if(typeof message.title!=="string"||typeof message.group!=="string")throw Error("Invalid publication label.");
+    f.title=message.title.trim().slice(0,72)||f.title;f.group=message.group.trim().slice(0,28)||"GENERAL";
+  }else if(message.action==="remove"){
+    const index=prefs.feeds.findIndex(x=>x.url===target);
+    if(index<0)throw Error("Subscription no longer exists.");
+    prefs.feeds.splice(index,1);delete cache[target];
+  }else if(message.action==="import"){
+    if(!Array.isArray(message.feeds)||message.feeds.length>32)throw Error("Too many subscriptions.");
+    for(const raw of message.feeds){
+      const f=safeRSSFeed(raw);if(!f)continue;
+      if(prefs.feeds.some(x=>x.url===f.url))continue;
+      if(prefs.feeds.length>=32)break;
+      prefs.feeds.push(f);added++;
+    }
+  }else if(message.action==="replace"){
+    const raw=message.snapshot;
+    if(!raw||typeof raw!=="object"||!Array.isArray(raw.feeds)||raw.feeds.length>32||raw.feeds.some(x=>!safeRSSFeed(x)))throw Error("Invalid RSS import snapshot.");
+    const next=safeRSSPrefs(raw);prefs.enabled=next.enabled;prefs.interval=next.interval;prefs.feeds=next.feeds;
+    for(const url of Object.keys(cache))if(!prefs.feeds.some(x=>x.url===url))delete cache[url];
+  }else if(message.action==="config"){
+    if(message.enabled!==undefined)prefs.enabled=message.enabled!==false;
+    if(message.interval!==undefined){if(![15,30,60,180,360].includes(message.interval))throw Error("Invalid RSS refresh interval.");prefs.interval=message.interval;}
+  }else if(message.action==="cache"){
+    if(!prefs.feeds.some(x=>x.url===target))return {ok:true,prefs,cache,added};
+    const entry=safeRSSCacheEntry(message.entry);if(!entry)throw Error("Invalid feed cache update.");
+    cache[target]=entry;
+  }else throw Error("Unknown RSS operation.");
+  await browser.storage.local.set({[RSS_PREFS_KEY]:prefs,[RSS_CACHE_KEY]:cache});
+  return {ok:true,prefs,cache,added};
+}
 browser.runtime.onMessage.addListener(message=>{
-  if(!message||message.type!=="elfshell:sessions:mutate:v1")return undefined;
-  const operation=sessionsChain.then(()=>changeSavedSessions(message));
-  // Keep the chain alive after a rejected storage write so the next action can retry.
-  sessionsChain=operation.then(()=>undefined,()=>undefined);
-  return operation.catch(error=>({ok:false,error:error?.message||"Workspace storage unavailable."}));
+  if(!message||typeof message!=="object")return undefined;
+  if(message.type==="elfshell:sessions:mutate:v1"){
+    const operation=sessionsChain.then(()=>changeSavedSessions(message));
+    // Keep the chain alive after a rejected storage write so the next action can retry.
+    sessionsChain=operation.then(()=>undefined,()=>undefined);
+    return operation.catch(error=>({ok:false,error:error?.message||"Workspace storage unavailable."}));
+  }
+  if(message.type==="elfshell:recovery:mutate:v1"){
+    const operation=recoveryChain.then(()=>mutateRecovery(message));
+    recoveryChain=operation.then(()=>undefined,()=>undefined);
+    return operation.catch(error=>({ok:false,error:error?.message||"Recovery storage unavailable."}));
+  }
+  if(message.type==="elfshell:rss:mutate:v1"){
+    const operation=rssChain.then(()=>mutateRSS(message));
+    rssChain=operation.then(()=>undefined,()=>undefined);
+    return operation.catch(error=>({ok:false,error:error?.message||"RSS storage unavailable."}));
+  }
+  return undefined;
 });

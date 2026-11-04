@@ -2,7 +2,7 @@
 
 ELF//SHELL does not collect or transmit analytics, telemetry, crash reports, browsing history, page contents, or personal information to a developer-controlled server. It has no developer-controlled server. Scripts, styles, wallpaper and launcher images are included in the extension package.
 
-Firefox extension-local storage holds local notes, preferences, quick-link URLs, editable search templates and optionally saved sets of tab URLs. This storage is not encrypted. A JSON export includes this information. Users should avoid storing credentials or exporting private session URLs.
+Firefox extension-local storage holds local notes, preferences, quick-link URLs, editable search templates and optionally saved sets of tab URLs and duplicate-tab recovery URLs until reopened or manually cleared. These recovery URLs may contain private query parameters. This storage is not encrypted. A JSON export includes this information. Users should avoid storing credentials or exporting private session URLs.
 
 The extension requests the `theme`, `search` and `storage` permissions for its browser appearance, default-engine search and local settings. The `tabs`, `sessions`, `bookmarks` and `history` permissions are optional, explained in the interface and revocable. No remote host access is requested for content scripts. The optional `https://*/*` host permission is available solely so users can choose arbitrary HTTPS RSS or Substack publications, and access is requested at runtime for each exact feed domain before fetching. Rejecting permission prevents that feed from being fetched. Host permissions can be revoked in the NET FEED manager or Firefox settings.
 

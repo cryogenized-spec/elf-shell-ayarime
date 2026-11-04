@@ -34,6 +34,21 @@ let selected=0;
 let searchRevision=0;
 let lastClosedDuplicates=[];
 let reopeningDuplicates=false;
+const recoveryKey="elfshell-duplicate-recovery-v1";
+const recoveryMessageType="elfshell:recovery:mutate:v1";
+async function recoveryAction(action,details={}){
+  if(!ext)return {ok:true,entries:lastClosedDuplicates,added:[]};
+  if(!browser.runtime?.sendMessage)throw Error("Firefox recovery service unavailable.");
+  const response=await browser.runtime.sendMessage({type:recoveryMessageType,action,...details});
+  if(!response?.ok)throw Error(response?.error||"Recovery storage unavailable.");
+  lastClosedDuplicates=response.entries;
+  $("undo-duplicates").hidden=!lastClosedDuplicates.length;
+  return response;
+}
+async function refreshRecovery(){
+  try{await recoveryAction("list");}
+  catch(error){console.warn("ELF//SHELL: could not load recovery records",error);$("housekeeping-message").textContent="Recovery history unavailable: "+error.message;}
+}
 
 const validUrl=(url)=>{try{let u=new URL(url);return u.protocol==="https:"||u.protocol==="http:";}catch{return false;}};
 const cleanString=(v,max)=>typeof v==="string"?v.slice(0,max):"";
@@ -531,7 +546,7 @@ async function saveWorkspace(){
     $("sessions-message").textContent=`Saved ${urls.length} tabs locally. URLs may contain sensitive query parameters; export with care.`;
   }catch(err){console.error(err);$("sessions-message").textContent="Save failed: "+err.message+" Your workspace name is still here; retry when storage is available.";}
 }
-function showHousekeeping(){$("housekeeping-message").textContent="";$("housekeeping-dialog").showModal();}
+function showHousekeeping(){$("housekeeping-message").textContent="";$("housekeeping-dialog").showModal();refreshRecovery();}
 async function closeDuplicates(){
   if(!await hasPermission("tabs")){$("housekeeping-message").textContent="Enable Tabs permission in Browser Access first.";return;}
   try{
@@ -548,41 +563,58 @@ async function closeDuplicates(){
     }
     if(!ids.length){$("housekeeping-message").textContent="No safe duplicate tabs found.";return;}
     if(!confirm(`Close ${ids.length} background duplicate tab(s) in this window? Unsaved page content may be lost.`))return;
-    const chosen=tabs.filter(t=>ids.includes(t.id)).map(t=>({url:t.url,windowId:t.windowId,index:t.index}));
-    await browser.tabs.remove(ids);
-    // Append to the pending recovery list; never discard failures from an older cleanup.
-    lastClosedDuplicates.push(...chosen);
-    $("undo-duplicates").hidden=false;
-    $("housekeeping-message").textContent=`Closed ${ids.length} duplicate tabs; ${lastClosedDuplicates.length} address(es) available to reopen. Page state is not saved.`;
+    const chosen=tabs.filter(t=>ids.includes(t.id)).map(t=>({tabId:t.id,url:t.url,windowId:t.windowId,index:t.index}));
+    let closed=0;
+    for(const item of chosen){
+      // Reserve each recovery URL in storage BEFORE closing its tab. If a
+      // storage write fails, this tab remains open, never silently lost.
+      if(ext)await recoveryAction("append",{entries:[item]});
+      else{lastClosedDuplicates.push({...item,id:"preview-"+item.tabId});$("undo-duplicates").hidden=false;}
+      // Handle tabs individually: a failure partway through a batch must not
+      // prevent earlier successfully closed tabs from being recoverable.
+      try{await browser.tabs.remove([item.tabId]);closed++;}
+      catch(error){console.warn("Duplicate tab removal may not have completed",error);throw Error("A tab could not be closed; its recovery address has been kept in case it was removed. " + error.message);}
+    }
+    $("housekeeping-message").textContent=`Closed ${closed} duplicate tabs; ${lastClosedDuplicates.length} address(es) available to reopen after refresh or restart. Page state is not saved.`;
     await diagnostics();
   }catch(error){console.error(error);$("housekeeping-message").textContent="Duplicate cleanup failed.";}
 }
 async function reopenDuplicates(){
-  if(reopeningDuplicates||!lastClosedDuplicates.length)return;
+  if(reopeningDuplicates)return;
   reopeningDuplicates=true;
-  const pending=lastClosedDuplicates.slice(),failed=[];
-  // Reopening is best effort; preserve addresses that failed so the user can retry.
-  let recovered=0;
-  for(const item of pending){
-    try{
-      await browser.tabs.create({url:item.url,windowId:item.windowId,active:false,index:item.index});recovered++;
-    }catch{
-      try{await browser.tabs.create({url:item.url,active:false});recovered++;}
-      catch(error){console.error("Could not reopen duplicate URL",error);failed.push(item);}
+  let recovered=0,failed=0,bookkeepingErrors=0,pending=[];
+  try{
+    // Read latest persisted entries, including those added by other dashboards.
+    if(ext)await recoveryAction("list");
+    if(!lastClosedDuplicates.length)return;
+    pending=lastClosedDuplicates.slice();
+    for(const item of pending){
+      let reopened=false;
+      try{await browser.tabs.create({url:item.url,windowId:item.windowId,active:false,index:item.index});reopened=true;}
+      catch{
+        try{await browser.tabs.create({url:item.url,active:false});reopened=true;}
+        catch(error){console.error("Could not reopen duplicate URL",error);failed++;}
+      }
+      if(reopened){
+        recovered++;
+        try{
+          if(ext)await recoveryAction("complete",{ids:[item.id]});
+          else{const index=lastClosedDuplicates.findIndex(x=>x.id===item.id);if(index>=0)lastClosedDuplicates.splice(index,1);}
+        }catch(error){bookkeepingErrors++;console.error("Recovery record remains after tab reopened",error);}
+      }
     }
-  }
-  // A second cleanup may append entries while awaits above are pending.
-  // Delete only entries successfully reopened from the LIVE queue; do not
-  // replace the queue with an earlier snapshot, losing newly closed tabs.
-  const successful=pending.filter(item=>!failed.includes(item));
-  for(const item of successful){
-    const index=lastClosedDuplicates.indexOf(item);
-    if(index>=0)lastClosedDuplicates.splice(index,1);
-  }
-  $("undo-duplicates").hidden=lastClosedDuplicates.length===0;
-  $("housekeeping-message").textContent=`Reopened ${recovered} of ${pending.length} addresses.${lastClosedDuplicates.length?" "+lastClosedDuplicates.length+" address(es) remain available to reopen.":""} Unsaved page contents cannot be restored by this action.`;
-  reopeningDuplicates=false;
-  await diagnostics();
+    if(ext)await recoveryAction("list");
+    $("undo-duplicates").hidden=lastClosedDuplicates.length===0;
+    $("housekeeping-message").textContent=`Reopened ${recovered} of ${pending.length} addresses.${lastClosedDuplicates.length?" "+lastClosedDuplicates.length+" address(es) remain available to reopen.":""}${bookkeepingErrors?" Recovery bookkeeping failed for "+bookkeepingErrors+" opened address(es); verify tabs before retrying.":""} Unsaved page contents cannot be restored.`;
+  }catch(error){console.error(error);$("housekeeping-message").textContent="Recovery could not complete: "+error.message+". No pending addresses were intentionally deleted.";}
+  finally{reopeningDuplicates=false;await diagnostics();}
+}
+async function clearDuplicateRecovery(){
+  if(!lastClosedDuplicates.length)return;
+  if(!confirm(`Permanently discard ${lastClosedDuplicates.length} locally saved recovery address(es)? No tabs will be reopened.`))return;
+  try{if(ext)await recoveryAction("clear");else lastClosedDuplicates=[];
+    $("undo-duplicates").hidden=true;$("housekeeping-message").textContent="Recovery addresses cleared from local storage.";
+  }catch(error){$("housekeeping-message").textContent="Could not clear recovery addresses: "+error.message;}
 }
 async function discardIdle(){
   if(!await hasPermission("tabs")){$("housekeeping-message").textContent="Enable Tabs permission in Browser Access first.";return;}
@@ -616,7 +648,7 @@ async function init(){
     state=cleanWorkspace(updated)||base;
   }catch(error){console.warn("ELF//SHELL: could not load local configuration",error);}
   $("focus-input").value=state.focus;$("note-input").value=state.note;
-  renderLinks();applyAppearance();renderClock();diagnostics();refreshAccessButtons();
+  renderLinks();applyAppearance();renderClock();diagnostics();refreshAccessButtons();refreshRecovery();
   setInterval(renderClock,15000);setInterval(diagnostics,30000);
 }
 
@@ -654,6 +686,7 @@ $("housekeeping-toggle").addEventListener("click",showHousekeeping);
 $("close-housekeeping").addEventListener("click",()=>$("housekeeping-dialog").close());
 $("close-duplicates").addEventListener("click",closeDuplicates);
 $("undo-duplicates").addEventListener("click",reopenDuplicates);
+$("clear-duplicate-recovery").addEventListener("click",clearDuplicateRecovery);
 $("discard-inactive").addEventListener("click",discardIdle);
 $("notes-toggle").addEventListener("click",()=>{$("focus-editor").value=state.focus;$("note-editor").value=state.note;$("notes-dialog").showModal();});
 $("close-notes").addEventListener("click",()=>$("notes-dialog").close());
@@ -688,6 +721,12 @@ if(ext){try{
   browser.tabs?.onRemoved?.addListener(diagnostics);
   browser.sessions?.onChanged?.addListener(loadRecents);
   browser.storage?.onChanged?.addListener(applyWorkspaceStorageChanges);
+  browser.storage?.onChanged?.addListener((changes,area)=>{
+    if(area!=="local"||!changes[recoveryKey])return;
+    // The authoritative queue lives in the extension background script.
+    // Refresh it rather than using another dashboard's stale snapshot.
+    refreshRecovery();
+  });
 }catch(error){console.warn("Optional live events not available",error);}}
 else window.addEventListener("storage",event=>{
   if(!event.key?.startsWith(`${dataKey}:field:`) || event.newValue===null)return;

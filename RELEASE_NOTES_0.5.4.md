@@ -7,7 +7,7 @@ This is not a signed or stable extension release.
 - Report failed note writes as **SAVE ERROR** instead of mistakenly showing a save confirmation.
 - Extend the mock-Firefox regression suite for these cases.
 
-Still outstanding before public v1.0: real Firefox 142+ integration testing (host permission grant/deny/revoke, sessions, tabs, RSS, search and theme), successful Mozilla web-ext lint, AMO signing and signed add-on restart tests.
+Still outstanding before public v1.0: real Firefox 142+ integration testing (host permission grant/deny/revoke, sessions, tabs, RSS, search and theme), AMO signing and signed add-on restart tests. GitHub Actions Mozilla `web-ext lint --warnings-as-errors` has passed on the candidate.
 
 ### CI compatibility correction
 
@@ -30,3 +30,14 @@ GitHub Actions Mozilla lint passed after the Firefox 142 minimum-version compati
 - Added `tests/session_races.cjs` and an in-flight reopen scenario in mock Firefox QA. These checks simulate simultaneous dashboard actions, storage rejection and retry, import replacement and the tab-recovery timing race.
 
 All GitHub CI results must be checked on the new commit. This is still a **release candidate**, not an installed or signed Firefox extension.
+
+### GitHub Issue #2 — Claude's Observation (source fixes)
+
+- Public HTTPS RSS validation now rejects dotless hostnames, trailing-dot FQDNs, `.lan`, `.internal`, `.home.arpa`, `.local`, `.localhost`, and reserved `.test`/`.invalid`/`.example` suffixes. IPv4 literal spellings, including browser-normalized shorthand and hexadecimal notation, remain rejected. Each feed still needs an explicit per-site Firefox permission grant.
+- The RSS XML parser only accepts the appropriate RSS/RDF `<link>` for RSS entries; an `<atom:link>` extension does not impersonate an RSS article link. Missing or self-only Atom article URLs are not substituted with the feed URL.
+- Subscription rows render into a detached fragment. A generation counter discards out-of-order asynchronous permission-check results, preventing duplicated rows after overlapping renders.
+- Feed subscriptions, enabled state, groups, refresh interval, imports and per-feed cache updates are serialized in the Firefox background script. Concurrent changes across multiple new-tab dashboards merge rather than replacing stale whole-object snapshots. Removed publications cannot be revived by in-flight cache updates.
+- Duplicate-tab recovery records are now stored, without encryption, in `browser.storage.local` and handled by a second serialized background queue. Every URL is reserved *before* its tab is closed, an unsuccessful local-storage write prevents that tab from being closed, and each successfully reopened URL is acknowledged individually. The recovery queue survives navigation and browser restarts and can be explicitly cleared. URLs may contain sensitive query parameters.
+- Added `tests/recovery_persistence.cjs`, `tests/rss_concurrency.cjs`, and browser-side `tests/rss_render_qa.py`. Expanded the static, URL, privacy and mock-Firefox checks. These do not replace live Firefox permission, RSS, and signing acceptance tests.
+
+Source review and automated validation are still distinct from the **native Firefox 142+** release gate. Import of a multi-component settings backup can still report `Import incomplete` if one later component fails; backup restoration is not an all-or-nothing transaction.

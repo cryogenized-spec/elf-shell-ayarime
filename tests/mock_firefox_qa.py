@@ -12,7 +12,7 @@ with sync_playwright() as p:
     page.set_content(html)
     mock='''(() => {
       const local={};let origins=['https://example.org/*'];
-      window.__mock={closed:[],created:[],removed:[],discarded:[],grants:()=>origins,addTab:tab=>tabs.push(tab)};
+      window.__mock={closed:[],created:[],removed:[],discarded:[],grants:()=>origins,addTab:tab=>tabs.push(tab),localStorage:local};
       let tabs=[{id:101,url:'https://example.org/abc',active:true,pinned:false,audible:false,incognito:false,windowId:1,index:0},
                 {id:102,url:'https://example.org/abc',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:1},
                 {id:103,url:'https://example.org/other',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:2},
@@ -43,6 +43,12 @@ with sync_playwright() as p:
     page.locator('#close-access').click()
     page.locator('#station-menu summary').click()
     page.locator('#housekeeping-toggle').click()
+    # A recovery reservation must succeed before any tab is removed.
+    page.evaluate("() => {window.__savedSet=window.browser.storage.local.set;window.browser.storage.local.set=async()=>{throw Error('simulated recovery disk failure')};}")
+    page.locator('#close-duplicates').click()
+    page.wait_for_timeout(80)
+    assert page.evaluate('window.__mock.removed.length')==0, 'never close a tab when the recovery record cannot be stored'
+    page.evaluate('() => {window.browser.storage.local.set=window.__savedSet;}')
     page.locator('#close-duplicates').click()
     assert page.evaluate('window.__mock.removed.join(",")')=='102', 'only same-window duplicates may be removed'
     assert page.locator('#undo-duplicates').is_visible()

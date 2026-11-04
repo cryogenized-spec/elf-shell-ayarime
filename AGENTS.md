@@ -12,3 +12,6 @@ Treat feed XML, titles, links and imported OPML as untrusted. Use DOMParser and 
 
 ### Storage and release integrity
 Local notes and browser state are unencrypted; avoid claiming otherwise. Never report a successful save if the storage write fails. Preserve the extension's stable Firefox ID and storage keys on upgrade, and do not claim real-Firefox verification from Chromium or mocks.
+
+
+Issue #2 review priorities: reject local/reserved RSS hostnames including dotted `localhost.`, atom namespace links cannot impersonate RSS item links, generation-guard async feed renders, background-serialize subscription/cache changes across dashboard instances, and reserve duplicate-recovery addresses in unencrypted local storage *before* closing tabs. Check failed browser-storage writes and explicit recovery-history clearing. Native Firefox confirmation remains mandatory before release.

@@ -155,8 +155,9 @@
     <h2 id="housekeeping-title">// TAB HOUSEKEEPING</h2>
     <p>All actions are manual, require confirmation, and preserve your active or pinned tabs.</p>
     <div class="housekeeping-actions"><button id="close-duplicates" type="button">CLOSE DUPLICATES IN THIS WINDOW</button><button id="discard-inactive" type="button">DISCARD IDLE TABS IN THIS WINDOW (30+ MIN)</button></div>
-    <button id="undo-duplicates" class="undo-duplicates" type="button" hidden>REOPEN JUST-CLOSED DUPLICATE URLS</button>
-    <p class="quiet">Reopen restores addresses only, not unsaved form contents or full page state. Use Firefox's Recently Closed panel if available for fuller session recovery.</p>
+    <button id="undo-duplicates" class="undo-duplicates" type="button" hidden>REOPEN SAVED DUPLICATE URLS</button>
+    <button id="clear-duplicate-recovery" type="button">CLEAR RECOVERY HISTORY</button>
+    <p class="quiet">Recovery addresses persist locally without encryption until reopened or cleared, and may contain sensitive URL parameters. Reopening restores addresses only, not unsaved form contents. Use Firefox's Recently Closed panel if available for fuller session recovery.</p>
     <p class="quiet">Discarding unloads background pages to save memory; tabs reopen when selected. Pages with unsaved data may prevent closing or discarding.</p>
     <p id="housekeeping-message" class="message" role="status"></p>
     <div class="dialog-actions"><button type="button" id="close-housekeeping">CLOSE</button></div>

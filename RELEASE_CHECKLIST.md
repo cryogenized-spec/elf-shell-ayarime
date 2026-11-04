@@ -9,7 +9,8 @@
 - [ ] Run Mozilla `web-ext lint` and review any reported warnings.
 - [ ] Verify `browser.search.search` and default search functionality.
 - [x] Public repository `cryogenized-spec/elf-shell-ayarime` created by project owner.
-- [ ] Open a public release-review PR and explicitly request Codex review; address review findings and rerun checks before merge.
+- [x] Open a public release-review PR and explicitly request Codex review (PR #1).
+- [ ] Address all remaining Codex findings and rerun checks before merge.
 - [ ] Add authentic Firefox screenshots, descriptions, privacy disclosure and icon to Mozilla Add-ons Developer Hub.
 - [ ] Obtain Mozilla signing; test a signed distribution.
 - [ ] Publish the first stable version with clear licence terms for code and artwork.
@@ -53,3 +54,14 @@
 - [x] Add automated regressions for both cross-tab workspace mutations and in-flight duplicate recovery.
 - [ ] Confirm GitHub Actions and a fresh Codex review on the updated commit, then resolve or document outstanding findings.
 - [ ] Real Firefox 142+ temporary extension tests on a disposable profile, including optional grants, sessions, restart persistence, RSS and dynamic browser theme.
+
+### Issue #2 follow-up review
+
+- [x] Validate unsafe/local RSS hostname spellings and correct RSS/Atom story links.
+- [x] Prevent concurrent subscription renders from appending duplicate rows.
+- [x] Serialize RSS subscription, import and cache mutations across open dashboards.
+- [x] Store duplicate-recovery URLs before closing each tab; persist until reopened or cleared.
+- [x] Add true restart and concurrent-edit simulations for feed and recovery storage.
+- [x] Run the Node tests, simulated Firefox interactions, Chromium XML parser and responsive UI checks.
+- [ ] Have Codex review the issue #2 patch and address any new findings.
+- [ ] Validate grant/revoke, real-world RSS, workspace and recovery after restart in Firefox 142+.

@@ -299,8 +299,8 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,2.85vw,54px)
 .permission-host-list{display:grid;gap:8px;}
 .permission-host-row{display:flex;gap:12px;justify-content:space-between;align-items:center;background:#202b3b9c;padding:8px 9px;border-left:2px solid #8caeb7;}
 .permission-host-row span{overflow-wrap:anywhere;font:11px ui-monospace,monospace;color:#ddebf1;}
-.permission-host-row button,.undo-duplicates{background:#353042;color:#f7eaf4;border:1px solid #a17c9b;padding:9px 12px;cursor:pointer;font:10px ui-monospace,monospace;}
-.permission-host-row button:hover,.undo-duplicates:hover{border-color:#d5efa4;background:#543d55;}
+.permission-host-row button,.undo-duplicates,#clear-duplicate-recovery{background:#353042;color:#f7eaf4;border:1px solid #a17c9b;padding:9px 12px;cursor:pointer;font:10px ui-monospace,monospace;}
+.permission-host-row button:hover,.undo-duplicates:hover,#clear-duplicate-recovery:hover{border-color:#d5efa4;background:#543d55;}
 .undo-duplicates:not([hidden]){display:block;width:100%;margin:4px 0 10px;}
 @media(max-width:760px){
   .coordinates{margin-bottom:17px;}
@@ -312,3 +312,5 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,2.85vw,54px)
   .station-menu summary{min-width:204px;padding:9px 16px;}
   .station-menu .center-actions{grid-template-columns:1fr;max-height:52vh;overflow-y:auto;min-width:min(305px,90vw);}
 }
+
+#clear-duplicate-recovery{display:block;width:100%;margin:3px 0 12px;opacity:.84;}

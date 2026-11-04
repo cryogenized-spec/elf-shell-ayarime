@@ -1,4 +1,4 @@
-# ELF//SHELL — v0.5.1 release-acceptance tests
+# ELF//SHELL — v0.5.4 release-acceptance tests
 
 Do **not** test tab deletion/discarding with irreplaceable work or unsaved forms. Use a separate Firefox profile or harmless example tabs. The source tests are automated; the following items require a real Firefox **142+** installation.
 
@@ -26,14 +26,20 @@ Do **not** test tab deletion/discarding with irreplaceable work or unsaved forms
 
 ## D. Sessions and safety
 
-14. Create harmless duplicate tabs and tabs with different URL fragments (`https://example.com/#a` vs `https://example.com/#b`). Duplicate cleanup must not close the fragment-distinct tab. A confirmation must appear before any removal. Exercise discarded-tab commands only on throwaway tabs.
-15. Save a named workspace, restore it, and confirm private/incognito or internal Firefox pages were not captured. Test restoring a recently closed tab. Confirm tabs are not opened automatically when the extension first starts.
+14. Create harmless duplicate tabs and tabs with different URL fragments (`https://example.com/#a` vs `https://example.com/#b`). Duplicate cleanup must not close the fragment-distinct tab. A confirmation must appear before any removal. Verify that a new duplicate cleanup while an earlier recovery is pending does not erase either set of recoverable URLs. Exercise discarded-tab commands only on throwaway tabs.
+15. Save a named workspace, restore it, and confirm private/incognito or internal Firefox pages were not captured. Open two new-tab dashboards and save distinct workspaces simultaneously; both must remain saved after reload. Test saving one while deleting another; the delete must not be undone. Test restoring a recently closed tab. Confirm tabs are not opened automatically when the extension first starts. In the same test profile, confirm pre-v0.5.4 session sets are preserved on first use.
 
 ## E. Production release gates
 
 16. Run `npm test`, then `python3 scripts/package.py`, then `npx --yes web-ext@10.8.0 lint --source-dir dist/amo --warnings-as-errors` on a machine with npm network access. All checks must be green before the Mozilla submission.
-17. Upload `dist/ELF-SHELL-Ayarime-v0.5.1-AMO.zip` to [Mozilla Add-ons Developer Hub](https://addons.mozilla.org/developers/). Select public **On this site** distribution if ready. Check privacy declarations and other listing questions carefully.
+17. Upload `dist/ELF-SHELL-Ayarime-v0.5.4-AMO.zip` to [Mozilla Add-ons Developer Hub](https://addons.mozilla.org/developers/). Select public **On this site** distribution if ready. Check privacy declarations and other listing questions carefully.
 18. Mozilla must sign the extension. Install the signed XPI, restart Firefox, check that the extension persists, and re-run the important privacy, search, note, RSS, theme and restart tests.
 19. Release only after Mozilla review and after verifying the signed package. Record Firefox version, date, test results, and any remaining known issues in the GitHub release notes.
 
-**Release label until step 19 succeeds:** v0.5.1 release candidate. Do not claim full production stability based solely on Node syntax tests or a static ZIP check.
+**Release label until step 19 succeeds:** v0.5.4 release candidate. Do not claim full production stability based solely on Node syntax tests or a static ZIP check.
+
+## Issue #2 acceptance: persistent recovery and RSS cross-tab changes
+
+On a disposable Firefox 142+ profile, install the current release-candidate branch temporarily and open two dashboard/new-tab pages. In one, subscribe to a known public HTTPS RSS/Atom feed and explicitly allow only its site; verify the other dashboard reflects the new feed without losing any existing subscriptions. Repeat with another feed, a feed removal and a denied host permission. Confirm the grant ledger displays precisely the accepted hosts. Never use private/intranet feed URLs as test destinations.
+
+Open two duplicate throwaway tabs in the same window, run a confirmed duplicate cleanup, and observe the saved recovery button. Close the dashboard, open another new tab (and later restart Firefox with a signed build), and verify the queue remains available. Reopen the URLs, verify the queue empties, repeat once using the explicit CLEAR RECOVERY HISTORY control. Note that these records are local and unencrypted; use test-only URLs, not authenticated services. Finally confirm a manually denied or failed storage write never results in the underlying tab being closed without a recovery reservation.
