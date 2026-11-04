@@ -16,12 +16,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # Match Mozilla AMO's published reviewer environment (Node 24).
+          node-version: '24.14.0'
       - name: Source and behaviour tests
         run: npm test
+      - name: Verify locked source reproduces the shipped spelling bundle
+        run: npm run verify:spelling
       - name: Build AMO submission candidate
         run: python3 scripts/package.py
       - name: Mozilla Add-ons validation
         run: npx --yes web-ext@10.8.0 lint --source-dir dist/amo --warnings-as-errors
       - name: Check release package contents
         run: python3 scripts/package.py --verify-only
+      - name: Assemble Mozilla reviewer source archive
+        run: npm run package:amo:source
+      - name: Verify reviewer source excludes untracked files and rebuilds without Git
+        run: python3 tests/source_archive_safety.py

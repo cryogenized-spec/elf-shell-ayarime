@@ -45,10 +45,14 @@ receive the script automatically.
 
 ## Third-party resources
 
-- `nspell-bundle.js`: browserified MIT-licensed nspell by Titus Wormer.
-  Licensed under `NSPELL-LICENSE.txt`; the bundle was sourced from
-  [Melker/Spell-Checker](https://github.com/melker12345/Spell-Checker)
-  and must be reviewed against the upstream nspell source before a release.
+- `nspell-bundle.js`: MIT-licensed nspell 2.1.5 by Titus Wormer,
+  built with Browserify 17.0.1 and the upstream transitive `is-buffer`
+  dependency. Source entry point, original pinned npm lockfile,
+  exact upstream commit and reproducibility instructions are provided in
+  [vendor/README.md](vendor/README.md). Runtime licence notices are
+  `NSPELL-LICENSE.txt` and `IS-BUFFER-LICENSE.txt`. Run
+  `npm run verify:spelling` to enforce a byte-for-byte rebuild; if it
+  fails, the extension is **not ready for AMO**.
 - `en.aff` and `en.dic`: British English dictionary from
   [wooorm/dictionaries](https://github.com/wooorm/dictionaries/tree/main/dictionaries/en-GB).
   Licensing and attribution are preserved verbatim in
@@ -56,7 +60,7 @@ receive the script automatically.
 
 ## Developer checks
 
-Run `npm test` and `python3 scripts/package.py`. The package includes
+Run `npm test`, `npm run verify:spelling`, and `python3 scripts/package.py`. The package includes
 all files under `spelling/`. Native Firefox verification is still required
 and release PR #1 remains separate.
 
