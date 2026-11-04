@@ -49,8 +49,8 @@ receive the script automatically.
   Licensed under `NSPELL-LICENSE.txt`; the bundle was sourced from
   [Melker/Spell-Checker](https://github.com/melker12345/Spell-Checker)
   and must be reviewed against the upstream nspell source before a release.
-- `en.aff` and `en.dic`: English dictionary from
-  [wooorm/dictionaries](https://github.com/wooorm/dictionaries/tree/main/dictionaries/en).
+- `en.aff` and `en.dic`: British English dictionary from
+  [wooorm/dictionaries](https://github.com/wooorm/dictionaries/tree/main/dictionaries/en-GB).
   Licensing and attribution are preserved verbatim in
   `DICTIONARY-LICENSE.txt` (MIT AND BSD).
 
