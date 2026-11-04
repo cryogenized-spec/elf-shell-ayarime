@@ -220,13 +220,22 @@ async function mutateRSS(message){
     if(!prefs.feeds.some(x=>x.url===target))return {ok:true,prefs,cache,added};
     const entry=safeRSSCacheEntry(message.entry);if(!entry)throw Error("Invalid feed cache update.");
     const previous=cache[target];
-    // A delayed request from another dashboard cannot replace more recent
-    // headlines or timestamps. Failed refreshes may update the attempt/error
-    // metadata but must retain newer, successfully checked article content.
-    if(!previous||entry.attemptedAt>previous.attemptedAt){
-      cache[target]=(previous&&entry.checkedAt<previous.checkedAt)
-        ?{...entry,items:previous.items,checkedAt:previous.checkedAt}
-        :entry;
+    // Successes and attempts are independent timelines. A delayed *successful*
+    // batch may contain newer checked headlines even if a later failed attempt
+    // has already persisted its error/attempt timestamp. Merge each timeline
+    // independently: errors must not suppress newer successful article data.
+    if(!previous)cache[target]=entry;
+    else{
+      const contentIsNewer=entry.checkedAt>previous.checkedAt;
+      const attemptIsNewer=entry.attemptedAt>previous.attemptedAt;
+      if(contentIsNewer||attemptIsNewer){
+        cache[target]={
+          items:contentIsNewer?entry.items:previous.items,
+          checkedAt:contentIsNewer?entry.checkedAt:previous.checkedAt,
+          attemptedAt:attemptIsNewer?entry.attemptedAt:previous.attemptedAt,
+          error:attemptIsNewer?entry.error:previous.error
+        };
+      }
     }
   }else throw Error("Unknown RSS operation.");
   await browser.storage.local.set({[RSS_PREFS_KEY]:prefs,[RSS_CACHE_KEY]:cache});

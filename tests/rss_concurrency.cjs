@@ -41,6 +41,19 @@ const item=url=>({items:[{title:'Article',url,date:Date.now()}],checkedAt:Date.n
  await req('cache',{url:b,entry:failedEntry});
  assert.equal(data[cacheKey][b].items[0].url,'https://beta.org/new-headlines','failed refresh must retain newer cached articles');
  assert.equal(data[cacheKey][b].error,'Timeout');
+ // Codex P2: a success fetched at T200 may be persisted after a failed
+ // refresh at T300. The successful headlines are still fresher than cached
+ // T100 content, even though the error/attempt metadata at T300 wins.
+ const successfulAt200={...item('https://beta.org/success-at-200'),checkedAt:baseline+50,attemptedAt:baseline+50,error:''};
+ const laterFailedAt300={...item('https://beta.org/stale-at-100'),checkedAt:baseline+25,attemptedAt:baseline+80,error:'Gateway timeout'};
+ const first=await req('cache',{url:b,entry:laterFailedAt300});
+ const second=await req('cache',{url:b,entry:successfulAt200});
+ assert(first.ok&&second.ok,'both writes are valid even when delivered in reverse');
+ assert.equal(data[cacheKey][b].items[0].url,'https://beta.org/success-at-200','late successful content must supersede older articles');
+ assert.equal(data[cacheKey][b].checkedAt,baseline+50,'successful content carries its own newest checkedAt');
+ assert.equal(data[cacheKey][b].attemptedAt,baseline+80,'later attempt status remains newest');
+ assert.equal(data[cacheKey][b].error,'Gateway timeout','most recent attempted refresh still reports its error');
+
 
  const [remove,add]=await Promise.all([req('remove',{url:a}),req('add',{feed:feed(c)})]);
  assert.equal(remove.ok,true);assert.equal(add.ok,true);

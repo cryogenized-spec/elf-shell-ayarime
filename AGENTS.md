@@ -18,3 +18,5 @@ Issue #2 review priorities: reject local/reserved RSS hostnames including dotted
 
 ### Additional cache and tab race safety
 Do not replay every RSS cache entry when only one feed changed; send only changed records and protect successful headlines from older background writes. After any async recovery reservation, recheck the actual browser tab URL/window/protected status before closing it. Tests must simulate tab navigation and window moves while storage is pending.
+
+For RSS cache reviews, compare successful article revisions by `checkedAt`, not solely by `attemptedAt`; a later failed attempt must never block a delayed successful batch with newer checked headlines.

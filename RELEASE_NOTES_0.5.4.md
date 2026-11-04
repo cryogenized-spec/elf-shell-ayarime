@@ -49,3 +49,9 @@ Source review and automated validation are still distinct from the **native Fire
 - Expanded tests for stale RSS writes, failed-refresh item preservation, changed-only dashboard cache writes, and a tab navigating/moving mid-cleanup.
 
 These changes are source fixes pending GitHub CI and Codex's follow-up review. Firefox-native acceptance and AMO signing remain **not complete**.
+
+### Codex follow-up: late success after a more recent failed RSS attempt
+
+RSS cache updates now merge **successful article content** using `checkedAt`, independently of `attemptedAt` and the most recent error. A delayed successful response with newer headlines can no longer be thrown away merely because a later failed request wrote an error first. The latest attempt metadata remains truthful. The reverse-order case is exercised by `tests/rss_concurrency.cjs`.
+
+The source and CI checks do not replace native Firefox tests.

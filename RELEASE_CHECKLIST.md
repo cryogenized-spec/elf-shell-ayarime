@@ -74,3 +74,9 @@
 - [x] Add simulated race tests for in-flight navigation, window moves and stale RSS cache writes.
 - [ ] Confirm GitHub Actions and a fresh Codex review on the updated review branch.
 - [ ] Complete native Firefox 142+ permissions, RSS, sessions, recovery and dynamic theme checks.
+
+### Codex review of `be8f5de`: independent RSS cache timelines
+
+- [x] Merge `checkedAt`-qualified successful content separately from last `attemptedAt` / `error`.
+- [x] Test the specific inverse-order race: failed T300 is persisted before a newer successful T200 batch.
+- [ ] Confirm GitHub CI and Codex re-review on this fix.
