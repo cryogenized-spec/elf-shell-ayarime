@@ -16,7 +16,7 @@ for(const state of states){
     assert.equal(bytes.readUInt32BE(16),size,asset+" width");
     assert.equal(bytes.readUInt32BE(20),size,asset+" height");
     assert.equal(bytes[25],6,asset+" must be RGBA");
-    if(size===48)assert(css.includes(asset),asset+" missing from CSS");
+    if(size===48)assert((state==="pointer"?js:css).includes(asset),asset+" not referenced by cursor implementation");
   }
   const demo=state==="ibeam"?"text":state==="pointer"?"default":state;
   assert(html.includes('data-cursor-state="'+demo+'"'),state+" preview missing");
