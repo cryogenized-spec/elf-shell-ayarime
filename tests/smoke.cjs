@@ -52,6 +52,6 @@ assert(!/fetch\s*\(/.test(code),'main module does not fetch');
 assert(/credentials:"omit"/.test(feedsCode),'feed requests omit site credentials');
 assert(/permissions\.request\(\{origins:/.test(feedsCode),'feed access must be requested per domain');
 assert(!/https?:\/\/[^'"\s]+\.(?:js|css|woff|ttf)\b/.test(dom+code),'no remote scripts/styles/fonts');
-assert(code.includes('const key=t.url; // A fragment'),'exact fragment-safe duplicate-tab matching');
+assert(code.includes('groups.has(tab.url)')&&code.includes('groups.get(tab.url).push(tab)'),'exact fragment-safe duplicate-tab matching');
 assert(code.includes('$("search-input").value="";endPalette();'),'escape clears the search field');
 console.log(`ELF//SHELL v0.5.4: all smoke tests passed (${icons.length} icons, manifest, DOM, math, commands, search templates, migration and privacy).`);
