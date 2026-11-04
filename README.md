@@ -182,5 +182,13 @@ See [spelling/README.md](spelling/README.md) for limitations and testing.
 
 ELF//SHELL also coordinates sidebar, popup, and inactive-window colours and
 requests dark-colour browser chrome. Native Linux Mint window themes and
-system pointers are outside WebExtension control. The proposed optional
-spearhead cursor is a separate design concept, not part of the draft build.
+system pointers are outside WebExtension control.
+
+The feature branch also includes **six optional Ayarime pointer designs**
+derived from the original Classic Spearhead / Crystal-Tech Shard / Elven
+Feather / Hollow Frame / Rune-Edged / Minimal Precision concept sheet.
+Open **Station Configuration → Pointer Design** to select one, or retain
+**System Default** (the initial setting). Cursor art applies **only to the
+ELF//SHELL new-tab dashboard**, never the operating system or other websites.
+See [the cursor gallery](assets/cursors/README.md) for previews, asset details,
+and native Firefox QA limitations.
