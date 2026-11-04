@@ -19,10 +19,10 @@ for(const name of variants){
   assert(page.includes('src="'+pathName+'"'),name+" image preview missing");
 }
 assert(page.includes('name="cursor-choice" value="system" checked'),"custom cursor must be opt-in");
-assert(js.includes('"cursor","bangs"'),"cursor must have a separate persisted workspace field");
+assert(/const workspaceFields=\[[^\]]*"cursor"[^\]]*"typography"[^\]]*\]/.test(js),"cursor must have a separate persisted workspace field");
 assert(js.includes('const cleanCursor=value=>'),"imported cursor values need strict allowlisting");
 assert(js.includes('document.body.style.setProperty("--elf-custom-cursor"'),"cursor must be applied only from allowlist");
-assert(js.includes('persist(["links","bangs","motion","contrast","cursor"])'),"cursor setting must persist with other settings");
+assert(js.includes('persist(["links","bangs","motion","contrast","cursor","typography"])'),"cursor setting must persist with typography and other settings");
 assert(css.includes('body[data-cursor]:not([data-cursor="system"])'),"cursor must remain opt-in");
 assert(css.includes("cursor:text;"),"editing text must retain I-beam caret");
 const pure=js.slice(0,js.indexOf('$("search-form").addEventListener'));
