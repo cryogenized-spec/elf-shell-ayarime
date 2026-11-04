@@ -8,7 +8,8 @@
     "lint:firefox": "web-ext lint --source-dir . --warnings-as-errors",
     "package:amo": "python3 scripts/package.py",
     "verify:spelling": "node scripts/verify-spelling.cjs",
-    "build-for-amo": "npm run verify:spelling && npm run package:amo"
+    "build-for-amo": "npm run verify:spelling && npm run package:amo",
+    "package:amo:source": "python3 scripts/package_source.py"
   },
   "license": "MPL-2.0"
 }
