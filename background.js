@@ -143,7 +143,17 @@ async function mutateRecovery(message){
     try{
       const live=await browser.tabs.get(item.tabId);
       const currentPeers=await browser.tabs.query({windowId:item.windowId});
-      if(!eligibleDuplicate(live,item,currentPeers)){
+      // The target itself must also appear, unchanged and eligible, in
+      // the FINAL query result. A tab can navigate or change windows while
+      // the query is pending, making the earlier tabs.get snapshot stale.
+      const queriedTarget=currentPeers.find(tab=>tab.id===item.tabId);
+      // One final read narrows the remaining query-to-removal race. Firefox
+      // has no conditional remove-by-id-and-URL API, so no check can make
+      // removal fully atomic with unrelated browser navigation.
+      const finalTarget=await browser.tabs.get(item.tabId);
+      if(!eligibleDuplicate(live,item,currentPeers)||
+         !eligibleDuplicate(queriedTarget,item,currentPeers)||
+         !eligibleDuplicate(finalTarget,item,currentPeers)){
         // Changed or protected while we saved the URL: never close it.
         // If discarding the unused record fails, retain the harmless entry.
         try{

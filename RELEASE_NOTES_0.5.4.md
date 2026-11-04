@@ -57,3 +57,5 @@ RSS cache updates now merge **successful article content** using `checkedAt`, in
 The source and CI checks do not replace native Firefox tests.
 
 - Recovery clear/close race hardening: the background now serialises durable recovery reservation, tab revalidation and tab removal as one operation. History clearing targets explicitly confirmed IDs; concurrent tab closure cannot lose its recovery URL. Added an overlapping clear/close regression test.
+
+- **Codex P1 final-query race:** Duplicate cleanup now checks the selected tab in the last `tabs.query()` snapshot and performs one more `tabs.get()` check before calling `tabs.remove()`. Regression tests change target URL, window, active/pinned state during the final query and after it. Browser tab removal has no atomic URL-conditional variant, so this is a best-effort safety check rather than a guarantee against changes after the final read.

@@ -87,5 +87,51 @@ function launchBackground(){
  assert.equal(unqualifiedClear.ok,false,'unqualified clear is unsafe');
  const cleared=await send({action:'clear',ids:storage[key].map(x=>x.id)});
  assert.equal(cleared.ok,true);assert.equal(storage[key].length,0);
- console.log('Recovery persistence QA PASS: durable reservations, restart, write failures, and concurrent clear/close safety.');
+ // Codex P1: the target can navigate / move / become active while the
+ // final query is pending. The old tabs.get snapshot must not authorize
+ // closing a changed tab, even if another tab still has the old URL.
+ const originalQuery=browser.tabs.query;
+ const savedGet=browser.tabs.get;
+ for(const [kind,patch] of [
+   ['navigation',{url:'https://example.org/important',active:true}],
+   ['window move',{windowId:2}],
+   ['pin',{pinned:true}]
+ ]){
+   const id=203+['navigation','window move','pin'].indexOf(kind);
+   const target={id,url:'https://example.org/duplicate',windowId:1,index:1,active:false,pinned:false,audible:false,incognito:false};
+   liveTabs.push(target);
+   let queryCalls=0;
+   browser.tabs.query=async opts=>{
+     queryCalls++;
+     if(queryCalls===2)Object.assign(target,patch);
+     return originalQuery(opts);
+   };
+   const beforeRemoved=removed.length;
+   const outcome=await send({action:'closeDuplicate',item:{tabId:id,url:'https://example.org/duplicate',windowId:1,index:1}});
+   assert.equal(outcome.ok,true,kind+' check should complete safely');
+   assert.equal(outcome.closed,false,kind+' during final query must not close tab');
+   assert.equal(outcome.skipped,true,kind+' must be treated as an ineligible target');
+   assert.equal(removed.length,beforeRemoved,kind+' may not remove the changed tab');
+   assert(liveTabs.some(t=>t.id===id),kind+' tab must remain open');
+   assert.equal(storage[key].length,0,kind+' unused reservation must be cleaned');
+   browser.tabs.query=originalQuery;
+   liveTabs.splice(liveTabs.findIndex(t=>t.id===id),1);
+ }
+ // A change between the last query and the final tabs.get must also
+ // cause cleanup to skip the tab instead of trusting the query snapshot.
+ const newest={id:207,url:'https://example.org/duplicate',windowId:1,index:1,active:false,pinned:false,audible:false,incognito:false};
+ liveTabs.push(newest);
+ let getCalls=0;
+ browser.tabs.get=async id=>{
+   getCalls++;
+   if(getCalls===3)newest.active=true;
+   return savedGet(id);
+ };
+ const latest=await send({action:'closeDuplicate',item:{tabId:207,url:'https://example.org/duplicate',windowId:1,index:1}});
+ assert.equal(latest.ok,true);
+ assert.equal(latest.closed,false,'final get must detect an activated tab');
+ assert.equal(removed.includes(207),false);
+ assert.equal(storage[key].length,0);
+ browser.tabs.get=savedGet;
+ console.log('Recovery persistence QA PASS: durable reservations, restart, write failures, concurrent clear/close, and final query/get tab-race safety.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
