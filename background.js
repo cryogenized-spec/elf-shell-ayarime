@@ -4,16 +4,21 @@
 const AYARIME_THEME = {
   images: { theme_frame: "assets/theme-frame.jpg" },
   colors: {
-    frame: "#131723", tab_background_text: "#E9E5E5", toolbar: "#1B1A28",
+    frame: "#131723", frame_inactive: "#10141d", tab_background_text: "#E9E5E5", toolbar: "#1B1A28",
     toolbar_text: "#EEE9E8", tab_selected: "#4C293C", tab_text: "#F7E8F2",
     tab_line: "#CA839F", toolbar_field: "#171924", toolbar_field_text: "#F0EBE8",
     toolbar_field_border: "#9E6982", toolbar_field_focus: "#1F2031",
     toolbar_field_text_focus: "#FFFFFF", toolbar_field_border_focus: "#D598B1",
-    popup: "#191B27", popup_text: "#EDE8EA", popup_border: "#764862",
+    popup: "#23232e", popup_text: "#f3eef1", popup_border: "#62576b",
+    popup_highlight: "#514455", popup_highlight_text: "#fff9fc",
     button_background_hover: "#433248", button_background_active: "#683C55",
     sidebar: "#171923", sidebar_text: "#EEE9E8", sidebar_border: "#4A3A4D",
+    sidebar_highlight: "#514455", sidebar_highlight_text: "#fff9fc",
     ntp_background: "#111824", ntp_text: "#EDE7E8",
-  }
+  },
+  // Firefox uses this for supported browser chrome, including context-menu
+  // light/dark selection. Native GTK window widgets remain OS-controlled.
+  properties: { color_scheme: "dark", content_color_scheme: "system" }
 };
 async function applyTheme() {
   try { await browser.theme.update(AYARIME_THEME); }
