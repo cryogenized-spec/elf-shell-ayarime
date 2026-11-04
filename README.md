@@ -68,7 +68,7 @@ The project uses no npm runtime dependencies; `package.json` exists for repeatab
 
 ## Licence and publishing
 
-- Source code: **MIT** (`LICENSE`).
+- Project-owned source code: **Mozilla Public License 2.0 (MPL-2.0)** (`LICENSE`). See `LICENSE_SCOPE.md` for the scope and historical MIT notice.
 - Generated Ayarime artwork and locally authored SVG icon assets: permissive project dedication detailed in `ARTWORK_LICENSE.md` (to the extent the contributor has rights to license them). Names and third-party trademarks remain with their respective owners.
 - Public source repository (created by the project owner): [cryogenized-spec/elf-shell-ayarime](https://github.com/cryogenized-spec/elf-shell-ayarime); [release-review PR #1](https://github.com/cryogenized-spec/elf-shell-ayarime/pull/1) remains unmerged.
 - Planned Firefox distribution: signed Firefox Add-ons (AMO) extension, after live testing, Mozilla linting and review. The new-tab override makes it an extension, even though it also themes the browser frame.

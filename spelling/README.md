@@ -65,3 +65,7 @@ and release PR #1 remains separate.
 - Disabling spelling unregisters the site script first and notifies matching open tabs. Tabs that cannot be reached may need reloading; enabling/disabling never automatically revokes host access shared with RSS.
 - Long or unusually dense rich-text editors retain native Firefox spellchecking rather than disabling it after a partial 350-token / 4500-character scan.
 - Add-to-dictionary writes are serialised in the extension background so concurrent additions from separate tabs cannot overwrite one another.
+
+## Permission/editor safety review
+
+Each spelling request (including initial activation) is checked against the sender's actual HTTPS origin, the exact registered per-site script and current host permission. Immediate injection refuses a tab that has navigated, and permission revocation revalidates already injected tabs. The suggestion menu uses a closed shadow root and trusted user input; pending suggestions close on typing or IME composition, and stale DOM ranges cannot replace changed text.
