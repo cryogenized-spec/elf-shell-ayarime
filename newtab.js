@@ -550,60 +550,38 @@ function showHousekeeping(){$("housekeeping-message").textContent="";$("housekee
 async function closeDuplicates(){
   if(!await hasPermission("tabs")){$("housekeeping-message").textContent="Enable Tabs permission in Browser Access first.";return;}
   try{
-    // Never remove a tab from another window: the same URL may be intentional in a separate workspace.
-    const tabs=await browser.tabs.query({currentWindow:true});const groups=new Map();
-    for(const t of tabs){if(t.incognito||!validUrl(t.url))continue;const key=t.url; // A fragment can identify a distinct state in a modern web application.
-      if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);}
-    let ids=[];
-    for(const list of groups.values()){
-      if(list.length<2)continue;
-      // Preserve active, pinned, audible tabs over background counterparts.
-      list.sort((a,b)=>Number(b.active)-Number(a.active)||Number(b.pinned)-Number(a.pinned)||Number(b.audible)-Number(a.audible)||a.id-b.id);
-      ids.push(...list.slice(1).filter(t=>!t.active&&!t.pinned&&!t.audible).map(t=>t.id));
+    const tabs=await browser.tabs.query({currentWindow:true}),groups=new Map();
+    for(const tab of tabs){
+      if(tab.incognito||!validUrl(tab.url))continue;
+      if(!groups.has(tab.url))groups.set(tab.url,[]);
+      groups.get(tab.url).push(tab);
+    }
+    const ids=[];
+    for(const group of groups.values()){
+      if(group.length<2)continue;
+      group.sort((a,b)=>Number(b.active)-Number(a.active)||Number(b.pinned)-Number(a.pinned)||Number(b.audible)-Number(a.audible)||a.id-b.id);
+      ids.push(...group.slice(1).filter(tab=>!tab.active&&!tab.pinned&&!tab.audible).map(tab=>tab.id));
     }
     if(!ids.length){$("housekeeping-message").textContent="No safe duplicate tabs found.";return;}
-    if(!confirm(`Close ${ids.length} background duplicate tab(s) in this window? Unsaved page content may be lost.`))return;
-    const chosen=tabs.filter(t=>ids.includes(t.id)).map(t=>({tabId:t.id,url:t.url,windowId:t.windowId,index:t.index}));
+    if(!confirm("Close "+ids.length+" background duplicate tab(s) in this window? Unsaved page content may be lost."))return;
+    const chosen=tabs.filter(tab=>ids.includes(tab.id)).map(tab=>({tabId:tab.id,url:tab.url,windowId:tab.windowId,index:tab.index}));
     let closed=0,skipped=0;
     for(const item of chosen){
-      // Reserve each recovery URL in storage BEFORE closing its tab. If a
-      // storage write fails, this tab remains open, never silently lost.
-      let reservedId;
-      if(ext){const reservation=await recoveryAction("append",{entries:[item]});reservedId=reservation.added[0]?.id;}
-      else{reservedId="preview-"+item.tabId;lastClosedDuplicates.push({...item,id:reservedId});$("undo-duplicates").hidden=false;}
-      // Tabs can navigate, become pinned/active, or move between windows while
-      // a recovery reservation is being saved. Revalidate as near as possible
-      // to removal, or we could close a page different from the saved URL.
-      let live,otherTabs;
-      try{
-        otherTabs=await browser.tabs.query({windowId:item.windowId});
-        live=await browser.tabs.get(item.tabId);
-      }catch(error){
-        skipped++;console.warn("Tab changed or disappeared during duplicate cleanup; recovery reserved",error);
-        continue; // Uncertain state: never remove, and retain the recovery record.
-      }
-      const stillDuplicate=otherTabs.some(t=>t.id!==item.tabId && t.url===item.url && t.windowId===item.windowId && !t.incognito);
-      const safeToClose=live?.url===item.url&&live.windowId===item.windowId&&
-        !live.active&&!live.pinned&&!live.audible&&!live.incognito&&stillDuplicate;
-      if(!safeToClose){
-        skipped++;
-        // We did not touch this tab. Remove its unnecessary reservation;
-        // a failed cleanup leaves the address visible for manual review.
-        try{
-          if(ext)await recoveryAction("complete",{ids:[reservedId]});
-          else lastClosedDuplicates=lastClosedDuplicates.filter(x=>x.id!==reservedId);
-        }catch(error){console.warn("Could not discard an unused recovery reservation",error);}
-        continue;
-      }
-      // Handle tabs individually: a failure partway through a batch must not
-      // prevent earlier successfully closed tabs from being recoverable.
-      try{await browser.tabs.remove([item.tabId]);closed++;}
-      catch(error){console.warn("Duplicate tab removal may not have completed",error);throw Error("A tab could not be closed; its recovery address has been kept in case it was removed. " + error.message);}
+      // Background serialises reservation + revalidation + tab removal
+      // against all clear-history actions from other dashboards.
+      const result=await recoveryAction("closeDuplicate",{item});
+      if(result.closed)closed++;else skipped++;
     }
-    $("housekeeping-message").textContent=`Closed ${closed} duplicate tabs${skipped?`; skipped ${skipped} changed tab(s)`:""}; ${lastClosedDuplicates.length} address(es) available to reopen after refresh or restart. Page state is not saved.`;
+    await refreshRecovery();
+    $("housekeeping-message").textContent="Closed "+closed+" duplicate tabs"+(skipped?"; skipped "+skipped+" changed tab(s)":"")+"; "+lastClosedDuplicates.length+" address(es) available to reopen after refresh or restart. Page state is not saved.";
     await diagnostics();
-  }catch(error){console.error(error);$("housekeeping-message").textContent="Duplicate cleanup failed.";}
+  }catch(error){
+    console.error(error);
+    await refreshRecovery();
+    $("housekeeping-message").textContent="Duplicate cleanup failed: "+error.message+". Any already-closed URLs remain in recovery history.";
+  }
 }
+
 async function reopenDuplicates(){
   if(reopeningDuplicates)return;
   reopeningDuplicates=true;
@@ -636,11 +614,20 @@ async function reopenDuplicates(){
 }
 async function clearDuplicateRecovery(){
   if(!lastClosedDuplicates.length)return;
-  if(!confirm(`Permanently discard ${lastClosedDuplicates.length} locally saved recovery address(es)? No tabs will be reopened.`))return;
-  try{if(ext)await recoveryAction("clear");else lastClosedDuplicates=[];
-    $("undo-duplicates").hidden=true;$("housekeeping-message").textContent="Recovery addresses cleared from local storage.";
+  // Snapshot the exact records the user confirms clearing.
+  const ids=lastClosedDuplicates.map(item=>item.id);
+  if(!confirm("Permanently discard "+ids.length+" locally saved recovery address(es)? No tabs will be reopened."))return;
+  try{
+    if(ext)await recoveryAction("clear",{ids});
+    else lastClosedDuplicates=lastClosedDuplicates.filter(item=>!ids.includes(item.id));
+    const remaining=lastClosedDuplicates.length;
+    $("undo-duplicates").hidden=!remaining;
+    $("housekeeping-message").textContent=remaining?
+      "Selected addresses cleared; "+remaining+" newer recovery address(es) remain available.":
+      "Selected recovery addresses cleared from local storage.";
   }catch(error){$("housekeeping-message").textContent="Could not clear recovery addresses: "+error.message;}
 }
+
 async function discardIdle(){
   if(!await hasPermission("tabs")){$("housekeeping-message").textContent="Enable Tabs permission in Browser Access first.";return;}
   try{

@@ -55,3 +55,5 @@ These changes are source fixes pending GitHub CI and Codex's follow-up review. F
 RSS cache updates now merge **successful article content** using `checkedAt`, independently of `attemptedAt` and the most recent error. A delayed successful response with newer headlines can no longer be thrown away merely because a later failed request wrote an error first. The latest attempt metadata remains truthful. The reverse-order case is exercised by `tests/rss_concurrency.cjs`.
 
 The source and CI checks do not replace native Firefox tests.
+
+- Recovery clear/close race hardening: the background now serialises durable recovery reservation, tab revalidation and tab removal as one operation. History clearing targets explicitly confirmed IDs; concurrent tab closure cannot lose its recovery URL. Added an overlapping clear/close regression test.

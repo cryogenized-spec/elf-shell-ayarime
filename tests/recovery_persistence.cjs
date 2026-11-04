@@ -8,12 +8,22 @@ const code=fs.readFileSync(path.join(__dirname,'../background.js'),'utf8');
 const key='elfshell-duplicate-recovery-v1';
 const storage={};
 let rejectNext=false;
+const liveTabs=[
+ {id:201,url:'https://example.org/duplicate',windowId:1,index:0,active:true,pinned:false,audible:false,incognito:false},
+ {id:202,url:'https://example.org/duplicate',windowId:1,index:1,active:false,pinned:false,audible:false,incognito:false}
+];
+const removed=[];
 const browser={
  storage:{local:{
   async get(names){await new Promise(r=>setTimeout(r,6));return Object.fromEntries([].concat(names).map(k=>[k,storage[k]]));},
   async set(entries){if(rejectNext){rejectNext=false;throw Error('Simulated disk failure');}await new Promise(r=>setTimeout(r,6));Object.assign(storage,JSON.parse(JSON.stringify(entries)));}
  }},
  theme:{update:async()=>{}},
+ tabs:{
+   async get(id){const tab=liveTabs.find(t=>t.id===id);if(!tab)throw Error('Tab disappeared');return {...tab};},
+   async query({windowId}){return liveTabs.filter(t=>t.windowId===windowId).map(t=>({...t}));},
+   async remove(ids){removed.push(...ids);for(const id of ids){const i=liveTabs.findIndex(t=>t.id===id);if(i>=0)liveTabs.splice(i,1);}}
+ },
  runtime:{onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){this.handler=fn;}}}
 };
 function launchBackground(){
@@ -47,7 +57,35 @@ function launchBackground(){
  const invalid=await send({action:'append',entries:[{url:'javascript:alert(1)',windowId:1,index:0}]});
  assert.equal(invalid.ok,false,'non-web recovery URLs must be rejected');
  assert.equal((await send({action:'list'})).entries.length,2);
- const cleared=await send({action:'clear'});
+ // Simulate another dashboard clearing history while a duplicate's recovery
+ // address is durably reserved but its second tab safety check is pending.
+ const olderIds=storage[key].map(item=>item.id);
+ const originalGet=browser.tabs.get;
+ let getCount=0,releaseRecheck;
+ let signalRecheck;
+ const reachedRecheck=new Promise(resolve=>{signalRecheck=resolve;});
+ browser.tabs.get=async id=>{
+   getCount++;
+   if(getCount===2){
+     signalRecheck();
+     await new Promise(resolve=>{releaseRecheck=resolve;});
+   }
+   return originalGet(id);
+ };
+ const closing=send({action:'closeDuplicate',item:{tabId:202,url:'https://example.org/duplicate',windowId:1,index:1}});
+ await reachedRecheck;
+ assert.equal(storage[key].length,olderIds.length+1,'reserve recovery before removing the tab');
+ const clearing=send({action:'clear',ids:olderIds});
+ releaseRecheck();
+ const [closed,oldCleared]=await Promise.all([closing,clearing]);
+ assert.equal(closed.ok,true);assert.equal(closed.closed,true);
+ assert.deepEqual(removed,[202]);
+ assert.equal(oldCleared.ok,true);
+ assert.equal(storage[key].length,1,'concurrent clear must preserve the newer duplicate recovery address');
+ assert.equal(storage[key][0].url,'https://example.org/duplicate');
+ const unqualifiedClear=await send({action:'clear'});
+ assert.equal(unqualifiedClear.ok,false,'unqualified clear is unsafe');
+ const cleared=await send({action:'clear',ids:storage[key].map(x=>x.id)});
  assert.equal(cleared.ok,true);assert.equal(storage[key].length,0);
- console.log('Recovery persistence QA PASS: concurrent appends, unique IDs, restart, per-record completion, storage failure/retry, unsafe URLs and manual clear.');
+ console.log('Recovery persistence QA PASS: durable reservations, restart, write failures, and concurrent clear/close safety.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

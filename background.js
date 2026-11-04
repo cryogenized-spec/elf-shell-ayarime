@@ -103,11 +103,67 @@ function safeRecovery(value){
     return {id:item.id,url:item.url,windowId,index};
   }).filter(Boolean);
 }
+
+function eligibleDuplicate(tab,item,peers){
+  return !!tab&&tab.id===item.tabId&&tab.url===item.url&&
+    tab.windowId===item.windowId&&!tab.active&&!tab.pinned&&
+    !tab.audible&&!tab.incognito&&
+    peers.some(peer=>peer.id!==item.tabId&&peer.url===item.url&&
+      peer.windowId===item.windowId&&!peer.incognito);
+}
 async function mutateRecovery(message){
   const stored=await browser.storage.local.get(RECOVERY_KEY);
   const pending=safeRecovery(stored[RECOVERY_KEY]);
   if(message.action==="list")return {ok:true,entries:pending};
   let updated=pending,added=[];
+  if(message.action==="closeDuplicate"){
+    const item=message.item;
+    if(!item||!Number.isInteger(item.tabId)||item.tabId<1||
+      !validSessionURL(item.url)||!Number.isInteger(item.windowId)||item.windowId<1||
+      !Number.isInteger(item.index)||item.index<0||item.index>=100000){
+      throw Error("Invalid duplicate-tab cleanup request.");
+    }
+    // The entire reservation, recheck and tab close is serialised with
+    // history clearing. No other dashboard can remove its record mid-close.
+    const before=await browser.tabs.get(item.tabId);
+    const peers=await browser.tabs.query({windowId:item.windowId});
+    if(!eligibleDuplicate(before,item,peers)){
+      return {ok:true,entries:pending,added:[],closed:false,skipped:true};
+    }
+    if(pending.length>=100){
+      throw Error("100 recovery addresses already stored. Reopen or clear some before closing more tabs.");
+    }
+    let id;
+    do{id=Date.now().toString(36)+"-"+(++recoverySerial).toString(36);}
+    while(pending.some(x=>x.id===id));
+    const reserved={id,url:item.url,windowId:item.windowId,index:item.index};
+    updated=[...pending,reserved];
+    // Never close unless the recoverable URL was first saved durably.
+    await browser.storage.local.set({[RECOVERY_KEY]:updated});
+    try{
+      const live=await browser.tabs.get(item.tabId);
+      const currentPeers=await browser.tabs.query({windowId:item.windowId});
+      if(!eligibleDuplicate(live,item,currentPeers)){
+        // Changed or protected while we saved the URL: never close it.
+        // If discarding the unused record fails, retain the harmless entry.
+        try{
+          await browser.storage.local.set({[RECOVERY_KEY]:pending});
+          return {ok:true,entries:pending,added:[],closed:false,skipped:true};
+        }catch(error){
+          console.warn("Could not discard unused recovery address",error);
+          return {ok:true,entries:updated,added:[reserved],closed:false,skipped:true};
+        }
+      }
+    }catch(error){
+      console.warn("Could not recheck duplicate tab: not closing",error);
+      return {ok:true,entries:updated,added:[reserved],closed:false,skipped:true};
+    }
+    try{await browser.tabs.remove([item.tabId]);}
+    catch(error){
+      throw Error("Tab closure failed or cannot be confirmed; the recovery address remains saved. "+error.message);
+    }
+    return {ok:true,entries:updated,added:[reserved],closed:true,skipped:false};
+  }
   if(message.action==="append"){
     if(!Array.isArray(message.entries)||!message.entries.length||message.entries.length>100||
        pending.length+message.entries.length>100)throw Error("100 recovery addresses are already stored. Reopen or clear some before closing more tabs.");
@@ -120,17 +176,20 @@ async function mutateRecovery(message){
       return {id,url:item.url,windowId:item.windowId,index:item.index};
     });
     updated=[...pending,...added];
-  }else if(message.action==="complete"){
+  }else if(message.action==="complete"||message.action==="clear"){
+    // Clear only explicitly confirmed IDs, never newer records added by
+    // a background cleanup during the user's confirmation dialog.
     if(!Array.isArray(message.ids)||message.ids.length>100||
-       message.ids.some(id=>typeof id!=="string"||id.length>80))throw Error("Invalid recovery completion.");
-    const completed=new Set(message.ids);
-    updated=pending.filter(item=>!completed.has(item.id));
-  }else if(message.action==="clear"){
-    updated=[];
+       message.ids.some(id=>typeof id!=="string"||id.length>80)){
+      throw Error("Invalid recovery record selection.");
+    }
+    const selected=new Set(message.ids);
+    updated=pending.filter(item=>!selected.has(item.id));
   }else throw Error("Unknown recovery operation.");
   await browser.storage.local.set({[RECOVERY_KEY]:updated});
   return {ok:true,entries:updated,added};
 }
+
 // Feed subscriptions and caches are also shared by multiple new-tab instances.
 // Serialize edits per URL in the background to prevent stale snapshots from
 // dropping other dashboards' additions or cached headlines.

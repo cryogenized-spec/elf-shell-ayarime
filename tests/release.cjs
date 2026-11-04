@@ -25,7 +25,7 @@ assert(mainJs.includes('$("search-input").value=">"'),'Ctrl+K must open actions'
 assert(mainJs.includes('permission-host-row'),'permission ledger must list origins');
 assert(mainJs.includes('permissions.remove({origins:[origin]})'),'host revoke action missing');
 assert(mainJs.includes('REOPEN JUST-CLOSED DUPLICATE URLS')===false,'reopen button text should live in HTML');
-assert(mainJs.includes('await recoveryAction("append"'),'each cleanup must persist recovery addresses BEFORE closing the tab');
+assert(mainJs.includes('await recoveryAction("closeDuplicate",{item})'),'duplicate cleanup must be one serialized background transaction');
 assert.equal((mainJs.match(/browser\.tabs\.query\(\{currentWindow:true\}\)/g)||[]).length,3,'saved workspace and both destructive housekeeping actions must be current-window scoped');
 assert(mainJs.includes('await recoveryAction("complete",{ids:[item.id]})'),'successful reopen must acknowledge only the reopened record by ID');
 assert(mainJs.includes('reopeningDuplicates'),'duplicate recovery must prevent simultaneous reopen operations');
