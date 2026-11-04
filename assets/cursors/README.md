@@ -30,3 +30,26 @@ The pointer is **only applied to the ELF//SHELL dashboard**. Firefox's address b
 - No OS-wide theme installer or persistent cursor changes to Linux Mint are made.
 
 All assets are local: no runtime downloads, external image hosts, telemetry, or remote assets.
+
+
+## Ayarime six-state functional cursor family
+
+The optional **Ayarime Core · Six States** choice is derived from the six-state
+concept sheet supplied for the project: Pointer, Text (I-beam), Busy,
+Crosshair, diagonal Resize and Link Hand.
+
+Transparent 48×48 PNGs are used for CSS cursor images, with native keyword
+fallbacks. 64×64 variants are bundled for previews and HiDPI evaluation.
+The silhouettes exclude the decorative selection circles, labels and frames.
+
+The six original pointer alternatives are still available, with their normal
+cursor appearance unchanged. When any custom pointer is selected, common
+interactive, text, busy, precision and resize targets use the coordinating
+state artwork. System Default overrides nothing.
+
+The Busy design is currently STATIC. Gecko may display only the first frame
+of an animated GIF/APNG in a CSS cursor. Browser-native Firefox chrome,
+menus, other websites and operating-system cursors remain unaffected.
+
+Test hotspot accuracy and contrast on actual Firefox/Linux Mint at
+100%, 150% and 200% display scaling before stable release.
