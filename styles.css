@@ -314,3 +314,63 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,2.85vw,54px)
 }
 
 #clear-duplicate-recovery{display:block;width:100%;margin:3px 0 12px;opacity:.84;}
+
+/* AYARIME POINTER SET — opt-in and scoped to the ELF//SHELL new-tab page.
+   Native Firefox/GTK controls and text-selection cursors are left untouched. */
+.cursor-settings{
+  border:1px solid #7c7184;
+  padding:13px;
+  margin:18px 0 14px;
+  background:rgba(17,20,32,.55);
+  min-width:0;
+}
+.cursor-settings legend{
+  padding:0 8px;
+  font:11px ui-monospace,monospace;
+  color:#dfcadf;
+  letter-spacing:.13em;
+}
+.cursor-settings p{
+  margin:4px 0 13px;
+  color:#c9c5d2;
+  font:12px/1.5 ui-monospace,monospace;
+}
+.cursor-gallery{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(135px,1fr));
+  gap:8px;
+}
+.cursor-option{
+  position:relative;
+  display:flex;
+  align-items:center;
+  flex-direction:column;
+  justify-content:center;
+  gap:5px;
+  min-height:110px;
+  padding:8px 8px 10px;
+  background:rgba(20,23,36,.8);
+  border:1px solid #61596d;
+  border-radius:5px;
+  color:#f3e9f4;
+  font:10px ui-monospace,monospace;
+  text-align:center;
+  cursor:pointer;
+}
+.cursor-option:has(input:checked){outline:2px solid #d7adcb;outline-offset:0;background:#3b3144}
+.cursor-option:focus-within{box-shadow:0 0 0 2px #d0cad9}
+.cursor-option input{
+  position:absolute;top:6px;left:6px;width:13px;height:13px;margin:0;
+  accent-color:#d9b4d3;
+}
+.cursor-option img{display:block;width:60px;height:60px;object-fit:contain}
+.cursor-system-preview{display:grid;place-items:center;width:60px;height:60px;font:45px Georgia,serif;color:#eeecf2}
+.cursor-option span:last-child{max-width:120px}
+body[data-cursor]:not([data-cursor="system"]){cursor:var(--elf-custom-cursor,auto)}
+body[data-cursor]:not([data-cursor="system"]) :is(a,button,summary,[role="button"]){
+  cursor:var(--elf-custom-cursor,pointer);
+}
+body[data-cursor]:not([data-cursor="system"]) :is(input[type="text"],input[type="search"],input[type="url"],textarea,[contenteditable]){
+  cursor:text;
+}
+@media(max-width:430px){.cursor-gallery{grid-template-columns:repeat(2,minmax(0,1fr));}}

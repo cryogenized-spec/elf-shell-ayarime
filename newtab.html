@@ -7,6 +7,7 @@
 <title>ELF//SHELL — Ayarime</title>
 <link rel="icon" type="image/x-icon" sizes="any" href="favicon.ico">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="typography.css">
 <script defer src="newtab.js"></script>
 <script defer src="memory.js"></script>
 <script defer src="feeds.js"></script>
@@ -106,6 +107,77 @@
         <label><input type="checkbox" id="reduce-motion"> Reduce visual effects</label>
         <label><input type="checkbox" id="high-contrast"> Increase interface contrast</label>
       </div>
+      <fieldset class="typography-settings" aria-label="Typography preferences for the ELF SHELL dashboard">
+        <legend>TYPOGRAPHY // AYARIME</legend>
+        <p>Choose a coordinated font palette or tailor each layer. Fonts are packaged locally; nothing is fetched from a font service. Original preserves today's appearance.</p>
+        <div class="typography-controls">
+          <label for="typography-preset">STYLE PRESET
+            <select id="typography-preset">
+              <option value="original">Original / System (current)</option>
+              <option value="classic">Ayarime Classic</option>
+              <option value="neural">Neural Interface</option>
+              <option value="archive">The Archive</option>
+            </select>
+          </label>
+          <label for="typography-scale">READABILITY / SMALL TEXT
+            <select id="typography-scale">
+              <option value="90">90%</option><option value="100">100%</option>
+              <option value="110">110%</option><option value="120">120%</option>
+              <option value="125">125%</option>
+            </select>
+          </label>
+        </div>
+        <div id="typography-preview" class="typography-preview" aria-label="Live font sample">
+          <span class="typography-preview-title">ELF//SHELL — Ayarime</span>
+          <span class="typography-preview-ui">NEURAL ARCHIVE · STATION CONTROLS</span>
+          <span class="typography-preview-mono">SYSTEM NOMINAL · 0042 · STATUS: READY</span>
+          <span class="typography-preview-japanese" lang="ja">沈黙もまた、一つのプロトコルよ。</span>
+        </div>
+        <details id="typography-advanced">
+          <summary>ADVANCED / CUSTOM FONT ROLES</summary>
+          <div class="typography-advanced-grid">
+            <label for="typography-display">DISPLAY / TITLES
+              <select id="typography-display">
+                <option value="preset">Follow preset</option><option value="cormorant">Cormorant Garamond</option>
+                <option value="marcellus">Marcellus</option><option value="oxanium">Oxanium</option>
+                <option value="system">Original serif</option>
+              </select>
+            </label>
+            <label for="typography-ui">INTERFACE / CONTROLS
+              <select id="typography-ui">
+                <option value="preset">Follow preset</option><option value="rajdhani">Rajdhani</option>
+                <option value="plexsans">IBM Plex Sans</option><option value="system">System UI</option>
+              </select>
+            </label>
+            <label for="typography-mono">DIAGNOSTICS / DATA
+              <select id="typography-mono">
+                <option value="preset">Follow preset</option><option value="plexmono">IBM Plex Mono</option>
+                <option value="jetbrains">JetBrains Mono</option><option value="system">System monospace</option>
+              </select>
+            </label>
+            <label for="typography-japanese">JAPANESE / MEMORY
+              <select id="typography-japanese">
+                <option value="preset">Follow preset</option><option value="notoserif">Noto Serif JP (local)</option>
+                <option value="notosans">Noto Sans JP (local)</option><option value="system">System Japanese fallback</option>
+              </select>
+            </label>
+          </div>
+          <p class="typography-footnote">Japanese Noto faces use installed fonts if present; otherwise Firefox chooses an available Japanese fallback. All Latin display, interface and diagnostic fonts are bundled offline.</p>
+        </details>
+      </fieldset>
+      <fieldset class="cursor-settings" aria-label="Cursor style for the ELF SHELL new tab">
+        <legend>POINTER DESIGN // AYARIME</legend>
+        <p>Choose a cursor for this dashboard only. Your browser and desktop keep their normal pointer. The system default is recommended until you choose another.</p>
+        <div class="cursor-gallery" role="group" aria-label="Optional cursor designs">
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="system" checked><span class="cursor-system-preview" aria-hidden="true">↖</span><span>System Default</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="classic-spearhead"><img src="assets/cursors/classic-spearhead.png" width="64" height="64" alt="" loading="lazy"><span>Classic Spearhead</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="crystal-tech-shard"><img src="assets/cursors/crystal-tech-shard.png" width="64" height="64" alt="" loading="lazy"><span>Crystal-Tech Shard</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="elven-feather"><img src="assets/cursors/elven-feather.png" width="64" height="64" alt="" loading="lazy"><span>Elven Feather</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="hollow-frame"><img src="assets/cursors/hollow-frame.png" width="64" height="64" alt="" loading="lazy"><span>Hollow Frame</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="rune-edged"><img src="assets/cursors/rune-edged.png" width="64" height="64" alt="" loading="lazy"><span>Rune-Edged</span></label>
+          <label class="cursor-option"><input type="radio" name="cursor-choice" value="minimal-precision"><img src="assets/cursors/minimal-precision.png" width="64" height="64" alt="" loading="lazy"><span>Minimal Precision</span></label>
+        </div>
+      </fieldset>
       <div class="import-actions"><button type="button" id="export-settings">EXPORT JSON</button><button type="button" id="import-settings">IMPORT JSON</button><input type="file" id="import-file" accept="application/json,.json" hidden></div>
       <p id="settings-message" class="message" role="status"></p>
       <div class="dialog-actions"><button type="button" id="reset-links">RESET LINKS</button><button type="button" id="cancel-settings">CANCEL</button><button type="submit" id="save-settings">SAVE CONFIG</button></div>

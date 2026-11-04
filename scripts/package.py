@@ -16,7 +16,8 @@ STAGING = DIST / 'amo'
 OUTPUT = DIST / f'ELF-SHELL-Ayarime-v{VERSION}-AMO.zip'
 SOURCES = [
     'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
-    'memory.js', 'feeds.js', 'styles.css',
+    'memory.js', 'feeds.js', 'styles.css', 'typography.css',
+    *[str(p.relative_to(ROOT)) for p in (ROOT / 'spelling').rglob('*') if p.is_file()],
 ]
 
 def sources():

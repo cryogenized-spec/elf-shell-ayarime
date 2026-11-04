@@ -169,3 +169,49 @@ The v0.5.4 review branch also incorporates the observations recorded in [GitHub 
 **Tab recovery now persists.** After confirming a duplicate-tab cleanup, ELF//SHELL saves the URLs in Firefox extension-local storage *before* closing each duplicate. The recovery panel can reopen them after navigating away or restarting Firefox, or delete the recovery history manually. This data is not encrypted; URLs can contain login tokens or other sensitive parameters. Recovery restores the web addresses only, never unsaved form data. No stored recovery URLs are included in the regular station JSON export.
 
 The remaining release gates are a disposable-profile Firefox 142+ test (including restarts and real RSS feeds), the Codex review of issue #2's changes, and Mozilla signing. Do not describe a source ZIP as a permanently installable add-on.
+
+## Experimental left-click spelling and theme (draft PR #4)
+
+The feature branch `feature/spell-left-click-window-theme` adds a user-enabled,
+offline British-English spelling module for supported rich-text editors. Click the ELF//SHELL
+toolbar button on an HTTPS site to opt in, then left-click a misspelled word
+to choose a correction, ignore it, or add it to an extension-owned personal
+dictionary. Unsupported fields retain Firefox's native spelling UI. The
+extension **does not** rewrite Firefox's native personal dictionary.
+See [spelling/README.md](spelling/README.md) for limitations and testing.
+
+ELF//SHELL also coordinates sidebar, popup, and inactive-window colours and
+requests dark-colour browser chrome. Native Linux Mint window themes and
+system pointers are outside WebExtension control.
+
+The feature branch also includes **six optional Ayarime pointer designs**
+derived from the original Classic Spearhead / Crystal-Tech Shard / Elven
+Feather / Hollow Frame / Rune-Edged / Minimal Precision concept sheet.
+Open **Station Configuration → Pointer Design** to select one, or retain
+**System Default** (the initial setting). Cursor art applies **only to the
+ELF//SHELL new-tab dashboard**, never the operating system or other websites.
+See [the cursor gallery](assets/cursors/README.md) for previews, asset details,
+and native Firefox QA limitations.
+
+
+## Typography presets (PR #4, experimental)
+
+In **Station Configuration → Typography**, choose **Original / System**
+(the unchanged default), **Ayarime Classic**, **Neural Interface**, or
+**The Archive**. A live sample shows the selected roles before saving.
+Small diagnostic text can be scaled to 90%, 100%, 110%, 120% or 125%.
+Advanced controls independently override display, interface, monospace
+and Japanese font roles; set each override back to **Follow preset**
+to recover the coordinated palette.
+
+The Latin WOFF2 fonts are bundled in `assets/fonts/` and loaded only from
+this extension; font licences are in `assets/fonts/licenses/`.
+Noto Serif JP and Noto Sans JP are resolved from locally installed
+fonts (or Firefox's Japanese fallback) rather than requiring a huge
+download. The selected typography is stored in its own
+`elfshell-workspace-v3:field:typography` key, participates in
+settings export/import and cross-tab sync, and never changes typography
+on other sites, Firefox's native menus or the OS.
+
+The new type system remains part of draft PR #4 until native Firefox
+visual and regression checks are completed.

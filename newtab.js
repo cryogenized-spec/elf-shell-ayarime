@@ -12,12 +12,63 @@ const dataKey="elfshell-workspace-v3";
 const previousKey="elfshell-workspace-v2";
 // Store each workspace field independently. A note save must never overwrite a
 // different tab's newer shortcuts, sessions, focus, or appearance settings.
-const workspaceFields=["links","note","focus","motion","contrast","bangs","sessions"];
+const workspaceFields=["links","note","focus","motion","contrast","cursor","typography","bangs","sessions"];
 const fieldKey=field=>`${dataKey}:field:${field}`;
 const dirtyFields=new Set();
 const saveFailures=new Set();
 const saveTimers=new Map();
 const iconNames=["firefox","mail","calendar","drive","video","library","globe","code","tasks","terminal","notes","news"];
+const cursorChoices=["system","classic-spearhead","crystal-tech-shard","elven-feather","hollow-frame","rune-edged","minimal-precision"];
+const cleanCursor=value=>cursorChoices.includes(value)?value:"system";
+
+const defaultTypography=Object.freeze({preset:"original",scale:100,display:"preset",ui:"preset",mono:"preset",japanese:"preset"});
+const typographyChoices={
+  preset:["original","classic","neural","archive"],scale:[90,100,110,120,125],
+  display:["preset","cormorant","marcellus","oxanium","system"],
+  ui:["preset","rajdhani","plexsans","system"],
+  mono:["preset","plexmono","jetbrains","system"],
+  japanese:["preset","notoserif","notosans","system"]
+};
+const typographyPresets={
+  original:{display:"system",ui:"system",mono:"system",japanese:"system"},
+  classic:{display:"cormorant",ui:"rajdhani",mono:"plexmono",japanese:"notoserif"},
+  neural:{display:"oxanium",ui:"rajdhani",mono:"jetbrains",japanese:"notosans"},
+  archive:{display:"marcellus",ui:"plexsans",mono:"plexmono",japanese:"notoserif"}
+};
+const typographyFamilies={
+  display:{system:'Georgia,"Times New Roman",serif',cormorant:'"Ayarime Cormorant",Georgia,serif',marcellus:'"Ayarime Marcellus",Georgia,serif',oxanium:'"Ayarime Oxanium",system-ui,sans-serif'},
+  ui:{system:'system-ui,sans-serif',rajdhani:'"Ayarime Rajdhani",system-ui,sans-serif',plexsans:'"Ayarime Plex Sans",system-ui,sans-serif'},
+  mono:{system:'ui-monospace,"Liberation Mono",monospace',plexmono:'"Ayarime Plex Mono",ui-monospace,monospace',jetbrains:'"Ayarime JetBrains",ui-monospace,monospace'},
+  japanese:{system:'"Noto Sans CJK JP","Yu Gothic",sans-serif',notoserif:'"Noto Serif JP","Noto Serif CJK JP","Yu Mincho",serif',notosans:'"Noto Sans JP","Noto Sans CJK JP","Yu Gothic",sans-serif'}
+};
+function cleanTypography(input){
+  const value=input&&typeof input==="object"&&!Array.isArray(input)?input:{};
+  const result={};
+  for(const [field,allowed] of Object.entries(typographyChoices))
+    result[field]=allowed.includes(value[field])?value[field]:defaultTypography[field];
+  return result;
+}
+function applyTypography(target,input){
+  const typography=cleanTypography(input),preset=typographyPresets[typography.preset];
+  for(const role of ["display","ui","mono","japanese"]){
+    const font=typography[role]==="preset"?preset[role]:typography[role];
+    target.style.setProperty("--ayr-font-"+role,typographyFamilies[role][font]);
+  }
+  target.style.setProperty("--ayr-type-scale",String(typography.scale/100));
+  if(target===document.body){
+    target.dataset.typePreset=typography.preset;
+    target.classList.toggle("typography-on",typography.preset!=="original"||typography.scale!==100||["display","ui","mono","japanese"].some(role=>typography[role]!=="preset"));
+  }
+}
+function typographyFromForm(){
+  return cleanTypography({
+    preset:$("typography-preset").value,scale:Number($("typography-scale").value),
+    display:$("typography-display").value,ui:$("typography-ui").value,
+    mono:$("typography-mono").value,japanese:$("typography-japanese").value
+  });
+}
+function updateTypographyPreview(){applyTypography($("typography-preview"),typographyFromForm());}
+
 const defaultBangs=[
   {key:"yt",url:"https://www.youtube.com/results?search_query={query}"},
   {key:"gh",url:"https://github.com/search?q={query}"},
@@ -27,7 +78,7 @@ const defaultBangs=[
 const legacyKey="elfshell-shortcuts-v1";
 const $=id=>document.getElementById(id);
 const ext=typeof browser!=="undefined" && !!browser.storage;
-let state={links:defaults.map(x=>({...x})),note:"",focus:"",motion:false,contrast:false,bangs:defaultBangs.map(x=>({...x})),sessions:[]};
+let state={links:defaults.map(x=>({...x})),note:"",focus:"",motion:false,contrast:false,cursor:"system",typography:{...defaultTypography},bangs:defaultBangs.map(x=>({...x})),sessions:[]};
 let searchItems=[];
 let searchQuery="";
 let selected=0;
@@ -66,7 +117,7 @@ function cleanWorkspace(x){
   if(links.some(x=>!x))return null;
   const bangs=cleanBangs(x.bangs);
   const sessions=cleanSessions(x.sessions);
-  return {links,note:cleanString(x.note,6000),focus:cleanString(x.focus,120),motion:!!x.motion,contrast:!!x.contrast,bangs,sessions};
+  return {links,note:cleanString(x.note,6000),focus:cleanString(x.focus,120),motion:!!x.motion,contrast:!!x.contrast,cursor:cleanCursor(x.cursor),typography:cleanTypography(x.typography),bangs,sessions};
 }
 function safeBang(x){
   if(!x || typeof x!=="object")return null;
@@ -156,7 +207,7 @@ function applyWorkspaceStorageChanges(changes,areaName){
   if(!cleaned)return;
   state=cleaned;
   if(changedFields.includes("links"))renderLinks();
-  if(changedFields.some(f=>["motion","contrast"].includes(f)))applyAppearance();
+  if(changedFields.some(f=>["motion","contrast","cursor","typography"].includes(f)))applyAppearance();
   for(const field of ["focus","note"]){
     if(!changedFields.includes(field))continue;
     for(const input of document.querySelectorAll(field==="focus"?"#focus-input, #focus-editor":"#note-input, #note-editor"))input.value=state[field];
@@ -193,7 +244,16 @@ async function mutateSessions(action,data={}){
   dirtyFields.delete("sessions");saveFailures.delete("sessions");
   return state.sessions;
 }
-function applyAppearance(){document.body.classList.toggle("reduce-effects",state.motion);document.body.classList.toggle("high-contrast",state.contrast);}
+function applyAppearance(){
+  document.body.classList.toggle("reduce-effects",state.motion);
+  document.body.classList.toggle("high-contrast",state.contrast);
+  const choice=cleanCursor(state.cursor);
+  document.body.dataset.cursor=choice;
+  // Only names in cursorChoices can enter a CSS URL; never trust imported URLs.
+  if(choice==="system")document.body.style.removeProperty("--elf-custom-cursor");
+  else document.body.style.setProperty("--elf-custom-cursor",`url("assets/cursors/${choice}.png") 2 2, auto`);
+  applyTypography(document.body,state.typography);
+}
 function renderLinks(){
   const nav=$("shortcuts");nav.replaceChildren();
   state.links.forEach((item,i)=>{
@@ -424,7 +484,13 @@ function buildSettings(){
       label.append(input);row.append(label);
     }rootBangs.append(row);
   });
-  $("reduce-motion").checked=state.motion;$("high-contrast").checked=state.contrast;$("settings-message").textContent="";
+  $("reduce-motion").checked=state.motion;$("high-contrast").checked=state.contrast;
+  for(const radio of document.querySelectorAll('input[name="cursor-choice"]'))radio.checked=radio.value===cleanCursor(state.cursor);
+  const typography=cleanTypography(state.typography);
+  for(const role of ["preset","scale","display","ui","mono","japanese"])
+    $("typography-"+role).value=String(typography[role]);
+  updateTypographyPreview();
+  $("settings-message").textContent="";
 }
 function showSettings(){buildSettings();$("settings-dialog").showModal();}
 async function saveSettings(event){
@@ -435,13 +501,14 @@ async function saveSettings(event){
   for(const input of $("bang-fields").querySelectorAll("input"))bangs[Number(input.dataset.bangIndex)][input.dataset.bangField]=input.value.trim();
   const used=new Set();
   if(bangs.some(b=>!safeBang(b)||used.has(b.key)||(used.add(b.key),false))){$("settings-message").textContent="Invalid search bang: use a unique short key and an HTTPS template containing {query}.";return;}
-  const validated=cleanWorkspace({...state,links,bangs,motion:$("reduce-motion").checked,contrast:$("high-contrast").checked});
+  const cursor=document.querySelector('input[name="cursor-choice"]:checked')?.value||"system";
+  const validated=cleanWorkspace({...state,links,bangs,motion:$("reduce-motion").checked,contrast:$("high-contrast").checked,cursor,typography:typographyFromForm()});
   if(!validated){$("settings-message").textContent="Check all six links. Web addresses must start with https:// or http://.";return;}
   const before=state;
   state=validated;
-  if(!await persist(["links","bangs","motion","contrast"])){
+  if(!await persist(["links","bangs","motion","contrast","cursor","typography"])){
     state=before;
-    for(const field of ["links","bangs","motion","contrast"])dirtyFields.delete(field);
+    for(const field of ["links","bangs","motion","contrast","cursor","typography"])dirtyFields.delete(field);
     $("settings-message").textContent="Save failed. Your edits remain in this dialog; please retry.";
     return;
   }
@@ -707,6 +774,8 @@ $("close-recents").addEventListener("click",()=>$("recents-dialog").close());
 $("recent-enable").addEventListener("click",()=>{$("recents-dialog").close();showAccess();});
 $("cancel-settings").addEventListener("click",()=>$("settings-dialog").close());
 $("settings-form").addEventListener("submit",saveSettings);
+for(const id of ["typography-preset","typography-scale","typography-display","typography-ui","typography-mono","typography-japanese"])
+  $(id).addEventListener("change",updateTypographyPreview);
 $("reset-links").addEventListener("click",()=>{state.links=defaults.map(x=>({...x}));buildSettings();$("settings-message").textContent="Default links restored in editor. Save to apply.";});
 $("export-settings").addEventListener("click",saveJSON);
 $("import-settings").addEventListener("click",()=>$("import-file").click());
