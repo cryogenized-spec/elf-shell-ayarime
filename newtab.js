@@ -33,6 +33,7 @@ let searchQuery="";
 let selected=0;
 let searchRevision=0;
 let lastClosedDuplicates=[];
+let reopeningDuplicates=false;
 
 const validUrl=(url)=>{try{let u=new URL(url);return u.protocol==="https:"||u.protocol==="http:";}catch{return false;}};
 const cleanString=(v,max)=>typeof v==="string"?v.slice(0,max):"";
@@ -151,6 +152,31 @@ async function freshestSessions(){
   if(!ext)return state.sessions;
   const stored=await browser.storage.local.get(fieldKey("sessions"));
   return stored[fieldKey("sessions")]===undefined?state.sessions:cleanSessions(stored[fieldKey("sessions")]);
+}
+// Atomic cross-tab session mutations are processed by the Firefox background
+// page. The static Chromium preview has a local-only fallback (not a substitute
+// for testing the extension). The native path NEVER read-modify-writes sessions
+// independently from a dashboard tab.
+async function mutateSessions(action,data={}){
+  if(ext){
+    if(!browser.runtime?.sendMessage)throw Error("Firefox background session service is unavailable.");
+    const result=await browser.runtime.sendMessage({type:"elfshell:sessions:mutate:v1",action,...data});
+    if(!result?.ok)throw Error(result?.error||"Saved-workspace operation failed.");
+    state.sessions=cleanSessions(result.sessions);
+  }else{
+    const current=await freshestSessions();
+    if(action==="save"){
+      if(current.length>=10)throw Error("Ten workspaces already saved. Delete one first.");
+      state.sessions=cleanSessions([{name:data.name,created:new Date().toISOString(),urls:data.urls},...current]);
+    }else if(action==="delete"){
+      const id=item=>JSON.stringify([item.created,item.name,item.urls]);
+      state.sessions=current.filter(item=>id(item)!==id(data.workspace));
+    }else if(action==="replace")state.sessions=cleanSessions(data.sessions);
+    else throw Error("Invalid workspace operation");
+    if(!await persist(["sessions"]))throw Error("Local workspace storage failed.");
+  }
+  dirtyFields.delete("sessions");saveFailures.delete("sessions");
+  return state.sessions;
 }
 function applyAppearance(){document.body.classList.toggle("reduce-effects",state.motion);document.body.classList.toggle("high-contrast",state.contrast);}
 function renderLinks(){
@@ -424,12 +450,15 @@ async function importJSON(file){
     if(raw.memory!==undefined&&!memoryImport)throw Error("Invalid Memory Trace settings in backup");
     const before=state;
     state=imported;
-    if(!await persist(workspaceFields)){
+    const regularFields=workspaceFields.filter(field=>field!=="sessions");
+    if(!await persist(regularFields)){
       state=before;
-      for(const field of workspaceFields)dirtyFields.delete(field);
+      for(const field of regularFields)dirtyFields.delete(field);
       throw Error("Local storage rejected the import. Previous settings were retained; retry the file.");
     }
     workspaceCommitted=true;
+    try{await mutateSessions("replace",{sessions:imported.sessions});}
+    catch(error){state.sessions=before.sessions;throw error;}
     applyAppearance();renderLinks();$("focus-input").value=state.focus;$("note-input").value=state.note;
     if(feedImport)await window.elfFeeds.applySnapshot(feedImport);
     if(memoryImport)await window.elfMemory.applySnapshot(memoryImport);
@@ -461,7 +490,11 @@ function commandSuggestions(term){
   const needle=term.toLowerCase().replaceAll(/[^a-z0-9 ]/g,"").split(/\s+/).filter(Boolean);
   return actions.filter(a=>needle.every(w=>(a.label+" "+a.sub).toLowerCase().includes(w))).slice(0,8);
 }
-function showSessions(){renderWorkspaces();$("sessions-message").textContent="";$("sessions-dialog").showModal();}
+async function showSessions(){
+  $("sessions-message").textContent="";$("sessions-dialog").showModal();
+  try{state.sessions=await freshestSessions();renderWorkspaces();}
+  catch(error){console.error(error);$("sessions-message").textContent="Cannot refresh workspaces. Please reopen this panel.";}
+}
 function renderWorkspaces(){
   const root=$("workspace-list");root.replaceChildren();
   if(!state.sessions.length){const p=document.createElement("p");p.className="quiet";p.textContent="No saved workspaces yet.";root.append(p);return;}
@@ -477,14 +510,10 @@ function renderWorkspaces(){
     const remove=document.createElement("button");remove.type="button";remove.textContent="DELETE";
     remove.addEventListener("click",async()=>{
       if(!confirm(`Delete saved workspace “${item.name}”?`))return;
-      const before=state.sessions;
       try{
-        const latest=await freshestSessions();
-        // A saved item is identified by its timestamp, name, and list of URLs.
-        state.sessions=latest.filter(x=>!(x.created===item.created&&x.name===item.name&&JSON.stringify(x.urls)===JSON.stringify(item.urls)));
-        if(!await persist(["sessions"]))throw Error("Local storage rejected deletion");
+        await mutateSessions("delete",{workspace:item});
         renderWorkspaces();$("sessions-message").textContent="Workspace deleted locally.";
-      }catch(error){state.sessions=before;dirtyFields.delete("sessions");console.error(error);$("sessions-message").textContent="Delete was not saved. Please retry.";}
+      }catch(error){console.error(error);$("sessions-message").textContent="Delete was not saved: "+error.message+" Please retry.";}
     });
     row.append(info,open,remove);root.append(row);
   });
@@ -497,18 +526,10 @@ async function saveWorkspace(){
     const tabs=await browser.tabs.query({currentWindow:true});
     const urls=tabs.filter(t=>!t.incognito && validUrl(t.url) && t.url.length<=2048).slice(0,40).map(t=>t.url);
     if(!urls.length){$("sessions-message").textContent="No web tabs to save. Internal Firefox tabs are skipped.";return;}
-    const before=state.sessions;
-    const latest=await freshestSessions();
-    state.sessions=cleanSessions([{name,created:new Date().toISOString(),urls},...latest]).slice(0,10);
-    if(!await persist(["sessions"])){
-      state.sessions=before;
-      dirtyFields.delete("sessions");
-      $("sessions-message").textContent="Save failed. Your workspace name is still here; retry when storage is available.";
-      return;
-    }
+    await mutateSessions("save",{name,urls});
     renderWorkspaces();$("workspace-name").value="";
     $("sessions-message").textContent=`Saved ${urls.length} tabs locally. URLs may contain sensitive query parameters; export with care.`;
-  }catch(err){console.error(err);$("sessions-message").textContent="Unable to save workspace. Check Tabs permission.";}
+  }catch(err){console.error(err);$("sessions-message").textContent="Save failed: "+err.message+" Your workspace name is still here; retry when storage is available.";}
 }
 function showHousekeeping(){$("housekeeping-message").textContent="";$("housekeeping-dialog").showModal();}
 async function closeDuplicates(){
@@ -537,7 +558,8 @@ async function closeDuplicates(){
   }catch(error){console.error(error);$("housekeeping-message").textContent="Duplicate cleanup failed.";}
 }
 async function reopenDuplicates(){
-  if(!lastClosedDuplicates.length)return;
+  if(reopeningDuplicates||!lastClosedDuplicates.length)return;
+  reopeningDuplicates=true;
   const pending=lastClosedDuplicates.slice(),failed=[];
   // Reopening is best effort; preserve addresses that failed so the user can retry.
   let recovered=0;
@@ -549,9 +571,17 @@ async function reopenDuplicates(){
       catch(error){console.error("Could not reopen duplicate URL",error);failed.push(item);}
     }
   }
-  lastClosedDuplicates=failed;
-  $("undo-duplicates").hidden=failed.length===0;
-  $("housekeeping-message").textContent=`Reopened ${recovered} of ${pending.length} addresses.${failed.length?" Retry the remaining "+failed.length+" address(es) using the same button.":""} Unsaved page contents cannot be restored by this action.`;
+  // A second cleanup may append entries while awaits above are pending.
+  // Delete only entries successfully reopened from the LIVE queue; do not
+  // replace the queue with an earlier snapshot, losing newly closed tabs.
+  const successful=pending.filter(item=>!failed.includes(item));
+  for(const item of successful){
+    const index=lastClosedDuplicates.indexOf(item);
+    if(index>=0)lastClosedDuplicates.splice(index,1);
+  }
+  $("undo-duplicates").hidden=lastClosedDuplicates.length===0;
+  $("housekeeping-message").textContent=`Reopened ${recovered} of ${pending.length} addresses.${lastClosedDuplicates.length?" "+lastClosedDuplicates.length+" address(es) remain available to reopen.":""} Unsaved page contents cannot be restored by this action.`;
+  reopeningDuplicates=false;
   await diagnostics();
 }
 async function discardIdle(){

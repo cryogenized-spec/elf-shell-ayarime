@@ -27,13 +27,17 @@ assert(mainJs.includes('permissions.remove({origins:[origin]})'),'host revoke ac
 assert(mainJs.includes('REOPEN JUST-CLOSED DUPLICATE URLS')===false,'reopen button text should live in HTML');
 assert(mainJs.includes('lastClosedDuplicates.push(...chosen);'),'consecutive duplicate cleanups must preserve existing recovery entries');
 assert.equal((mainJs.match(/browser\.tabs\.query\(\{currentWindow:true\}\)/g)||[]).length,3,'saved workspace and both destructive housekeeping actions must be current-window scoped');
-assert(mainJs.includes('lastClosedDuplicates=failed;'),'failed tab-reopen attempts must remain retryable');
+assert(mainJs.includes('lastClosedDuplicates.indexOf(item)'),'successful reopen must remove only the actual entry from the live recovery queue');
+assert(mainJs.includes('reopeningDuplicates'),'duplicate recovery must prevent simultaneous reopen operations');
 assert(mainJs.includes('saveFailures.size?"SAVE ERROR"'), 'note save status must reflect storage write failures');
 assert(mainJs.includes('values[fieldKey(field)]'), 'workspace writes must be per-field');
 assert(!mainJs.includes('storage.local.set({[dataKey]:state})'), 'stale whole-workspace writes are prohibited');
 assert(mainJs.includes('browser.storage?.onChanged?.addListener(applyWorkspaceStorageChanges)'), 'cross-tab storage updates must be observed');
-assert(mainJs.includes('if(!await persist(["sessions"]))'), 'saved sessions must check persistence outcomes');
-assert(mainJs.includes('if(!await persist(workspaceFields))'), 'import must check persistence outcomes');
+assert(mainJs.includes('await mutateSessions("save",{name,urls})'), 'saved session mutations must use serialised background handler');
+assert(mainJs.includes('await mutateSessions("delete",{workspace:item})'), 'saved session deletions must use serialised background handler');
+assert(mainJs.includes('await persist(regularFields)'), 'import must check persistence outcomes');
+assert(mainJs.includes('await mutateSessions("replace",{sessions:imported.sessions})'),'session imports must use serialised background handler');
+assert(fs.readFileSync(path.join(root,'background.js'),'utf8').includes('sessionsChain=operation.then'), 'background must serialise saved workspace changes');
 assert(fs.readFileSync(path.join(root,'background.js'),'utf8').includes('browser.theme.update'),'browser chrome tint missing');
 
 const ico=fs.readFileSync(path.join(root,'favicon.ico'));

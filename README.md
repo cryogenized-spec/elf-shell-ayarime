@@ -155,3 +155,7 @@ The Station control uses a two-line centered heading and hint, with a larger gap
 - Corrects the note-save indicator: rejected storage writes now show **SAVE ERROR**, not **SAVED**.
 - Chromium/mock regressions cover cross-window protection, failed-reopen recovery, and storage-write errors.
 - **Not final**: requires native Firefox tests, Mozilla `web-ext lint`, and signing.
+
+#### Concurrency and recovery behaviour (v0.5.4 review)
+
+Firefox processes saved-workspace add/delete/import operations in the background extension event page, in order. Multiple open new-tab dashboards therefore cannot overwrite one another's concurrent workspace changes; newer background reads also load older-format saved sessions during the upgrade. The list has a maximum of ten entries, and saving a new one at capacity reports an error rather than silently dropping an old entry. Notes, focus and other unrelated preferences remain independent storage fields. Duplicate-tab recovery retains new cleanup entries appended during an in-flight reopen, but reopening a URL cannot recover unsaved form contents.

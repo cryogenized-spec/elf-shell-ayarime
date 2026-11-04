@@ -22,3 +22,11 @@ GitHub Actions successfully ran all source and packaging tests but `web-ext lint
 - Add cross-instance storage tests and mock-Firefox acceptance scenarios for both batches of recovery and failed saves.
 
 GitHub Actions Mozilla lint passed after the Firefox 142 minimum-version compatibility correction; remaining release gates are real Firefox permission/session/RSS/theme testing and Mozilla signing.
+
+### Codex P2 review fixes (follow-up)
+
+- Saved workspaces are now mutated by one **serialised background message queue**, rather than independent dashboard read-modify-write operations. Saves, deletions and JSON-import replacements share the same queue, preserving earlier v2/v3 saved sessions on first use. The 10-workspace limit is enforced without silently dropping an older saved workspace; rapid identical saves get distinct identities.
+- Duplicate-tab recovery now removes only successfully reopened entries from the **live** recovery queue. New cleanup batches added while a reopen is awaiting Firefox remain available. Overlapping reopen attempts are prevented.
+- Added `tests/session_races.cjs` and an in-flight reopen scenario in mock Firefox QA. These checks simulate simultaneous dashboard actions, storage rejection and retry, import replacement and the tab-recovery timing race.
+
+All GitHub CI results must be checked on the new commit. This is still a **release candidate**, not an installed or signed Firefox extension.

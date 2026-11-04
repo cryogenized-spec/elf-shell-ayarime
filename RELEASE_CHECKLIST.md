@@ -45,3 +45,11 @@
 - [ ] Confirm RSS controls fit in two rows at 390px and headlines remain readable/ellipsised when long.
 - [ ] Confirm no `/favicon.ico` request fails in browser console/network log.
 - [ ] Re-test Firefox-native APIs, optional permission prompts, bookmarks/history/sessions, and theme under a temporary extension install.
+
+### Codex follow-up review and CI
+
+- [x] Address initial P1 feedback: independent field storage, truthful failure states, persistent duplicate recovery.
+- [x] Address follow-up P2 feedback: background-serialised workspace saves/deletions/imports; live recovery queue preservation during pending tab reopens.
+- [x] Add automated regressions for both cross-tab workspace mutations and in-flight duplicate recovery.
+- [ ] Confirm GitHub Actions and a fresh Codex review on the updated commit, then resolve or document outstanding findings.
+- [ ] Real Firefox 142+ temporary extension tests on a disposable profile, including optional grants, sessions, restart persistence, RSS and dynamic browser theme.

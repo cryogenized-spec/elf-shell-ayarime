@@ -21,15 +21,16 @@ with sync_playwright() as p:
       window.confirm=()=>true;
       window.browser={
         storage:{local:{get:async keys=>Object.fromEntries([].concat(keys).map(k=>[k,local[k]])),set:async value=>Object.assign(local,value)}},
+        theme:{update:async()=>{}},
         permissions:{contains:async ({permissions,origins:orig})=>permissions?permissions.every(x=>x==='tabs'):orig.every(x=>origins.includes(x)),getAll:async()=>({permissions:['tabs'],origins}),remove:async obj=>{if(obj.origins){origins=origins.filter(x=>!obj.origins.includes(x));return true;}return false;},request:async()=>true},
         tabs:{query:async opts=>opts?.currentWindow?tabs.filter(t=>t.windowId===1):tabs,remove:async ids=>{window.__mock.removed.push(...ids);tabs=tabs.filter(t=>!ids.includes(t.id));},create:async data=>{window.__mock.created.push(data);return {...data,id:104}},discard:async ids=>{window.__mock.discarded.push(...ids);return [];}} ,
-        runtime:{},
+        runtime:{onInstalled:{addListener:()=>{}},onStartup:{addListener:()=>{}},onMessage:{addListener:listener=>{window.__sessionListener=listener;}},sendMessage:msg=>window.__sessionListener(msg)},
         sessions:{getRecentlyClosed:async()=>[]}
       };
       window.fetch=async()=>({ok:true,json:async()=>JSON.parse(%s)});
     })();'''%json.dumps((ROOT/'assets/ayarime-quotes.json').read_text())
     page.evaluate(mock)
-    for source in ['newtab.js','memory.js','feeds.js']:
+    for source in ['background.js','newtab.js','memory.js','feeds.js']:
         page.add_script_tag(content=(ROOT/source).read_text())
     page.locator('#station-menu summary').click()
     page.locator('#permissions-toggle').click()
@@ -59,6 +60,30 @@ with sync_playwright() as p:
     page.wait_for_timeout(100)
     assert page.evaluate('window.__mock.created.length')==2
     assert set(page.evaluate('window.__mock.created.map(x=>x.url)'))=={'https://example.org/abc','https://example.org/other'}
+    assert page.locator('#undo-duplicates').is_hidden()
+    # Codex P2: a new cleanup during a slow reopen must remain in the LIVE queue.
+    page.evaluate('''() => {
+      window.__mock.addTab({id:107,url:'https://example.org/other',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:4});
+      window.__originalCreateAgain=window.browser.tabs.create;
+      window.__reopenGateTriggered=false;
+      window.browser.tabs.create=async data=>{
+        if(!window.__reopenGateTriggered){
+          window.__reopenGateTriggered=true;
+          await new Promise(resolve=>window.__releaseReopen=resolve);
+        }
+        return window.__originalCreateAgain(data);
+      };
+    }''')
+    page.locator('#close-duplicates').click()
+    page.evaluate('''() => {window.__reopenTask=reopenDuplicates();}''')
+    page.wait_for_function('window.__reopenGateTriggered && typeof window.__releaseReopen === "function"')
+    page.evaluate('''() => window.__mock.addTab({id:108,url:'https://example.org/other',active:false,pinned:false,audible:false,incognito:false,windowId:1,index:5})''')
+    page.locator('#close-duplicates').click()
+    page.evaluate('''() => window.__releaseReopen()''')
+    page.evaluate('''async()=>await window.__reopenTask''')
+    assert page.locator('#undo-duplicates').is_visible(), 'cleanup added during reopen must remain recoverable'
+    assert page.evaluate('lastClosedDuplicates.length')==1
+    page.locator('#undo-duplicates').click()
     assert page.locator('#undo-duplicates').is_hidden()
     page.locator('#close-housekeeping').click()
     # Persist must not misreport success when Firefox local storage rejects a write.
