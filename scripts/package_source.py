@@ -1,77 +1,94 @@
 #!/usr/bin/env python3
-"""Assemble a deterministic, reviewable AMO *source* submission archive.
+"""Build a deterministic Mozilla reviewer source ZIP using tracked files only.
 
-This is NOT the runtime extension ZIP. It includes the locked nspell build
-inputs and complete project source, while excluding dependencies and local
-outputs. Unlike blindly zipping a working tree, only explicit paths are used
-so untracked secret files cannot accidentally enter the source submission.
+A clean Git checkout inventories tracked files; the resulting ZIP embeds its
+own file inventory so the exact source archive can be rebuilt without .git.
+No untracked files, credentials, local dependencies, or build outputs enter it.
 """
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import hashlib
 import json
+import subprocess
 import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = json.loads((ROOT / 'manifest.json').read_text())['version']
+VERSION = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))['version']
 OUTPUT = ROOT / 'dist' / f'ELF-SHELL-Ayarime-v{VERSION}-source.zip'
-ROOT_FILES = (
-    '.gitignore', 'AGENTS.md', 'ARTWORK_LICENSE.md', 'CONTRIBUTING.md',
-    'LICENSE', 'LICENSE_SCOPE.md', 'LIVE_FIREFOX_TESTS.md', 'PRIVACY.md',
-    'README.md', 'RELEASE_CHECKLIST.md',
-    'RELEASE_NOTES_0.5.1.md', 'RELEASE_NOTES_0.5.2.md',
-    'RELEASE_NOTES_0.5.3.md', 'RELEASE_NOTES_0.5.4.md',
-    'manifest.json', 'package.json', 'background.js', 'feeds.js',
-    'newtab.html', 'newtab.js', 'memory.js', 'styles.css',
-    'typography.css', 'favicon.ico',
-)
-SOURCE_FOLDERS = ('.github', 'assets', 'LICENSES', 'scripts', 'spelling', 'tests')
+INVENTORY = 'AMO-SOURCE-MANIFEST.json'
 SKIP_DIRS = {'node_modules', 'dist', '.git', '__pycache__', '.pytest_cache'}
 REQUIRED = {
     'spelling/vendor/src/index.js', 'spelling/vendor/package.json',
     'spelling/vendor/package-lock.json', 'spelling/vendor/README.md',
     'scripts/verify-spelling.cjs', 'scripts/package.py',
-    'spelling/nspell-bundle.js', 'spelling/IS-BUFFER-LICENSE.txt',
+    'scripts/package_source.py', 'spelling/nspell-bundle.js',
+    'spelling/IS-BUFFER-LICENSE.txt', 'LICENSE', 'manifest.json',
+    'package.json',
 }
-def collect():
-    listed = [ROOT / name for name in ROOT_FILES]
-    for folder_name in SOURCE_FOLDERS:
-        folder = ROOT / folder_name
-        if not folder.is_dir():
-            raise ValueError('Missing source folder: ' + folder_name)
-        listed.extend(p for p in folder.rglob('*')
-                      if p.is_file() and not any(part in SKIP_DIRS
-                      for part in p.relative_to(ROOT).parts))
-    expected = sorted({p.relative_to(ROOT).as_posix(): p for p in listed}.items())
-    for name, file in expected:
-        if not file.is_file():
-            raise ValueError('Missing source file: ' + name)
-        if file.is_symlink():
-            raise ValueError('Symlinks are not allowed in source ZIP: ' + name)
-    missing = REQUIRED - {name for name, _ in expected}
+
+def inventory():
+    if (ROOT / '.git').exists():
+        # Tracked-only inventory avoids untracked scratch files and secrets.
+        status = subprocess.run(
+            ['git', 'status', '--porcelain=v1', '--untracked-files=no'],
+            cwd=ROOT, capture_output=True, check=True
+        )
+        if status.stdout:
+            raise ValueError('Refusing source archive with modified tracked files')
+        tracked = subprocess.run(['git', 'ls-files', '-z'], cwd=ROOT,
+                                 capture_output=True, check=True).stdout
+        names = [p.decode('utf-8') for p in tracked.split(b'\0') if p]
+    else:
+        # Firefox AMO reviewers receive an extracted ZIP with no Git metadata.
+        manifest = ROOT / INVENTORY
+        if not manifest.is_file():
+            raise ValueError('Need a clean Git checkout or an extracted AMO source ZIP')
+        value = json.loads(manifest.read_text(encoding='utf-8'))
+        if value.get('format') != 'ayarime-amo-source-v1' or not isinstance(value.get('files'), list):
+            raise ValueError('Invalid source inventory')
+        names = value['files']
+    result = []
+    for name in names:
+        if not isinstance(name, str) or not name:
+            raise ValueError('Invalid tracked path')
+        path = PurePosixPath(name)
+        if path.is_absolute() or '..' in path.parts or '\\' in name or name == INVENTORY:
+            raise ValueError('Unsafe source path: ' + name)
+        if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        file = ROOT / path
+        if not file.is_file() or file.is_symlink():
+            raise ValueError('Missing or unsafe source file: ' + name)
+        result.append(name)
+    if len(result) != len(set(result)):
+        raise ValueError('Duplicate source paths')
+    result.sort()
+    missing = REQUIRED - set(result)
     if missing:
-        raise ValueError('Missing AMO source inputs: ' + repr(missing))
-    return expected
+        raise ValueError('Required source inputs missing: ' + repr(sorted(missing)))
+    return result
 
 def build():
-    expected = collect()
+    names = inventory()
+    manifest_bytes = (json.dumps({'format': 'ayarime-amo-source-v1', 'files': names},
+                                ensure_ascii=False, indent=2) + '\n').encode('utf-8')
     OUTPUT.parent.mkdir(exist_ok=True)
+    entries = sorted([(name, (ROOT / name).read_bytes()) for name in names]
+                     + [(INVENTORY, manifest_bytes)])
     with zipfile.ZipFile(OUTPUT, 'w', compression=zipfile.ZIP_DEFLATED,
                          compresslevel=9) as archive:
-        for name, file in expected:
+        for name, content in entries:
             info = zipfile.ZipInfo(name, (2026, 11, 4, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
-            archive.writestr(info, file.read_bytes(), compress_type=zipfile.ZIP_DEFLATED,
+            archive.writestr(info, content, compress_type=zipfile.ZIP_DEFLATED,
                              compresslevel=9)
     with zipfile.ZipFile(OUTPUT) as archive:
-        names = archive.namelist()
-        if names != [name for name, _ in expected] or archive.testzip():
-            raise ValueError('Source ZIP failed integrity verification')
-        if any('node_modules' in name.split('/') or name.startswith('dist/')
-               for name in names):
-            raise ValueError('Build dependencies or output slipped into source ZIP')
-    print(f'AMO reviewer source ZIP: {OUTPUT} ({len(expected)} files)')
+        if archive.namelist() != [name for name, _ in entries] or archive.testzip():
+            raise ValueError('Source ZIP integrity verification failed')
+        if any(archive.read(name) != content for name, content in entries):
+            raise ValueError('Source ZIP contents changed')
+    print(f'AMO reviewer source ZIP: {OUTPUT} ({len(entries)} files)')
     print('SHA256:', hashlib.sha256(OUTPUT.read_bytes()).hexdigest())
 
 if __name__ == '__main__':
