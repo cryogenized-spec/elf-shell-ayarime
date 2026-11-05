@@ -118,6 +118,8 @@ try:
         WebDriverWait(driver,12).until(lambda d:"declined" in d.find_element(By.ID,"feed-message").text.lower())
         if await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});'):
             raise AssertionError("Firefox granted host access after Deny")
+        if (await_api('return await browser.permissions.getAll();')).get("origins"):
+            raise AssertionError("Deny left unexpected host grants")
         state=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
         if state and state.get("feeds"):
             raise AssertionError("Declined permission nonetheless saved feed: "+repr(state))
@@ -130,8 +132,19 @@ try:
             lambda d:await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});') is True)
         WebDriverWait(driver,18).until(lambda d:
             len((await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];') or {}).get("feeds",[]))==1)
-        WebDriverWait(driver,23).until(lambda d:"Subscription saved" in d.find_element(By.ID,"feed-message").text)
+        host_grants=(await_api('return await browser.permissions.getAll();')).get("origins",[])
+        if host_grants != ["https://github.blog/*"]:
+            raise AssertionError("Allow unexpectedly granted other hosts: "+repr(host_grants))
+        scripts=await_api('return await browser.scripting.getRegisteredContentScripts();')
+        if scripts: raise AssertionError("RSS host consent unexpectedly registered spelling script")
+        # Wait for the live RSS request to finish, rather than matching the
+        # intermediate status "Subscription saved. Fetching...".
+        WebDriverWait(driver,26).until(lambda d:
+            "Subscription saved" in d.find_element(By.ID,"feed-message").text and
+            "Fetching" not in d.find_element(By.ID,"feed-message").text)
         result["liveFeedMessage"]=driver.find_element(By.ID,"feed-message").text
+        cache=await_api('return (await browser.storage.local.get("elfshell-rss-cache-v1"))["elfshell-rss-cache-v1"];') or {}
+        result["liveFeedCacheCount"]=len(cache.get("https://github.blog/feed/",{}).get("items",[]))
     check("real Firefox Allow grants only requested HTTPS host and saves RSS subscription",allow_and_subscribe)
 
     def revoke_host():
@@ -143,7 +156,19 @@ try:
         remaining=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
         if len((remaining or {}).get("feeds",[]))!=1:
             raise AssertionError("Revocation deleted subscription metadata")
+        if (await_api('return await browser.permissions.getAll();')).get("origins"):
+            raise AssertionError("Revocation left host grants behind")
     check("RSS Revoke Host removes access but preserves local subscription",revoke_host)
+
+    def post_revoke_no_fetch():
+        before=await_api('return (await browser.storage.local.get("elfshell-rss-cache-v1"))["elfshell-rss-cache-v1"];') or {}
+        attempted=(before.get("https://github.blog/feed/") or {}).get("attemptedAt")
+        driver.find_element(By.ID,"feed-refresh").click()
+        WebDriverWait(driver,10).until(lambda d:"Feed check complete" in d.find_element(By.ID,"feed-message").text)
+        after=await_api('return (await browser.storage.local.get("elfshell-rss-cache-v1"))["elfshell-rss-cache-v1"];') or {}
+        if (after.get("https://github.blog/feed/") or {}).get("attemptedAt")!=attempted:
+            raise AssertionError("Refreshing after host revocation made a new feed attempt")
+    check("refresh after host revocation makes no new RSS fetch",post_revoke_no_fetch)
 
     result["status"]="PASS"
 except Exception as exc:
