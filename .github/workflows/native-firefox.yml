@@ -40,6 +40,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_permissions.py
+      - name: Test native Firefox offline spelling activation and revocation
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_firefox_spelling.py
       - name: Upload Firefox screenshot and structured test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -49,4 +53,5 @@ jobs:
             dist/native-firefox-qa/
             dist/firefox-consent-qa/
             dist/firefox-permission-qa/
+            dist/firefox-spelling-qa/
           if-no-files-found: warn
