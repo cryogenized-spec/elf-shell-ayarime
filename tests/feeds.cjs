@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
+const {normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
 assert.equal(normaliseFeedUrl('thebrowser.substack.com'), 'https://thebrowser.substack.com/feed');
 assert.equal(normaliseFeedUrl('https://thebrowser.substack.com/p/a-story?utm_source=test'), 'https://thebrowser.substack.com/feed');
 assert.equal(normaliseFeedUrl('https://www.example.org/rss.xml'), 'https://www.example.org/rss.xml');
@@ -58,6 +58,17 @@ assert.equal(hasUnsafeXmlDeclaration('<rss><![CDATA[unclosed <!DOCTYPE html></rs
   'unclosed CDATA is malformed and must fail closed');
 assert.equal(hasUnsafeXmlDeclaration('<rss><!-- unclosed <!ENTITY x SYSTEM "file:///a"></rss>'),true,
   'unclosed XML comments must fail closed');
+const processingInstructionBypass='<?sample <!-- ?><!DOCTYPE rss [<!ENTITY title "expanded">]><!-- --><rss/>';
+assert.equal(hasUnsafeXmlDeclaration(processingInstructionBypass),true,
+  'processing-instruction comment text must not hide a later real DTD');
+assert.throws(()=>parseFeedXml(processingInstructionBypass,'https://example.org/rss'),/DTD\/entities/,
+  'RSS parsing must reject processing-instruction DTD bypass before DOMParser');
+assert.throws(()=>parseOpml(processingInstructionBypass),/DTD\/entities/,
+  'OPML parsing must reject processing-instruction DTD bypass before DOMParser');
+assert.equal(hasUnsafeXmlDeclaration('<?sample <!-- ?><rss/>'),false,
+  'a completed processing instruction is not a real XML comment or DTD');
+assert.equal(hasUnsafeXmlDeclaration('<?sample <!-- <rss/>'),true,
+  'unterminated processing instructions must fail closed');
 // Parser rejects DTD before any DOM parsing (no external entity expansion).
 assert.throws(()=>parseFeedXml('<!DOCTYPE x><rss/>','https://example.org/rss'),/DTD\/entities/);
 assert(/redirect:"error"/.test(require('node:fs').readFileSync(require('node:path').join(__dirname,'..','feeds.js'),'utf8')),'feed fetches must not follow redirects to unapproved sites');
