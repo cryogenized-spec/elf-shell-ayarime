@@ -13,7 +13,7 @@ import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,12 +46,20 @@ def storage(key):
     return reply
 
 def new_tab():
-    # Firefox Marionette deliberately blocks direct driver.get("about:newtab")
-    # navigation. Use the normal browser new-tab keyboard shortcut instead,
-    # which exercises the actual user-visible new-tab override.
+    # Firefox Marionette blocks direct about:newtab navigation, and the
+    # headless WebDriver keyboard channel cannot activate browser Ctrl+T.
+    # Only in this disposable CI Firefox, use Gecko's browser/chrome testing
+    # context to open a *real* user-facing new tab, then return to content.
     old_handles = set(driver.window_handles)
-    ActionChains(driver).key_down(Keys.CONTROL).send_keys("t").key_up(Keys.CONTROL).perform()
-    WebDriverWait(driver, 12).until(lambda d: len(set(d.window_handles) - old_handles) == 1)
+    with driver.context(driver.CONTEXT_CHROME):
+        driver.execute_script("""
+            const {Services} = ChromeUtils.importESModule("resource://gre/modules/Services.sys.mjs");
+            const win = Services.wm.getMostRecentWindow("navigator:browser");
+            if (!win || !win.gBrowser) throw new Error("Firefox browser chrome not ready");
+            const tab = win.gBrowser.addTrustedTab("about:newtab");
+            win.gBrowser.selectedTab = tab;
+        """)
+    WebDriverWait(driver, 15).until(lambda d: len(set(d.window_handles) - old_handles) == 1)
     new_handle = next(iter(set(driver.window_handles) - old_handles))
     driver.switch_to.window(new_handle)
     WebDriverWait(driver, 20).until(
@@ -69,7 +77,10 @@ try:
     options.set_preference("browser.shell.checkDefaultBrowser", False)
     options.set_preference("app.update.enabled", False)
     options.set_preference("browser.startup.homepage", "about:blank")
-    driver = webdriver.Firefox(options=options)
+    # System/chrome WebDriver access is restricted to the ephemeral CI runner;
+    # it allows opening actual Firefox new tabs, not touching user machines.
+    driver = webdriver.Firefox(options=options,
+                              service=FirefoxService(service_args=["--allow-system-access"]))
     driver.set_page_load_timeout(25)
     driver.set_script_timeout(20)
     driver.set_window_size(1366, 768)
