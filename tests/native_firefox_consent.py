@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -139,9 +140,14 @@ try:
         def untouched_site():
             ensure(driver.execute_script('return typeof window.__elfshellSpelling === "undefined"'),
                    "Spelling script appeared on an unapproved website")
-            driver.execute_script('const d=document.createElement("div");d.id="qa-editor";d.contentEditable="true";d.textContent="teh quik brwn fox";document.body.append(d);')
-            ensure(not driver.execute_script('return document.getElementById("qa-editor").hasAttribute("spellcheck")'),
-                   "Unapproved site had its native spelling attribute changed")
+            driver.execute_script('const d=document.createElement("div");d.id="qa-editor";d.contentEditable="true";d.setAttribute("spellcheck","true");d.textContent="teh quik brwn fox";document.body.append(d);')
+            editor = driver.find_element(By.ID, "qa-editor")
+            editor.click()
+            editor.send_keys(" mispeled")
+            time.sleep(1.2)
+            ensure(driver.execute_script('return document.getElementById("qa-editor").getAttribute("spellcheck")') == "true",
+                   "Unapproved editor lost native spelling after focus and typing")
+            ensure("mispeled" in editor.text, "Synthetic editor was not exercised")
         check("a public HTTPS rich editor remains unaffected without spelling opt-in", untouched_site)
         with driver.context(driver.CONTEXT_CHROME):
             controls = driver.execute_script("""
