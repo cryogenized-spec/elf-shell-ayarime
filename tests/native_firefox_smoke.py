@@ -13,6 +13,7 @@ import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -45,7 +46,14 @@ def storage(key):
     return reply
 
 def new_tab():
-    driver.get("about:newtab")
+    # Firefox Marionette deliberately blocks direct driver.get("about:newtab")
+    # navigation. Use the normal browser new-tab keyboard shortcut instead,
+    # which exercises the actual user-visible new-tab override.
+    old_handles = set(driver.window_handles)
+    ActionChains(driver).key_down(Keys.CONTROL).send_keys("t").key_up(Keys.CONTROL).perform()
+    WebDriverWait(driver, 12).until(lambda d: len(set(d.window_handles) - old_handles) == 1)
+    new_handle = next(iter(set(driver.window_handles) - old_handles))
+    driver.switch_to.window(new_handle)
     WebDriverWait(driver, 20).until(
         lambda d: d.current_url.startswith("moz-extension://") and
         len(d.find_elements(By.ID, "search-input")) == 1
@@ -120,7 +128,6 @@ try:
     check("command palette calculator and Escape", search_math)
 
     def cross_tab_persistence():
-        driver.switch_to.new_window("tab")
         new_tab()
         WebDriverWait(driver, 15).until(lambda d: d.find_element(By.ID, "note-input").get_attribute("value") == note)
         assert_true(driver.find_element(By.ID, "focus-input").get_attribute("value") == focus,
