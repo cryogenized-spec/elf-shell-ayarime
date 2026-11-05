@@ -1,6 +1,8 @@
 name: Native Firefox temporary-extension smoke tests
 
 on:
+  push:
+    branches: [release/v0.5.4-review]
   pull_request:
     branches: [release/v0.5.4-review]
   workflow_dispatch:
