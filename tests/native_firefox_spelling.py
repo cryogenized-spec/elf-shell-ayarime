@@ -126,8 +126,11 @@ try:
         editor=driver.find_element(By.ID,"qa-rich-editor")
         editor.click()
         editor.send_keys("This is a mispeled sentance.")
-        WebDriverWait(driver,25).until(lambda d:
-            d.execute_script("return document.getElementById('qa-rich-editor').getAttribute('spellcheck')")=="false")
+        WebDriverWait(driver,25).until(lambda d:d.execute_script("""
+            const root=document.getElementById("qa-rich-editor");
+            const marked=CSS.highlights?.get("elfshell-spelling-errors-v1");
+            return root?.getAttribute("spellcheck")==="false" && marked?.size>=1;
+        """))
         highlights=driver.execute_script("""
             return {supported:!!CSS.highlights, exists:!!CSS.highlights?.get("elfshell-spelling-errors-v1"),
                 count:CSS.highlights?.get("elfshell-spelling-errors-v1")?.size||0};
