@@ -112,10 +112,9 @@ try:
     results["newTabUrl"] = driver.current_url
 
     def dashboard():
-        assert_true(len(driver.find_elements(By.CSS_SELECTOR, "#shortcuts a")) >= 6,
-                    "six dashboard shortcuts did not render")
-        assert_true(bool(driver.find_element(By.ID, "memory-compact-en").text.strip()),
-                    "Memory Trace quote missing")
+        WebDriverWait(driver, 15).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "#shortcuts a")) == 6)
+        WebDriverWait(driver, 10).until(
+            lambda d: bool(d.find_element(By.ID, "memory-compact-en").text.strip()))
         assert_true(driver.find_element(By.ID, "feed-manage").is_displayed(),
                     "RSS manager inaccessible")
     check("six launchers, Memory Trace and RSS controls render", dashboard)
