@@ -82,9 +82,40 @@
       return (url.protocol === "https:" || url.protocol === "http:") && !url.username && !url.password;
     } catch { return false; }
   }
+  // Reject actual DTD/entity declarations *before* DOMParser sees XML.
+  // Published feeds often embed illustrative HTML such as <!DOCTYPE html>
+  // in CDATA descriptions (or comments); a blanket whole-string regex
+  // incorrectly rejects these entirely inert article snippets.
+  function hasUnsafeXmlDeclaration(xml) {
+    let from = 0;
+    while (true) {
+      // Scan *all* opening angle brackets in lexical order. A processing
+      // instruction may itself contain "<!--" without beginning a comment:
+      // <?sample <!-- ?><!DOCTYPE rss ...> must still reject the real DTD.
+      const start = xml.indexOf("<", from);
+      if (start < 0) return false;
+      if (xml.startsWith("<?", start)) {
+        const end = xml.indexOf("?>", start + 2);
+        if (end < 0) return true;
+        from = end + 2; continue;
+      }
+      if (xml.startsWith("<!--", start)) {
+        const end = xml.indexOf("-->", start + 4);
+        if (end < 0) return true; // malformed, never pass to XML parser
+        from = end + 3; continue;
+      }
+      if (xml.startsWith("<![CDATA[", start)) {
+        const end = xml.indexOf("]]>", start + 9);
+        if (end < 0) return true;
+        from = end + 3; continue;
+      }
+      if (/^<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml.slice(start, start + 48))) return true;
+      from = start + 2;
+    }
+  }
   function parseFeedXml(xml, sourceUrl) {
     if (typeof xml !== "string" || xml.length > 1500000) throw new Error("Feed XML exceeds the size limit.");
-    if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml))throw new Error("Feeds with XML DTD/entities are not supported.");
+    if (hasUnsafeXmlDeclaration(xml))throw new Error("Feeds with XML DTD/entities are not supported.");
     const doc = new DOMParser().parseFromString(xml, "application/xml");
     if (doc.getElementsByTagName("parsererror").length) throw new Error("Invalid RSS/Atom XML.");
     const root = doc.documentElement;
@@ -120,7 +151,7 @@
   }
   function parseOpml(xml) {
     if (typeof xml !== "string" || xml.length > 350000) throw new Error("OPML file too large.");
-    if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml))throw new Error("OPML with XML DTD/entities is not supported.");
+    if (hasUnsafeXmlDeclaration(xml))throw new Error("OPML with XML DTD/entities is not supported.");
     const doc = new DOMParser().parseFromString(xml, "application/xml");
     if (doc.getElementsByTagName("parsererror").length || doc.documentElement?.localName.toLowerCase() !== "opml") throw new Error("Invalid OPML document.");
     const result = [], seen = new Set();
@@ -395,7 +426,7 @@
     // No periodic background service. Only check saved, already-authorised feeds on an open new tab.
     if(prefs.feeds.some(f=>f.enabled))refreshFeeds(false);
   }
-  if(typeof module!=="undefined" && module.exports)module.exports={normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml};
+  if(typeof module!=="undefined" && module.exports)module.exports={normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration};
   if(typeof document==="undefined")return;
   window.elfFeeds={
     snapshot:()=>({...prefs,feeds:prefs.feeds.map(x=>({...x}))}),
