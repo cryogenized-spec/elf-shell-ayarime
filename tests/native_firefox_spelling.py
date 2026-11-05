@@ -176,8 +176,8 @@ try:
             d.find_element(By.ID,"qa-rich-editor").text!=original_text)
         edited=driver.find_element(By.ID,"qa-rich-editor").text
         res["correctionText"]=edited
-        ensure("mispeled" not in edited,
-               "The first suggestion did not replace the misspelled token")
+        ensure(edited=="This is a misspelled sentance.",
+               "Suggestion corrupted surrounding text or failed exact correction: "+repr(edited))
         editor.send_keys(Keys.CONTROL,"z")
         WebDriverWait(driver,10).until(lambda d:
             d.find_element(By.ID,"qa-rich-editor").text==original_text)
