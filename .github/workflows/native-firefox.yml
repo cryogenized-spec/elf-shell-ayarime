@@ -32,10 +32,16 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_smoke.py
-      - name: Upload Firefox screenshot and structured test report
+      - name: Test pre-consent spelling isolation and RSS imports in real Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_firefox_consent.py
+      - name: Upload Firefox screenshot and structured test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-firefox-qa
-          path: dist/native-firefox-qa/
+          path: |
+            dist/native-firefox-qa/
+            dist/firefox-consent-qa/
           if-no-files-found: warn
