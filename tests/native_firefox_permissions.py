@@ -68,6 +68,17 @@ try:
         # The user gesture is from the actual add-subscription form, not JS.
         # No synthetic permission grant is issued to the extension.
         with driver.context(driver.CONTEXT_CHROME):
+            # A real native prompt must appear; otherwise this check fails,
+            # rather than logging an empty panel as successful consent UI.
+            WebDriverWait(driver,12).until(lambda d:d.execute_script("""
+                const panel=document.getElementById("notification-popup");
+                const prompt=document.getElementById("addon-webext-permissions-notification");
+                return ["showing","open"].includes(panel?.state) &&
+                    prompt && !prompt.hidden &&
+                    (prompt.textContent||"").includes("github.blog") &&
+                    prompt.button?.getAttribute("label")==="Allow" &&
+                    prompt.secondaryButton?.getAttribute("label")==="Deny";
+            """))
             chrome=driver.execute_script("""
                 const panel=document.getElementById("notification-popup");
                 const match=document.getElementById("addon-webext-permissions-notification");
