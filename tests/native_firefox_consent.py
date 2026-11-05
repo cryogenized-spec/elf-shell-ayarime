@@ -186,8 +186,24 @@ try:
                         title:e.getAttribute("title")
                     }));
                 """)
-            results["firefoxActionPopup"] = popup
-            print("FIREFOX ACTION POPUP:", json.dumps(popup,ensure_ascii=False)[:12000],flush=True)
+            results["firefoxActionPopup"] = [x for x in popup if x["state"]=="open" or x["view"]=="popup"]
+            print("FIREFOX ACTION POPUP:", json.dumps(results["firefoxActionPopup"],ensure_ascii=False)[:3500],flush=True)
+            try:
+                with driver.context(driver.CONTEXT_CHROME):
+                    popup_frame = driver.find_element(By.CSS_SELECTOR, 'browser[webextension-view-type="popup"]')
+                    driver.switch_to.frame(popup_frame)
+                    results["popupFrameUrl"] = driver.execute_script("return document.location.href;")
+                    results["popupSite"] = driver.find_element(By.ID, "site").text
+                    results["popupToggle"] = driver.find_element(By.ID, "toggle").text
+                    driver.switch_to.default_content()
+                print("POPUP FRAME:",results["popupFrameUrl"],results["popupSite"],results["popupToggle"],flush=True)
+            except Exception as frameError:
+                results["popupFrameError"] = str(frameError)
+                print("POPUP FRAME DIAGNOSTIC:",str(frameError)[:1500],flush=True)
+                try:
+                    driver.switch_to.default_content()
+                except Exception:
+                    pass
         except Exception as menuError:
             results["firefoxExtensionsMenuError"] = str(menuError)
             print("Firefox toolbar menu diagnostic:",str(menuError),flush=True)
