@@ -12,6 +12,7 @@ import sys
 import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -102,7 +103,15 @@ try:
             expected = "Deny" if choice=="secondary" else "Allow"
             if button.get_attribute("label")!=expected:
                 raise AssertionError("Wrong Firefox prompt button: "+repr(button.get_attribute("label")))
-            button.click()
+            result["lastButtonGeometry"]=driver.execute_script("""
+                const e=arguments[0],r=e.getBoundingClientRect();
+                return {x:r.x,y:r.y,width:r.width,height:r.height,
+                    display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility};
+            """,button)
+            # Firefox's new moz-button custom control is not always treated as
+            # scrollable by WebDriver's element.click(). Send a real pointer
+            # action instead, without invoking a synthetic JS click.
+            ActionChains(driver).move_to_element(button).click().perform()
 
     def deny_no_side_effect():
         click_prompt_choice("secondary")
