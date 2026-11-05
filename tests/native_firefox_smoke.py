@@ -53,9 +53,13 @@ def new_tab():
     old_handles = set(driver.window_handles)
     with driver.context(driver.CONTEXT_CHROME):
         driver.execute_script("""
-            const {Services} = ChromeUtils.importESModule("resource://gre/modules/Services.sys.mjs");
-            const win = Services.wm.getMostRecentWindow("navigator:browser");
-            if (!win || !win.gBrowser) throw new Error("Firefox browser chrome not ready");
+            // Executed in a real Firefox browser-chrome window by Marionette.
+            // Avoid importing parent-only Services.sys.mjs in this sandbox.
+            const win = window;
+            if (!win.gBrowser) {
+                throw new Error("Browser-chrome gBrowser unavailable: " +
+                    String(win.location && win.location.href));
+            }
             const tab = win.gBrowser.addTrustedTab("about:newtab");
             win.gBrowser.selectedTab = tab;
         """)
