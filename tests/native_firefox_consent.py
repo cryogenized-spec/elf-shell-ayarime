@@ -172,6 +172,22 @@ try:
                 """)
             results["firefoxExtensionsMenu"] = menu
             print("FIREFOX EXTENSIONS MENU:",json.dumps(menu,ensure_ascii=False)[:10000],flush=True)
+            with driver.context(driver.CONTEXT_CHROME):
+                driver.find_element(By.ID, "elf-shell-ayarime_local_theme-BAP").click()
+                popup = driver.execute_script("""
+                    return [...document.querySelectorAll(
+                        'panel,[id*="webextension"],[id*="popup"],browser[webextension-view-type]'
+                    )].filter(e=>e.isConnected).slice(0,100).map(e=>({
+                        tag:e.tagName,id:e.id,label:e.getAttribute("label"),
+                        type:e.getAttribute("type"),open:e.getAttribute("open"),
+                        state:e.state||null,src:e.getAttribute("src"),
+                        view:e.getAttribute("webextension-view-type"),
+                        child:e.contentDocument?.documentElement?.outerHTML?.slice(0,300)||null,
+                        title:e.getAttribute("title")
+                    }));
+                """)
+            results["firefoxActionPopup"] = popup
+            print("FIREFOX ACTION POPUP:", json.dumps(popup,ensure_ascii=False)[:12000],flush=True)
         except Exception as menuError:
             results["firefoxExtensionsMenuError"] = str(menuError)
             print("Firefox toolbar menu diagnostic:",str(menuError),flush=True)
