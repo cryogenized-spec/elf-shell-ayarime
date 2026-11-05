@@ -3,13 +3,6 @@ name: Native Firefox temporary-extension smoke tests
 on:
   pull_request:
     branches: [release/v0.5.4-review]
-    paths:
-      - 'tests/native_firefox_smoke.py'
-      - '.github/workflows/native-firefox.yml'
-      - 'newtab.js'
-      - 'newtab.html'
-      - 'manifest.json'
-      - 'scripts/package.py'
   workflow_dispatch:
 
 permissions:
