@@ -14,6 +14,7 @@ import traceback
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -138,6 +139,51 @@ try:
         ensure(highlights["count"]>=1,"Offline spellchecker did not mark any misspelled words: "+str(highlights))
         ensure("mispeled" in editor.text,"Editor text changed unexpectedly")
     check("offline dictionary marks actual misspellings and takes over eligible rich editor",highlighted_editor)
+
+    original_text="This is a mispeled sentance."
+    def correction_and_undo():
+        driver.switch_to.window(site)
+        editor=driver.find_element(By.ID,"qa-rich-editor")
+        geometry=driver.execute_script("""
+            const editor=document.getElementById("qa-rich-editor");
+            const node=editor.firstChild;
+            const index=node.data.indexOf("mispeled");
+            if(index<0) throw Error("Misspelled token missing");
+            const token=document.createRange();
+            token.setStart(node,index); token.setEnd(node,index+8);
+            const r=token.getBoundingClientRect(),e=editor.getBoundingClientRect();
+            return {dx:r.left+r.width/2-e.left-e.width/2,
+                dy:r.top+r.height/2-e.top-e.height/2};
+        """)
+        ActionChains(driver).move_to_element_with_offset(
+            editor,int(geometry["dx"]),int(geometry["dy"])).click().perform()
+        WebDriverWait(driver,18).until(lambda d:
+            len(d.find_elements(By.CSS_SELECTOR,".elfshell-spell-menu"))==1)
+        menu=driver.find_element(By.CSS_SELECTOR,".elfshell-spell-menu")
+        ensure("mispeled" in (menu.get_attribute("aria-label") or ""),
+               "Wrong spelling suggestion menu opened")
+        res["spellMenu"]={"role":menu.get_attribute("role"),
+            "ariaLabel":menu.get_attribute("aria-label"),
+            "width":menu.rect["width"],"height":menu.rect["height"]}
+        ensure(menu.rect["height"]>45,"Spelling menu has no choices")
+        # The extension deliberately uses a closed ShadowRoot, which blocks
+        # test scripts from reading its buttons. Use a real WebDriver pointer
+        # positioned over the first visible suggestion, not a synthetic click.
+        ActionChains(driver).move_to_element_with_offset(
+            menu,int(32-menu.rect["width"]/2),
+            int(22-menu.rect["height"]/2)).click().perform()
+        WebDriverWait(driver,10).until(lambda d:
+            d.find_element(By.ID,"qa-rich-editor").text!=original_text)
+        edited=driver.find_element(By.ID,"qa-rich-editor").text
+        res["correctionText"]=edited
+        ensure(edited=="This is a misspelled sentance.",
+               "Suggestion corrupted surrounding text or failed exact correction: "+repr(edited))
+        editor.send_keys(Keys.CONTROL,"z")
+        WebDriverWait(driver,10).until(lambda d:
+            d.find_element(By.ID,"qa-rich-editor").text==original_text)
+        res["undoRestored"]=True
+    check("trusted spelling suggestion click corrects rich text and native Undo restores it",
+          correction_and_undo)
 
     def revoke_and_restore():
         driver.switch_to.window(dashboard)
