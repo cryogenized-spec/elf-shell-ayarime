@@ -60,16 +60,26 @@ def new_tab():
                 throw new Error("Browser-chrome gBrowser unavailable: " +
                     String(win.location && win.location.href));
             }
-            const tab = win.gBrowser.addTrustedTab("about:newtab");
-            win.gBrowser.selectedTab = tab;
+            // Invoke the real browser New Tab command: unlike loading
+            // "about:newtab", it honours WebExtension new-tab overrides.
+            if (!win.BrowserCommands || typeof win.BrowserCommands.openTab !== "function") {
+                throw new Error("Firefox BrowserCommands.openTab unavailable");
+            }
+            win.BrowserCommands.openTab();
         """)
     WebDriverWait(driver, 15).until(lambda d: len(set(d.window_handles) - old_handles) == 1)
     new_handle = next(iter(set(driver.window_handles) - old_handles))
     driver.switch_to.window(new_handle)
-    WebDriverWait(driver, 20).until(
-        lambda d: d.current_url.startswith("moz-extension://") and
-        len(d.find_elements(By.ID, "search-input")) == 1
-    )
+    try:
+        WebDriverWait(driver, 20).until(
+            lambda d: d.current_url.startswith("moz-extension://") and
+            len(d.find_elements(By.ID, "search-input")) == 1
+        )
+    except Exception as exc:
+        raise AssertionError("Browser new-tab override did not load: url=" +
+                             repr(driver.current_url) + ", title=" +
+                             repr(driver.title) + ", body=" +
+                             driver.find_element(By.TAG_NAME, "body").text[:300]) from exc
 
 try:
     assert_true(PACKAGE.is_file(), "AMO candidate ZIP not available; build first")
@@ -140,6 +150,10 @@ try:
         WebDriverWait(driver, 8).until(lambda d: "360" in d.find_element(By.ID, "search-results").text)
         el.send_keys(Keys.ESCAPE)
         assert_true(el.get_attribute("value") == "", "Escape should clear palette search")
+        assert_true("palette-open" not in driver.find_element(By.TAG_NAME, "body").get_attribute("class").split(),
+                    "Escape must dismiss the palette overlay")
+        assert_true(driver.find_element(By.ID, "palette-scrim").get_attribute("hidden") is not None,
+                    "Escape must hide the palette scrim")
     check("command palette calculator and Escape", search_math)
 
     def cross_tab_persistence():
