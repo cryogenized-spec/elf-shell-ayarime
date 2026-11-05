@@ -97,7 +97,7 @@ try:
         selector = '#addon-webext-permissions-notification .popup-notification-' + choice + '-button'
         with driver.context(driver.CONTEXT_CHROME):
             WebDriverWait(driver,8).until(
-                lambda d:d.execute_script('return document.getElementById("notification-popup")?.state === "showing";'))
+                lambda d:d.execute_script('return ["showing","open"].includes(document.getElementById("notification-popup")?.state);'))
             button=driver.find_element(By.CSS_SELECTOR,selector)
             expected = "Deny" if choice=="secondary" else "Allow"
             if button.get_attribute("label")!=expected:
