@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,exportOpml}=require('../feeds.js');
+const {normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
 assert.equal(normaliseFeedUrl('thebrowser.substack.com'), 'https://thebrowser.substack.com/feed');
 assert.equal(normaliseFeedUrl('https://thebrowser.substack.com/p/a-story?utm_source=test'), 'https://thebrowser.substack.com/feed');
 assert.equal(normaliseFeedUrl('https://www.example.org/rss.xml'), 'https://www.example.org/rss.xml');
@@ -41,6 +41,23 @@ const opml=exportOpml([{title:'Test & <A>',url:'https://example.com/?q=a&b=1',gr
 assert(opml.includes('Test &amp; &lt;A&gt;'));
 assert(opml.includes('q=a&amp;b=1'));
 assert(opml.includes('category="WRITING"'));
+// A real feed may contain sample HTML in inert CDATA or XML comments.
+assert.equal(hasUnsafeXmlDeclaration('<rss><item><description><![CDATA[<html><!DOCTYPE html><p>Example</p>]]></description></item></rss>'),false,
+  'doctype text inside CDATA is inert data, not an XML DTD');
+assert.equal(hasUnsafeXmlDeclaration('<rss><!-- <!ENTITY local SYSTEM "file:///etc/passwd"> --><channel/></rss>'),false,
+  'entity text inside XML comments is inert');
+assert.equal(hasUnsafeXmlDeclaration('<rss><![CDATA[<!-- <!DOCTYPE html> -->]]></rss>'),false,
+  'nested markup inside CDATA remains inert');
+assert.equal(hasUnsafeXmlDeclaration('<!DOCTYPE rss [<!ENTITY read SYSTEM "file:///etc/passwd">]><rss/>'),true,
+  'real external-entity declaration must be blocked before parsing');
+assert.equal(hasUnsafeXmlDeclaration('<?xml version="1.0"?><!-- harmless --><!DOCTYPE rss><rss/>'),true,
+  'a real DTD after comments must still be rejected');
+assert.equal(hasUnsafeXmlDeclaration('<rss><![CDATA[<!DOCTYPE html>]]><!DOCTYPE rss></rss>'),true,
+  'a real DTD after closed CDATA cannot be hidden');
+assert.equal(hasUnsafeXmlDeclaration('<rss><![CDATA[unclosed <!DOCTYPE html></rss>'),true,
+  'unclosed CDATA is malformed and must fail closed');
+assert.equal(hasUnsafeXmlDeclaration('<rss><!-- unclosed <!ENTITY x SYSTEM "file:///a"></rss>'),true,
+  'unclosed XML comments must fail closed');
 // Parser rejects DTD before any DOM parsing (no external entity expansion).
 assert.throws(()=>parseFeedXml('<!DOCTYPE x><rss/>','https://example.org/rss'),/DTD\/entities/);
 assert(/redirect:"error"/.test(require('node:fs').readFileSync(require('node:path').join(__dirname,'..','feeds.js'),'utf8')),'feed fetches must not follow redirects to unapproved sites');
