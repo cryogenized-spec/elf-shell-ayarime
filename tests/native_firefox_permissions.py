@@ -30,11 +30,14 @@ def check(name,fn):
     print("PASS:",name,flush=True)
 
 def await_api(source):
-    return driver.execute_async_script(
+    response=driver.execute_async_script(
         "const done=arguments[arguments.length-1];"
         "Promise.resolve().then(async()=>{" + source +
-        "}).then(done,e=>done({error:String(e)}));"
+        "}).then(done,e=>done({__apiError:String(e)}));"
     )
+    if isinstance(response,dict) and "__apiError" in response:
+        raise AssertionError("Firefox extension API rejected: "+response["__apiError"])
+    return response
 
 try:
     options=webdriver.FirefoxOptions()
