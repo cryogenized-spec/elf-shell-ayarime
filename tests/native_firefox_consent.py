@@ -155,6 +155,26 @@ try:
             """)
         results["firefoxToolbarControls"] = controls
         print("FIREFOX TOOLBAR:", json.dumps(controls, ensure_ascii=False)[:7000], flush=True)
+        try:
+            with driver.context(driver.CONTEXT_CHROME):
+                driver.find_element(By.ID, "unified-extensions-button").click()
+                menu = driver.execute_script("""
+                    return [...document.querySelectorAll(
+                        '[data-extensionid],unified-extensions-item,[id*="unified-extensions"]'
+                    )].filter(e=>e.isConnected).slice(0,100).map(e=>({
+                        tag:e.tagName,id:e.id,
+                        extension:e.getAttribute("data-extensionid"),
+                        label:e.getAttribute("label"),title:e.getAttribute("title"),
+                        className:String(e.className),text:(e.textContent||"").trim().slice(0,140),
+                        hidden:e.hidden,
+                        open:e.getAttribute("open")
+                    }));
+                """)
+            results["firefoxExtensionsMenu"] = menu
+            print("FIREFOX EXTENSIONS MENU:",json.dumps(menu,ensure_ascii=False)[:10000],flush=True)
+        except Exception as menuError:
+            results["firefoxExtensionsMenuError"] = str(menuError)
+            print("Firefox toolbar menu diagnostic:",str(menuError),flush=True)
     except AssertionError:
         raise
     except Exception as exc:
