@@ -73,7 +73,11 @@ try:
                 return {
                   panelState:panel?.state||null,
                   permissionsNode:{id:match?.id||null,hidden:match?.hidden??null,
-                    text:(match?.textContent||"").trim().slice(0,1200)},
+                    text:(match?.textContent||"").trim().slice(0,1200),
+                    html:match?.outerHTML?.slice(0,4800)||null,
+                    shadowHtml:match?.shadowRoot?.innerHTML?.slice(0,3500)||null,
+                    button:match?.button?.outerHTML?.slice(0,800)||null,
+                    secondary:match?.secondaryButton?.outerHTML?.slice(0,800)||null},
                   buttons:[...document.querySelectorAll(
                     '#notification-popup button, #notification-popup toolbarbutton, popupnotification button'
                   )].filter(x=>x.isConnected).slice(0,50).map(x=>({
