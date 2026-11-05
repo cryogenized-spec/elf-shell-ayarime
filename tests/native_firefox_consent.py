@@ -213,11 +213,10 @@ try:
         except Exception as menuError:
             results["firefoxExtensionsMenuError"] = str(menuError)
             print("Firefox toolbar menu diagnostic:",str(menuError),flush=True)
-    except AssertionError:
-        raise
     except Exception as exc:
-        results["externalWebsiteDiagnostic"] = str(exc)
-        print("External website / toolbar diagnostic unavailable:", exc, flush=True)
+        # The public HTTPS editor is an acceptance assertion, not optional.
+        # The toolbar's own diagnostic failures are already caught separately.
+        raise AssertionError("External HTTPS editor acceptance could not run: "+str(exc)) from exc
 
     results["status"] = "PASS"
 except Exception as exc:
