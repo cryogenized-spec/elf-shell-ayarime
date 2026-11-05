@@ -93,6 +93,49 @@ try:
         print("NATIVE FIREFOX PERMISSION PROMPT:",json.dumps(chrome,ensure_ascii=False)[:10000],flush=True)
     check("real subscription form requests Firefox optional host permission",request_from_real_ui)
 
+    def click_prompt_choice(choice):
+        selector = '#addon-webext-permissions-notification .popup-notification-' + choice + '-button'
+        with driver.context(driver.CONTEXT_CHROME):
+            WebDriverWait(driver,8).until(
+                lambda d:d.execute_script('return document.getElementById("notification-popup")?.state === "showing";'))
+            button=driver.find_element(By.CSS_SELECTOR,selector)
+            expected = "Deny" if choice=="secondary" else "Allow"
+            if button.get_attribute("label")!=expected:
+                raise AssertionError("Wrong Firefox prompt button: "+repr(button.get_attribute("label")))
+            button.click()
+
+    def deny_no_side_effect():
+        click_prompt_choice("secondary")
+        WebDriverWait(driver,12).until(lambda d:"declined" in d.find_element(By.ID,"feed-message").text.lower())
+        if await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});'):
+            raise AssertionError("Firefox granted host access after Deny")
+        state=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
+        if state and state.get("feeds"):
+            raise AssertionError("Declined permission nonetheless saved feed: "+repr(state))
+    check("real Firefox Deny prevents host grant and RSS subscription",deny_no_side_effect)
+
+    def allow_and_subscribe():
+        driver.find_element(By.CSS_SELECTOR,"#feed-add-form button[type=submit]").click()
+        click_prompt_choice("primary")
+        WebDriverWait(driver,18).until(
+            lambda d:await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});') is True)
+        WebDriverWait(driver,18).until(lambda d:
+            len((await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];') or {}).get("feeds",[]))==1)
+        WebDriverWait(driver,23).until(lambda d:"Subscription saved" in d.find_element(By.ID,"feed-message").text)
+        result["liveFeedMessage"]=driver.find_element(By.ID,"feed-message").text
+    check("real Firefox Allow grants only requested HTTPS host and saves RSS subscription",allow_and_subscribe)
+
+    def revoke_host():
+        buttons=driver.find_elements(By.XPATH,"//button[normalize-space()='REVOKE HOST']")
+        WebDriverWait(driver,8).until(lambda d:len(d.find_elements(By.XPATH,"//button[normalize-space()='REVOKE HOST']"))>=1)
+        driver.find_element(By.XPATH,"//button[normalize-space()='REVOKE HOST']").click()
+        WebDriverWait(driver,12).until(lambda d:
+            await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});') is False)
+        remaining=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
+        if len((remaining or {}).get("feeds",[]))!=1:
+            raise AssertionError("Revocation deleted subscription metadata")
+    check("RSS Revoke Host removes access but preserves local subscription",revoke_host)
+
     result["status"]="PASS"
 except Exception as exc:
     result["status"]="FAIL"
