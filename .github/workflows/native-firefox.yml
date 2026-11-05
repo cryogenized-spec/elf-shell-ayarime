@@ -1,0 +1,46 @@
+name: Native Firefox temporary-extension smoke tests
+
+on:
+  pull_request:
+    branches: [release/v0.5.4-review]
+    paths:
+      - 'tests/native_firefox_smoke.py'
+      - '.github/workflows/native-firefox.yml'
+      - 'newtab.js'
+      - 'newtab.html'
+      - 'manifest.json'
+      - 'scripts/package.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-firefox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install release Firefox
+        id: firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Selenium browser driver
+        run: python -m pip install 'selenium>=4.30,<5'
+      - name: Build candidate extension archive
+        run: python3 scripts/package.py
+      - name: Test isolated headless Firefox (temporary unsigned install)
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_firefox_smoke.py
+      - name: Upload Firefox screenshot and structured test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-firefox-qa
+          path: dist/native-firefox-qa/
+          if-no-files-found: warn
