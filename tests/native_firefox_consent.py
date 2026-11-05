@@ -140,7 +140,7 @@ try:
             ensure(driver.execute_script('return typeof window.__elfshellSpelling === "undefined"'),
                    "Spelling script appeared on an unapproved website")
             driver.execute_script('const d=document.createElement("div");d.id="qa-editor";d.contentEditable="true";d.textContent="teh quik brwn fox";document.body.append(d);')
-            ensure(driver.find_element(By.ID, "qa-editor").get_attribute("spellcheck") is None,
+            ensure(not driver.execute_script('return document.getElementById("qa-editor").hasAttribute("spellcheck")'),
                    "Unapproved site had its native spelling attribute changed")
         check("a public HTTPS rich editor remains unaffected without spelling opt-in", untouched_site)
         with driver.context(driver.CONTEXT_CHROME):
@@ -155,6 +155,8 @@ try:
             """)
         results["firefoxToolbarControls"] = controls
         print("FIREFOX TOOLBAR:", json.dumps(controls, ensure_ascii=False)[:7000], flush=True)
+    except AssertionError:
+        raise
     except Exception as exc:
         results["externalWebsiteDiagnostic"] = str(exc)
         print("External website / toolbar diagnostic unavailable:", exc, flush=True)
