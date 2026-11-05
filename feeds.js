@@ -89,8 +89,16 @@
   function hasUnsafeXmlDeclaration(xml) {
     let from = 0;
     while (true) {
-      const start = xml.indexOf("<!", from);
+      // Scan *all* opening angle brackets in lexical order. A processing
+      // instruction may itself contain "<!--" without beginning a comment:
+      // <?sample <!-- ?><!DOCTYPE rss ...> must still reject the real DTD.
+      const start = xml.indexOf("<", from);
       if (start < 0) return false;
+      if (xml.startsWith("<?", start)) {
+        const end = xml.indexOf("?>", start + 2);
+        if (end < 0) return true;
+        from = end + 2; continue;
+      }
       if (xml.startsWith("<!--", start)) {
         const end = xml.indexOf("-->", start + 4);
         if (end < 0) return true; // malformed, never pass to XML parser
