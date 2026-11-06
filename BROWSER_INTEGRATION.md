@@ -11,10 +11,12 @@ Open a new Ayarime tab → **STATION → CONFIGURE STATION → BROWSER INTEGRATI
   six-state cursor artwork on eligible HTTPS pages, and follows the current
   dashboard pointer selection for the default cursor where possible.
 - **Offline spelling → Across approved HTTPS websites:** Enables the bundled,
-  offline British-English checker on **compatible contenteditable fields**.
-  It remains intentionally restricted to supported rich-text editors.
-  Ordinary textareas and inputs, password/code editors and sites without
-  compatible editable elements retain Firefox's native spelling.
+  offline British-English checker on **compatible contenteditable editors**
+  and left-click suggestions on standard textareas and single-line text/search
+  inputs. Contenteditable words use an experimental custom highlight; ordinary
+  controls retain Firefox's native underlines, native right-click suggestions
+  and Undo while the extension provides an additional left-click menu. Password,
+  private, code and unsupported fields are excluded.
 - Choose each mode independently. Both broader modes share one optional
   Firefox grant for **all HTTPS sites**. Neither feature is activated by
   installation, and a per-site RSS grant does not turn on broad spelling.
