@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real Firefox acceptance: actual Station browser-wide consent and revocation.
+"""Real Firefox acceptance: spell-only Station consent, corrections and revocation.
 Runs only in a disposable headless Firefox profile, never on a user session.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ VERSION=json.loads((ROOT/"manifest.json").read_text())["version"]
 PACKAGE=ROOT/"dist"/f"ELF-SHELL-Ayarime-v{VERSION}-AMO.zip"
 OUTPUT=ROOT/"dist"/"firefox-integration-qa"
 OUTPUT.mkdir(parents=True,exist_ok=True)
-record={"scope":"Browser Integration Station user gesture, wildcard Deny/Allow, live existing-tab cursor + spell, revoke","checks":[]}
+record={"scope":"Station spelling consent Deny/Allow, existing-tab editor support and revocation","checks":[]}
 driver=None
 def check(name,fn):
     fn()
@@ -92,7 +92,7 @@ try:
         native.style.cssText="font:24px sans-serif;width:550px;height:120px;padding:10px";
         document.body.prepend(native);
         const input=document.createElement("input");
-        input.type="text";input.id="qa-native-input";
+        input.id="qa-native-input"; // Default HTML input type must be supported
         input.setAttribute("spellcheck","true");
         input.style.cssText="font:24px sans-serif;width:550px;padding:10px";
         document.body.prepend(input);
@@ -110,11 +110,8 @@ try:
         driver.find_element(By.CSS_SELECTOR,"#station-menu summary").click()
         driver.find_element(By.ID,"settings-toggle").click()
         WebDriverWait(driver,8).until(lambda d:d.find_element(By.ID,"settings-dialog").get_attribute("open") is not None)
-        ensure(Select(driver.find_element(By.ID,"integration-cursors")).first_selected_option.get_attribute("value")=="station",
-            "Cursor defaults must be station-only")
         ensure(Select(driver.find_element(By.ID,"integration-spelling")).first_selected_option.get_attribute("value")=="sites",
             "Spelling defaults must be per-site")
-        Select(driver.find_element(By.ID,"integration-cursors")).select_by_value("all")
         Select(driver.find_element(By.ID,"integration-spelling")).select_by_value("all")
     check("all-site modes are off by default and require explicit user selection",initial)
 
@@ -126,8 +123,6 @@ try:
         ensure(permission() is False,"Deny must not grant blanket host access")
         ensure(not registrations(),"Deny must not register any site-wide script")
         ensure(modes() is None,"Deny must not change stored preference")
-        ensure(Select(driver.find_element(By.ID,"integration-cursors")).first_selected_option.get_attribute("value")=="all",
-            "Denied permission should preserve chosen cursor mode for retry")
         ensure(Select(driver.find_element(By.ID,"integration-spelling")).first_selected_option.get_attribute("value")=="all",
             "Denied permission should preserve chosen spelling mode for retry")
     check("real native Firefox Deny leaves defaults and pages unchanged",deny)
@@ -137,27 +132,20 @@ try:
         prompt("allow")
         WebDriverWait(driver,18).until(lambda d:permission() is True)
         WebDriverWait(driver,18).until(lambda d:
-            modes() and modes().get("cursorMode")=="all" and modes().get("spellMode")=="all")
+            modes() and modes().get("spellMode")=="all")
         WebDriverWait(driver,18).until(lambda d:
-            {"elfshell-cursors-global-v1","elfspell-global-v1"}.issubset(
-              {x["id"] for x in registrations()}))
+            {x["id"] for x in registrations()}=={"elfspell-global-v1"})
         current=registrations()
         ensure(all(x["matches"]==["https://*/*"] for x in current),
             "Unexpected host match scope or per-site registration")
         record["registeredIds"]=[x["id"] for x in current]
-    check("native Firefox Allow registers exactly the consented all-HTTPS scripts",allow)
+    check("native Firefox Allow registers only the consented all-HTTPS spelling script",allow)
 
     def existing_tab():
         driver.switch_to.window(site)
-        WebDriverWait(driver,20).until(lambda d:d.execute_script("""
+        ensure(not driver.execute_script("""
             return !!document.getElementById("elfshell-global-cursors-v1");
-        """))
-        css=driver.execute_script("""
-            const style=document.getElementById("elfshell-global-cursors-v1");
-            return style?.textContent||"";
-        """)
-        ensure("moz-extension://" in css and "pointer-48.png" in css,
-               "Bundled cursor artwork was not applied to existing tab")
+        """),"Website cursor injection must not be active")
         textarea=driver.find_element(By.ID,"qa-native-textarea")
         textarea.click()
         textarea.send_keys("Unusualy spelt word")
@@ -173,7 +161,7 @@ try:
         """))
         ensure(editor.text=="This is a mispeled sentance.",
             "Spelling must not rewrite user text without consent")
-    check("existing HTTPS tab gets cursor art and offline spelling with native fallback",existing_tab)
+    check("existing HTTPS tab gets only offline spelling and preserves native textarea checking",existing_tab)
 
     def click_misspelling(field,expected):
         field.click()
@@ -264,7 +252,7 @@ try:
         driver.find_element(By.ID,"integration-revoke").click()
         WebDriverWait(driver,18).until(lambda d:permission() is False)
         WebDriverWait(driver,18).until(lambda d:not registrations())
-        ensure(modes()=={"cursorMode":"station","spellMode":"sites"},
+        ensure(modes()=={"spellMode":"sites"},
             "Revoke must restore limited modes")
         driver.switch_to.window(site)
         WebDriverWait(driver,18).until(lambda d:d.execute_script("""
@@ -275,7 +263,7 @@ try:
         """))
         ensure(driver.find_element(By.ID,"qa-integration-editor").text=="This is a mispeled sentance.",
             "Revocation must not alter editor contents")
-    check("Revoke removes broad access and restores Firefox cursor/spelling",revoke)
+    check("Revoke removes broad access and restores Firefox spelling",revoke)
     record["status"]="PASS"
 except Exception as error:
     record["status"]="FAIL"
