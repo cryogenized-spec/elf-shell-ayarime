@@ -114,8 +114,13 @@ try:
         prompt("allow")
         WebDriverWait(driver,15).until(lambda d:grant() is True)
         WebDriverWait(driver,15).until(lambda d:any(x.startswith("elfspell-") for x in scripts()))
-        ensure("DISABLE SPELLING" in driver.find_element(By.ID,"toggle").text,
-               "Site state should expose Disable after grant")
+        try:
+            WebDriverWait(driver,12).until(lambda d:
+                "DISABLE SPELLING" in d.find_element(By.ID,"toggle").text)
+        except Exception as error:
+            raise AssertionError("Site manager did not finish enabling: button="+
+               repr(driver.find_element(By.ID,"toggle").text)+
+               " status="+repr(driver.find_element(By.ID,"status").text)) from error
         ensure(driver.current_url==url,"Permission prompt must not close manager page")
     check("native Firefox Allow registers the site script from real click",allow)
 
