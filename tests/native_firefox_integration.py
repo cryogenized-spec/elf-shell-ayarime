@@ -191,8 +191,20 @@ try:
           document.getElementById("feed-refresh").dispatchEvent(
             new MouseEvent("click",{bubbles:true}));
         """)
-        WebDriverWait(driver,10).until(lambda d:
-            "Feed check complete" in d.find_element(By.ID,"feed-message").text)
+        try:
+            WebDriverWait(driver,6).until(lambda d:
+                "Feed check complete" in d.find_element(By.ID,"feed-message").text)
+        except Exception as error:
+            diagnostic=driver.execute_script("""
+              const btn=document.getElementById("feed-refresh");
+              return {message:document.getElementById("feed-message").textContent,
+                disabled:btn.disabled,busy:btn.getAttribute("aria-busy"),
+                prefs:window.elfFeeds.snapshot(),
+                attempted:window.__qaRSSAttempted};
+            """)
+            record["rssDiagnostic"]=diagnostic
+            raise AssertionError("RSS check did not finish: "+
+                json.dumps(diagnostic,ensure_ascii=False)) from error
         attempted=driver.execute_script("return window.__qaRSSAttempted")
         ensure(not attempted,
             "Imported RSS must not make a network request under wildcard spelling permission: "+str(attempted))
