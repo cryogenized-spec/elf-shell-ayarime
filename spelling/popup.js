@@ -5,7 +5,17 @@ const idForOrigin=url=>"elfspell-"+[...url].map(ch=>ch.charCodeAt(0).toString(16
 function setStatus(message){$("status").textContent=message;}
 async function readState(){
   const registrations=await browser.scripting.getRegisteredContentScripts();
+  const data=await browser.storage.local.get("elfshell:browser-integration:v1");
+  const mode=data["elfshell:browser-integration:v1"]?.spellMode||"sites";
+  const global=mode==="all"&&registrations.some(item=>item.id==="elfspell-global-v1");
   active=registrations.some(item=>item.id===scriptId);
+  if(global||mode==="off"){
+    $("toggle").textContent=global?"Global spelling enabled in Station":"Firefox native spelling only";
+    $("toggle").disabled=true;
+    setStatus(global?"Change browser-wide preferences in STATION → CONFIGURE STATION.":
+      "Enable per-site or browser-wide spelling from STATION → CONFIGURE STATION.");
+    return;
+  }
   $("toggle").textContent=active?"Disable spelling on this site":"Enable spelling on this site";
   $("toggle").disabled=false;
 }

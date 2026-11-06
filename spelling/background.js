@@ -14,12 +14,18 @@ async function spellingSenderAllowed(sender){
   catch{return false;}
   if(url.protocol!=="https:"||url.origin!==tabUrl.origin)return false;
   const origin=url.origin+"/*";
-  const [permission,registered]=await Promise.all([
+  const [permission,registered,settings]=await Promise.all([
     browser.permissions.contains({origins:[origin]}),
-    browser.scripting.getRegisteredContentScripts()
+    browser.scripting.getRegisteredContentScripts(),
+    browser.storage.local.get("elfshell:browser-integration:v1")
   ]);
-  return !!permission && registered.some(item=>item.id===spellingSiteId(url.origin)&&
+  const mode=settings["elfshell:browser-integration:v1"]?.spellMode||"sites";
+  if(mode==="off")return false;
+  const perSite=registered.some(item=>item.id===spellingSiteId(url.origin)&&
     Array.isArray(item.matches)&&item.matches.includes(origin));
+  const global=mode==="all"&&registered.some(item=>item.id==="elfspell-global-v1"&&
+    Array.isArray(item.matches)&&item.matches.includes("https://*/*"));
+  return !!permission&&(perSite||global);
 }
 function spellReset(error){
   if(spellWorker)spellWorker.terminate();
