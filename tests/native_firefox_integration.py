@@ -193,7 +193,8 @@ try:
         """)
         try:
             WebDriverWait(driver,6).until(lambda d:
-                "Feed check complete" in d.find_element(By.ID,"feed-message").text)
+                "Feed check complete" in d.execute_script(
+                'return document.getElementById("feed-message").textContent'))
         except Exception as error:
             diagnostic=driver.execute_script("""
               const btn=document.getElementById("feed-refresh");
