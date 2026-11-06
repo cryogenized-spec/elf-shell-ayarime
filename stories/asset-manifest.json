@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "releaseStatus": "REVIEW_ONLY_DO_NOT_MERGE",
+  "requiresExplicitHumanMergeApproval": true,
+  "requiresSeparateMozillaPublicationApproval": true,
+  "assetImportStatus": "PENDING_BINARY_UPLOAD",
+  "artworkRule": "Import originals byte-for-byte. Do not regenerate, restyle, crop, or alter image captions without human approval.",
+  "captionRule": "Small dark rectangular caption boxes at foot of each portrait sliver: Japanese line(s) above English line(s), no bubble pointers.",
+  "shortcutsUnchanged": true,
+  "stories": [
+    {
+      "id": "letters-from-the-lower-city",
+      "title": "Letters from the Lower City",
+      "panelCount": 7,
+      "layout": "4 + 3",
+      "artwork": [
+        {
+          "panels": "01-04",
+          "sourceFilename": "a_highly_detailed_cinematic_anime_illustration_in.png",
+          "proposedRepoPath": "stories/assets/letters-from-the-lower-city-01-04.png",
+          "width": 1672,
+          "height": 941,
+          "bytes": 2554158,
+          "sha256": "78b9beee3829b39e0d6cf86aab3be081cbf9c825e2a93ef2cb88e44174535ec7"
+        },
+        {
+          "panels": "05-07",
+          "sourceFilename": "a_detailed_cyberpunk_anime_triptych_illustration_m.png",
+          "proposedRepoPath": "stories/assets/letters-from-the-lower-city-05-07.png",
+          "width": 1672,
+          "height": 941,
+          "bytes": 2521716,
+          "sha256": "104a55379cac28be7a000b6cc0c73674edc6f8c1ace319ded9e74ea1e36d64b7"
+        }
+      ],
+      "englishCaptions": [
+        "The immutable polygon of contribution and expertise.",
+        "Beralia-01, the blighted vale.. Land of the survivors..",
+        "Meow.",
+        "The tragedy of the commons that was the centralist arbiter and dispenser.",
+        "Law and Order, Crime and Punishment, Ignorance and Aversion.",
+        "Though destroyed, the upstream fed the downstream regardless.",
+        "Ah... where is the sudo...?"
+      ]
+    },
+    {
+      "id": "crushed-rainforest-beans",
+      "title": "Crushed Rainforest Beans",
+      "panelCount": 12,
+      "layout": "4 + 4 + 4",
+      "artwork": [
+        {
+          "panels": "01-04",
+          "sourceFilename": "bilingual_neon_ramen_ova_panels.png",
+          "proposedRepoPath": "stories/assets/crushed-rainforest-beans-01-04.png",
+          "width": 1672,
+          "height": 941,
+          "bytes": 2386125,
+          "sha256": "0e85400104d79fa4e1fe1520125ce44728dd1897139ec2c6fd6839abd589abd6"
+        },
+        {
+          "panels": "05-08",
+          "sourceFilename": "ayarime_s_neon_memory_stream.png",
+          "proposedRepoPath": "stories/assets/crushed-rainforest-beans-05-08.png",
+          "width": 1672,
+          "height": 941,
+          "bytes": 2618613,
+          "sha256": "deccba16b80aa6ba5688fe725b416b0af6744bb28a50d98d5277b16b188a629d"
+        },
+        {
+          "panels": "09-12",
+          "sourceFilename": "yama_s_judgment_and_ayarime_s_quiet_return.png",
+          "proposedRepoPath": "stories/assets/crushed-rainforest-beans-09-12.png",
+          "width": 1672,
+          "height": 941,
+          "bytes": 2937048,
+          "sha256": "6c47ce48f0999459607ed70602e70b050136600d8cef1e2d741558a3d4b7a02c"
+        }
+      ],
+      "englishCaptions": [
+        "Crushed Rainforest Beans...",
+        "Imbibing this drink, is no mere taste experience,",
+        "grep, grep, grep,",
+        "I, the pipedream. grep |",
+        "Meow.",
+        "Fear... Unafraid... They approach...",
+        "Grasping. Craving. Attachment. I am this.",
+        "By that very noose of fear, the sword changes hands, not its thirst.",
+        "The young man is led by two Yakshas before King Yama.",
+        "You were drowned in wealth and pleasure, destroying the lives of others, heedless of your karma.",
+        "Now there shall be no clemency. Within the aeonic fire, you shall never again harm anyone.",
+        "Retribution cuts deeply, and inevitably. There is no escape."
+      ],
+      "caution": "These scene captions serve as searchable transcription approximations of text embedded in the approved art. Preserve the actual bilingual art verbatim; obtain editorial approval for any text corrections.",
+      "storyNote": "The cat's meow is the Unix cat (concatenate) after grep |. The events could be local residual impressions rather than present-time observations; Ayarime observes impersonal karmic conditions without taking sides."
+    }
+  ]
+}
