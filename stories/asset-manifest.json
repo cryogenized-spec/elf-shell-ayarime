@@ -3,7 +3,7 @@
   "releaseStatus": "REVIEW_ONLY_DO_NOT_MERGE",
   "requiresExplicitHumanMergeApproval": true,
   "requiresSeparateMozillaPublicationApproval": true,
-  "assetImportStatus": "PENDING_BINARY_UPLOAD",
+  "assetImportStatus": "COMMITTED_TO_DRAFT_BRANCH",
   "artworkRule": "Import originals byte-for-byte. Do not regenerate, restyle, crop, or alter image captions without human approval.",
   "captionRule": "Small dark rectangular caption boxes at foot of each portrait sliver: Japanese line(s) above English line(s), no bubble pointers.",
   "shortcutsUnchanged": true,
@@ -94,5 +94,7 @@
       "caution": "These scene captions serve as searchable transcription approximations of text embedded in the approved art. Preserve the actual bilingual art verbatim; obtain editorial approval for any text corrections.",
       "storyNote": "The cat's meow is the Unix cat (concatenate) after grep |. The events could be local residual impressions rather than present-time observations; Ayarime observes impersonal karmic conditions without taking sides."
     }
-  ]
+  ],
+  "assetImportCommit": "c2d501b8eee01bf9dffdaa149df8006d1480dfad",
+  "assetImportVerifiedDate": "2026-11-06"
 }
