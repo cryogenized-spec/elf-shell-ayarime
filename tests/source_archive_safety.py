@@ -30,7 +30,7 @@ try:
     with zipfile.ZipFile(ZIP) as archive:
         assert 'scripts/review-untracked-secret.env' not in archive.namelist()
         assert 'AMO-SOURCE-MANIFEST.json' in archive.namelist()
-        assert 'spelling/vendor/package-lock.json' in archive.namelist()
+        assert 'linux-cursors/build.py' in archive.namelist()
         with tempfile.TemporaryDirectory() as folder:
             archive.extractall(folder)
             unpacked = Path(folder)

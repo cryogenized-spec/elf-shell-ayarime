@@ -20,8 +20,6 @@ jobs:
           node-version: '24.14.0'
       - name: Source and behaviour tests
         run: npm test
-      - name: Verify locked source reproduces the shipped spelling bundle
-        run: npm run verify:spelling
       - name: Build AMO submission candidate
         run: python3 scripts/package.py
       - name: Mozilla Add-ons validation

@@ -18,12 +18,8 @@ OUTPUT = ROOT / 'dist' / f'ELF-SHELL-Ayarime-v{VERSION}-source.zip'
 INVENTORY = 'AMO-SOURCE-MANIFEST.json'
 SKIP_DIRS = {'node_modules', 'dist', '.git', '__pycache__', '.pytest_cache'}
 REQUIRED = {
-    'spelling/vendor/src/index.js', 'spelling/vendor/package.json',
-    'spelling/vendor/package-lock.json', 'spelling/vendor/README.md',
-    'scripts/verify-spelling.cjs', 'scripts/package.py',
-    'scripts/package_source.py', 'spelling/nspell-bundle.js',
-    'spelling/IS-BUFFER-LICENSE.txt', 'LICENSE', 'manifest.json',
-    'package.json',
+    'scripts/package.py', 'scripts/package_source.py',
+    'LICENSE', 'manifest.json', 'package.json',
 }
 
 def inventory():

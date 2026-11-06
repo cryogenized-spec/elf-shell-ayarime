@@ -11,18 +11,14 @@
   "permissions": [
     "theme",
     "search",
-    "storage",
-    "scripting",
-    "activeTab"
+    "storage"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
   "background": {
     "scripts": [
-      "background.js",
-      "spelling/background.js",
-      "integration/background.js"
+      "background.js"
     ]
   },
   "browser_specific_settings": {
@@ -47,13 +43,5 @@
   ],
   "content_security_policy": {
     "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https:; object-src 'none'; base-uri 'none'"
-  },
-  "action": {
-    "default_title": "ELF//SHELL — Offline spelling",
-    "default_popup": "spelling/popup.html",
-    "default_icon": {
-      "48": "assets/icon-48.png",
-      "96": "assets/icon-96.png"
-    }
   }
 }
