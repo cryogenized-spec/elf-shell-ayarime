@@ -210,6 +210,8 @@ async function mutateRecovery(message){
 // dropping other dashboards' additions or cached headlines.
 const RSS_PREFS_KEY="elfshell-rss-settings-v1";
 const RSS_CACHE_KEY="elfshell-rss-cache-v1";
+// Independent RSS consent: broad spelling host access must never approve feeds.
+const RSS_APPROVED_KEY="elfshell-rss-approved-urls-v1";
 let rssChain=Promise.resolve();
 function publicFeedURL(raw){
   if(typeof raw!=="string"||raw.length>2048)return null;
@@ -248,8 +250,21 @@ function safeRSSCacheEntry(value){
   return {items,checkedAt:Number.isFinite(value.checkedAt)?value.checkedAt:0,attemptedAt:Number.isFinite(value.attemptedAt)?value.attemptedAt:0,error:typeof value.error==="string"?value.error.slice(0,150):""};
 }
 async function mutateRSS(message){
-  const stored=await browser.storage.local.get([RSS_PREFS_KEY,RSS_CACHE_KEY]);
+  const stored=await browser.storage.local.get([RSS_PREFS_KEY,RSS_CACHE_KEY,RSS_APPROVED_KEY]);
   const prefs=safeRSSPrefs(stored[RSS_PREFS_KEY]);
+  // The approved list is deliberately not part of JSON/OPML imports. Legacy
+  // subscriptions start unapproved and require one renewed RSS consent click.
+  const existingUrls=new Set(prefs.feeds.map(f=>f.url));
+  const approved=new Set(
+    (Array.isArray(stored[RSS_APPROVED_KEY])?stored[RSS_APPROVED_KEY]:[])
+      .filter(url=>typeof url==="string"&&existingUrls.has(url))
+  );
+  const requireRSSHost=async url=>{
+    const u=new URL(url);
+    if(!browser.permissions?.contains||
+       !await browser.permissions.contains({origins:[u.origin+"/*"]}))
+      throw Error("RSS host access must be approved in Firefox first.");
+  };
   const cache={};
   const oldCache=stored[RSS_CACHE_KEY];
   if(oldCache&&typeof oldCache==="object"&&!Array.isArray(oldCache)){
@@ -262,7 +277,8 @@ async function mutateRSS(message){
     if(!f)throw Error("Invalid public HTTPS feed address.");
     if(prefs.feeds.some(x=>x.url===f.url))throw Error("Already subscribed to this publication.");
     if(prefs.feeds.length>=32)throw Error("Subscription limit reached.");
-    prefs.feeds.push(f);added=1;
+    await requireRSSHost(f.url);
+    prefs.feeds.push(f);approved.add(f.url);added=1;
   }else if(message.action==="toggle"){
     const f=prefs.feeds.find(x=>x.url===target);if(!f)throw Error("Subscription no longer exists.");
     f.enabled=!f.enabled;
@@ -273,7 +289,17 @@ async function mutateRSS(message){
   }else if(message.action==="remove"){
     const index=prefs.feeds.findIndex(x=>x.url===target);
     if(index<0)throw Error("Subscription no longer exists.");
-    prefs.feeds.splice(index,1);delete cache[target];
+    prefs.feeds.splice(index,1);delete cache[target];approved.delete(target);
+  }else if(message.action==="approve"){
+    if(!prefs.feeds.some(f=>f.url===target))throw Error("RSS subscription not found.");
+    await requireRSSHost(target);
+    approved.add(target);
+  }else if(message.action==="revoke-host"){
+    if(!prefs.feeds.some(f=>f.url===target))throw Error("RSS subscription not found.");
+    const origin=new URL(target).origin;
+    for(const item of prefs.feeds) {
+      if(new URL(item.url).origin===origin)approved.delete(item.url);
+    }
   }else if(message.action==="import"){
     if(!Array.isArray(message.feeds)||message.feeds.length>32)throw Error("Too many subscriptions.");
     for(const raw of message.feeds){
@@ -287,11 +313,16 @@ async function mutateRSS(message){
     if(!raw||typeof raw!=="object"||!Array.isArray(raw.feeds)||raw.feeds.length>32||raw.feeds.some(x=>!safeRSSFeed(x)))throw Error("Invalid RSS import snapshot.");
     const next=safeRSSPrefs(raw);prefs.enabled=next.enabled;prefs.interval=next.interval;prefs.feeds=next.feeds;
     for(const url of Object.keys(cache))if(!prefs.feeds.some(x=>x.url===url))delete cache[url];
+    // Imported preferences can only retain consent for exact URLs already
+    // approved in this profile. Backups cannot smuggle permission state.
+    const current=new Set(prefs.feeds.map(f=>f.url));
+    for(const url of [...approved])if(!current.has(url))approved.delete(url);
   }else if(message.action==="config"){
     if(message.enabled!==undefined)prefs.enabled=message.enabled!==false;
     if(message.interval!==undefined){if(![15,30,60,180,360].includes(message.interval))throw Error("Invalid RSS refresh interval.");prefs.interval=message.interval;}
   }else if(message.action==="cache"){
-    if(!prefs.feeds.some(x=>x.url===target))return {ok:true,prefs,cache,added};
+    if(!prefs.feeds.some(x=>x.url===target)||!approved.has(target))
+      return {ok:true,prefs,cache,added};
     const entry=safeRSSCacheEntry(message.entry);if(!entry)throw Error("Invalid feed cache update.");
     const previous=cache[target];
     // Successes and attempts are independent timelines. A delayed *successful*
@@ -312,7 +343,10 @@ async function mutateRSS(message){
       }
     }
   }else throw Error("Unknown RSS operation.");
-  await browser.storage.local.set({[RSS_PREFS_KEY]:prefs,[RSS_CACHE_KEY]:cache});
+  await browser.storage.local.set({
+    [RSS_PREFS_KEY]:prefs,[RSS_CACHE_KEY]:cache,
+    [RSS_APPROVED_KEY]:[...approved].sort()
+  });
   return {ok:true,prefs,cache,added};
 }
 browser.runtime.onMessage.addListener(message=>{
