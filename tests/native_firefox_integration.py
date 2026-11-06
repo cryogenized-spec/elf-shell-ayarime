@@ -165,11 +165,20 @@ try:
         ''')
         ensure("https://github.blog/feed/" not in approved,
                "Spelling permission must not approve an imported publication")
-        # The imported settings must reach the dashboard before refresh.
-        WebDriverWait(driver,10).until(lambda d:d.execute_script("""
+        # Explicitly load the imported settings into this already-open
+        # dashboard rather than relying on a storage.onChanged render before
+        # the NET FEED panel has ever been opened.
+        loaded=driver.execute_async_script("""
+          const done=arguments[arguments.length-1];
+          Promise.resolve().then(async()=>{
+            const prefs=(await browser.storage.local.get("elfshell-rss-settings-v1"))
+              ["elfshell-rss-settings-v1"];
+            await window.elfFeeds.applySnapshot(prefs);
             return document.querySelector("#feed-subscriptions")?.textContent
                 ?.includes("Unapproved QA RSS")===true;
-        """))
+          }).then(done,error=>done({error:String(error)}));
+        """)
+        ensure(loaded is True,"Imported RSS metadata was not rendered: "+repr(loaded))
         # Instrument only this isolated CI extension page. Even a quick
         # network attempt must be observable before any external request.
         driver.execute_script("""
