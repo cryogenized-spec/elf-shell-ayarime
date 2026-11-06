@@ -11,7 +11,8 @@
   const ignored=new Set();
   let enabled=false, editor=null, originalSpell=null, revision=0, composing=false, timer=0;
   let mistakes=new Set(), menu=null, menuRange=null, menuWord="";
-  let menuField=null,menuFieldStart=0,menuFieldEnd=0,menuFieldValue="",fieldRequest=0;
+  let menuField=null,menuFieldStart=0,menuFieldEnd=0,menuFieldValue="",menuFieldCaret=null,fieldRequest=0;
+  let focusMenuFirst=null;
   const WORD=/[A-Za-z]+(?:['’\-][A-Za-z]+)*/g;
   const request=(type,extra={})=>browser.runtime.sendMessage({type:"elfshell:spelling:"+type,...extra});
   const asElement=n=>n instanceof Element?n:n?.parentElement;
@@ -23,8 +24,10 @@
     // Standard controls retain Firefox's own underlines. Never read or
     // interact with password, code, private, disabled or readonly controls.
     const el=asElement(target);
-    const field=el?.closest?.("textarea,input[type='text'],input[type='search']")||null;
+    const field=el?.closest?.("textarea,input")||null;
     if(!field||!field.isConnected||field.disabled||field.readOnly)return null;
+    // HTML <input> without a type attribute defaults to "text".
+    if(field.tagName==="INPUT"&&!["text","search"].includes(field.type))return null;
     if(field.getAttribute("spellcheck")==="false")return null;
     if(field.closest("code,pre,[role='code'],[data-elfshell-spelling-off],"+
       "[data-private],[data-sensitive],.CodeMirror,.cm-editor,.monaco-editor,.ace_editor"))return null;
@@ -59,6 +62,7 @@
     if(menu){menu.remove();menu=null;}
     menuRange=null;menuWord="";
     menuField=null;menuFieldStart=0;menuFieldEnd=0;menuFieldValue="";
+    menuFieldCaret=null;focusMenuFirst=null;
   }
   function clearMark(){if(globalThis.CSS?.highlights)CSS.highlights.delete(MARK);mistakes.clear();}
   function restore(){
@@ -152,9 +156,13 @@
   function replace(choice){
     if(menuField){
       const field=menuField,start=menuFieldStart,end=menuFieldEnd;
-      const original=menuFieldValue,word=menuWord;
+      const original=menuFieldValue,word=menuWord,caret=menuFieldCaret;
+      // The text AND collapsed selection must still be at the original click.
+      // Never silently replace a word after the user moved the caret.
       if(!field.isConnected||field.disabled||field.readOnly||
-         field.value!==original||field.value.slice(start,end)!==word)return closeMenu();
+         field.value!==original||field.value.slice(start,end)!==word||
+         field.selectionStart!==caret||field.selectionEnd!==caret)
+        return closeMenu();
       closeMenu();
       try{
         field.focus();
@@ -188,6 +196,7 @@
     if(fieldHit){
       menuField=fieldHit.field;menuFieldStart=fieldHit.start;
       menuFieldEnd=fieldHit.end;menuFieldValue=fieldHit.value;
+      menuFieldCaret=fieldHit.caret;
     }
     const pane=document.createElement("div");
     pane.className="elfshell-spell-menu";
@@ -224,6 +233,9 @@
     pane.style.left=Math.max(5,Math.min(evt.clientX,innerWidth-rect.width-5))+"px";
     pane.style.top=Math.max(5,Math.min(evt.clientY+9,innerHeight-rect.height-5))+"px";
     menu=pane;
+    // A menu appended after the editor is not always next in tab order.
+    // Let the user's keyboard focus enter its real buttons deliberately.
+    focusMenuFirst=()=>shadow.querySelector("button")?.focus();
     pane.addEventListener("keydown",e=>{
       const items=[...shadow.querySelectorAll("button")],idx=items.indexOf(shadow.activeElement);
       if(e.key==="Escape"){
@@ -298,10 +310,29 @@
   },true);
   document.addEventListener("compositionstart",()=>{composing=true;++fieldRequest;closeMenu();++revision;},true);
   document.addEventListener("compositionend",()=>{composing=false;++fieldRequest;closeMenu();++revision;schedule();},true);
-  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu();},true);
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){++fieldRequest;closeMenu();return;}
+    if(menu&&focusMenuFirst&&
+       (document.activeElement===menuField||document.activeElement===editor)&&
+       (e.key==="Tab"||e.key==="ArrowDown")){
+      e.preventDefault();focusMenuFirst();return;
+    }
+    if(menuField&&document.activeElement===menuField&&
+       ["ArrowLeft","ArrowRight","Home","End","PageUp","PageDown"].includes(e.key)){
+      ++fieldRequest;closeMenu();
+    }
+  },true);
   document.addEventListener("scroll",()=>{++fieldRequest;closeMenu();},true);
+  document.addEventListener("selectionchange",()=>{
+    if(menuField&&(menuField.selectionStart!==menuFieldCaret||
+                   menuField.selectionEnd!==menuFieldCaret)){
+      ++fieldRequest;closeMenu();
+    }
+  },true);
   document.addEventListener("focusin",e=>{
-    if(menuField&&e.target!==menuField){++fieldRequest;closeMenu();}
+    if(menuField&&e.target!==menuField&&!menu?.contains(e.target)){
+      ++fieldRequest;closeMenu();
+    }
   },true);
   browser.runtime.onMessage.addListener(msg=>{
     if(msg?.type==="elfshell:spell:disable")disable();
