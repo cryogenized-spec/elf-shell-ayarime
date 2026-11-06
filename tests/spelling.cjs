@@ -49,8 +49,9 @@ assert(content.includes("field.selectionStart===hit.caret")&&content.includes("f
   "stale field click cannot open a menu after selection or value changes");
 assert(content.includes('document.execCommand("insertText",false,choice)'),
   "field correction must cooperate with native Undo stack");
-assert(content.includes('field.getAttribute("spellcheck")==="false"'),
-  "explicit opt-out of spelling must be preserved for native fields");
+assert(content.includes("if(spellcheckDisabled(field))return null;") &&
+  content.includes('const value=attr.trim().toLowerCase();'),
+  "inherited and case-insensitive spelling opt-outs must be preserved");
 assert(!content.includes("field.setRangeText("),
   "no setRangeText fallback that could corrupt framework state or Undo");
 assert(content.includes('field.type="password"')===false,
