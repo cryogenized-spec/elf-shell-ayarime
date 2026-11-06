@@ -29,7 +29,7 @@ textarea and text/search fields retain native Firefox underlines/right-click
 menus while Ayarime offers additional local left-click word suggestions.
 Password, sensitive and code editors are excluded. Neither a Firefox
 WebExtension nor a custom Linux theme can modify Firefox's privileged
-internal page controls. No spellcheck network traffic or page text telemetry.
+internal page controls. No spellcheck network traffic or page text telemetry. Browser-wide spelling permission does not approve RSS sources: separate NET FEED consent is stored per exact subscribed URL. Existing legacy subscriptions may require one-time RSS reapproval.
 
 ## Test and review gates
 
