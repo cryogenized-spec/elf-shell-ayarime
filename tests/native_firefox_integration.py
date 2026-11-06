@@ -86,6 +86,10 @@ try:
         e.setAttribute("spellcheck","true");
         e.style.cssText="padding:16px;min-height:75px;font:24px sans-serif;border:1px solid #888";
         document.body.prepend(e);
+        const native=document.createElement("textarea");
+        native.id="qa-native-textarea";
+        native.setAttribute("spellcheck","true");
+        document.body.prepend(native);
     """)
     driver.switch_to.window(dashboard)
 
@@ -144,6 +148,11 @@ try:
         """)
         ensure("moz-extension://" in css and "pointer-48.png" in css,
                "Bundled cursor artwork was not applied to existing tab")
+        textarea=driver.find_element(By.ID,"qa-native-textarea")
+        textarea.click()
+        textarea.send_keys("Unusualy spelt word")
+        ensure(textarea.get_attribute("spellcheck")=="true",
+               "Unsupported textarea must retain native Firefox spelling")
         editor=driver.find_element(By.ID,"qa-integration-editor")
         editor.click()
         editor.send_keys("This is a mispeled sentance.")
