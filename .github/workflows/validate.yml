@@ -32,3 +32,18 @@ jobs:
         run: python3 tests/source_archive_safety.py
       - name: Verify runtime ZIP excludes untracked assets and rebuilds from source archive
         run: python3 tests/runtime_asset_safety.py
+      - name: Install Linux Xcursor compiler
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq x11-apps
+      - name: Build seven Ayarime native Linux cursor themes
+        run: python3 linux-cursors/build.py
+      - name: Verify native Xcursor archive and reversible per-user install
+        run: python3 tests/linux_cursor_package.py
+      - name: Upload unsigned Firefox and independent Linux cursor test packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ayarime-unsigned-test-packages
+          path: |
+            dist/ELF-SHELL-Ayarime-v0.5.4-AMO.zip
+            dist/ELF-SHELL-Ayarime-v0.5.4-source.zip
+            dist/linux-cursors/Ayarime-Cursors-Linux-Mint.tar.gz
+          if-no-files-found: error
