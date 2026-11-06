@@ -100,6 +100,13 @@ try:
         password.type="password";password.id="qa-private-password";
         password.style.cssText="font:24px sans-serif;width:550px;padding:10px";
         document.body.prepend(password);
+        const form=document.createElement("form");
+        form.setAttribute("spellcheck","FALSE");
+        const optedOut=document.createElement("textarea");
+        optedOut.id="qa-native-optout";
+        optedOut.style.cssText="font:24px sans-serif;width:550px;height:110px;padding:10px";
+        optedOut.value="Unusualy spelt word";
+        form.append(optedOut);document.body.prepend(form);
     """)
     driver.switch_to.window(dashboard)
 
@@ -211,7 +218,7 @@ try:
             "Spelling must not rewrite user text without consent")
     check("existing HTTPS tab gets only offline spelling and preserves native textarea checking",existing_tab)
 
-    def click_misspelling(field,expected):
+    def click_misspelling(field,expected,choose=True):
         field.click()
         # Move the *real browser pointer* over the first word rather than
         # using a synthetic DOM click (trusted clicks are required).
@@ -234,9 +241,11 @@ try:
                "Left-click suggestions should be for "+expected+
                ", got "+str(menu.get_attribute("aria-label")))
         ensure(menu.rect["height"]>40,"No correction items appeared")
-        ActionChains(driver).move_to_element_with_offset(
-            menu,round(35-menu.rect["width"]/2),
-            round(22-menu.rect["height"]/2)).click().perform()
+        if choose:
+            ActionChains(driver).move_to_element_with_offset(
+                menu,round(35-menu.rect["width"]/2),
+                round(22-menu.rect["height"]/2)).click().perform()
+        return menu
 
     def textarea_leftclick():
         driver.switch_to.window(site)
@@ -279,6 +288,37 @@ try:
         ensure(native.get_attribute("spellcheck")=="true",
                "Native input spelling must remain enabled")
     check("single-line text input left-click offers offline correction with Undo",input_leftclick)
+
+    def optout_and_keyboard():
+        driver.switch_to.window(site)
+        field=driver.find_element(By.ID,"qa-native-optout")
+        # A true left-click within a word must honour inherited, uppercase
+        # spellcheck=FALSE even if the field itself has no attribute.
+        field.click()
+        metrics=driver.execute_script("""
+          const e=arguments[0],r=e.getBoundingClientRect(),s=getComputedStyle(e);
+          return {dx:30-r.width/2,dy:25-r.height/2};
+        """,field)
+        ActionChains(driver).move_to_element_with_offset(field,
+            round(metrics["dx"]),round(metrics["dy"])).click().perform()
+        ensure(driver.execute_script("""
+            const f=document.getElementById("qa-native-optout");
+            return f.selectionStart>0 && f.selectionStart<8;
+        """),"QA click must land inside the inherited-opt-out word")
+        ensure(not driver.find_elements(By.CSS_SELECTOR,".elfshell-spell-menu"),
+               "Inherited spellcheck=FALSE must suppress Ayarime suggestions")
+        input_box=driver.find_element(By.ID,"qa-native-input")
+        menu=click_misspelling(input_box,"Unusualy",choose=False)
+        ActionChains(driver).send_keys(Keys.TAB).perform()
+        WebDriverWait(driver,5).until(lambda d:d.execute_script("""
+            return document.activeElement===document.querySelector(".elfshell-spell-menu");
+        """))
+        ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+        WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+            return !document.querySelector(".elfshell-spell-menu") &&
+               document.activeElement?.id==="qa-native-input";
+        """))
+    check("inherited spellcheck opt-out and keyboard Escape focus restoration",optout_and_keyboard)
 
     def excluded_private():
         secret=driver.find_element(By.ID,"qa-private-password")
