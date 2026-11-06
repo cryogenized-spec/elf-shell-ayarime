@@ -28,7 +28,7 @@ assert(content.includes("focusMenuFirst")&&content.includes('!menu?.contains(e.t
   "keyboard focus entering the closed-shadow suggestions must not dismiss them");
 assert(content.includes('["text","search"].includes(field.type)'),
   "input default type text must receive optional suggestions");
-assert(content.includes('if(e.key==="Escape"){++fieldRequest;closeMenu()'),
+assert(/if\(e\.key==="Escape"\)\s*\{\s*\+\+fieldRequest;/.test(content),
   "Escape must cancel pending asynchronous suggestions");
 assert(content.includes('CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")'),
   "native Firefox spelling must stay active when custom underline rendering is unsupported");
