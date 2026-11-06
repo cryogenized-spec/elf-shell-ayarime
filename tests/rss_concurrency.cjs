@@ -4,9 +4,10 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const source=fs.readFileSync(path.resolve(__dirname,'../background.js'),'utf8');
-const settingsKey='elfshell-rss-settings-v1',cacheKey='elfshell-rss-cache-v1';
+const settingsKey='elfshell-rss-settings-v1',cacheKey='elfshell-rss-cache-v1',approvedKey='elfshell-rss-approved-urls-v1';
 const data={};let listener,failWrite=false;
 const browser={
+ permissions:{contains:async()=>true},
  storage:{local:{
    async get(keys){await new Promise(resolve=>setTimeout(resolve,5));return Object.fromEntries([].concat(keys).map(key=>[key,data[key]]));},
    async set(values){if(failWrite){failWrite=false;throw Error('Test disk quota failure');}await new Promise(resolve=>setTimeout(resolve,5));Object.assign(data,JSON.parse(JSON.stringify(values)));}
@@ -23,6 +24,27 @@ const item=url=>({items:[{title:'Article',url,date:Date.now()}],checkedAt:Date.n
  const [x,y]=await Promise.all([req('add',{feed:feed(a)}),req('add',{feed:feed(b)})]);
  assert.equal(x.ok,true);assert.equal(y.ok,true);
  assert.deepEqual(new Set(data[settingsKey].feeds.map(f=>f.url)),new Set([a,b]),'simultaneous subscriptions must both survive');
+ assert.deepEqual(new Set(data[approvedKey]),new Set([a,b]),'explicit subscriptions should carry independent RSS approval');
+ // OPML import never permits network access even with Firefox's wildcard
+ // spelling grant. Approval must be a separate RSS-specific click.
+ const opmlFeed='https://news.delta.org/rss';
+ const imported=await req('import',{feeds:[feed(opmlFeed)]});
+ assert(imported.ok,'safe OPML import should succeed');
+ assert(!data[approvedKey].includes(opmlFeed),'import must never auto-approve RSS');
+ const approved=await req('approve',{url:opmlFeed});
+ assert(approved.ok&&data[approvedKey].includes(opmlFeed),'explicit Allow should persist separately');
+ const revoked=await req('revoke-host',{url:opmlFeed});
+ assert(revoked.ok&&!data[approvedKey].includes(opmlFeed),'explicit revoke clears RSS approval');
+ // A wildcard spelling permission is NOT equivalent to RSS consent.
+ const feedSourceForConsent=fs.readFileSync(path.resolve(__dirname,'../feeds.js'),'utf8');
+ const testableSource=feedSourceForConsent.replace('  if(typeof module!==',
+   '  globalThis.__rssConsentProbe=hasHost;\n  if(typeof module!==');
+ const ctx={browser,URL,Date,Promise,console,setTimeout,clearTimeout};
+ vm.runInNewContext(testableSource,ctx,{timeout:2000});
+ assert.equal(await ctx.__rssConsentProbe(opmlFeed),false,
+   'wildcard Firefox host access must not fetch unapproved imported feed');
+ assert.equal(await ctx.__rssConsentProbe(a),true,
+   'explicitly subscribed and host-granted RSS feed remains eligible');
  const [cachedA,cachedB]=await Promise.all([req('cache',{url:a,entry:item('https://alpha.org/article')}),req('cache',{url:b,entry:item('https://beta.org/article')})]);
  assert.equal(cachedA.ok,true);assert.equal(cachedB.ok,true);
  assert(data[cacheKey][a]?.items.length===1&&data[cacheKey][b]?.items.length===1,'simultaneous independent cached feeds must survive');
