@@ -112,6 +112,10 @@ try:
         ensure(permission() is False,"Deny must not grant blanket host access")
         ensure(not registrations(),"Deny must not register any site-wide script")
         ensure(modes() is None,"Deny must not change stored preference")
+        ensure(Select(driver.find_element(By.ID,"integration-cursors")).first_selected_option.get_attribute("value")=="all",
+            "Denied permission should preserve chosen cursor mode for retry")
+        ensure(Select(driver.find_element(By.ID,"integration-spelling")).first_selected_option.get_attribute("value")=="all",
+            "Denied permission should preserve chosen spelling mode for retry")
     check("real native Firefox Deny leaves defaults and pages unchanged",deny)
 
     def allow():
