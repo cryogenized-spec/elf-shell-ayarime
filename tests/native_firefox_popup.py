@@ -128,11 +128,30 @@ try:
         driver.switch_to.window(site)
         editor=driver.find_element(By.ID,"test-editor")
         editor.click();editor.send_keys("This is a mispeled sentance.")
-        WebDriverWait(driver,22).until(lambda d:d.execute_script("""
-          const e=document.getElementById("test-editor");
-          return e?.getAttribute("spellcheck")==="false" &&
-            CSS.highlights?.get("elfshell-spelling-errors-v1")?.size>=2;
-        """))
+        try:
+            WebDriverWait(driver,12).until(lambda d:d.execute_script("""
+              const e=document.getElementById("test-editor");
+              return e?.getAttribute("spellcheck")==="false" &&
+                CSS.highlights?.get("elfshell-spelling-errors-v1")?.size>=2;
+            """))
+        except Exception as error:
+            diagnostics=driver.execute_script("""
+              const e=document.getElementById("test-editor");
+              return {text:e?.textContent,html:e?.outerHTML?.slice(0,600),
+                spellcheck:e?.getAttribute("spellcheck"),
+                supported:!!CSS.highlights,
+                customHighlight:CSS.highlights?.has("elfshell-spelling-errors-v1"),
+                count:CSS.highlights?.get("elfshell-spelling-errors-v1")?.size||0,
+                focused:document.activeElement?.id,ready:document.readyState};
+            """)
+            driver.switch_to.window(manager)
+            diagnostics["managerStatus"]=driver.find_element(By.ID,"status").text
+            diagnostics["button"]=driver.find_element(By.ID,"toggle").text
+            diagnostics["registrations"]=scripts()
+            diagnostics["hostGranted"]=grant()
+            report["activationDiagnostics"]=diagnostics
+            raise AssertionError("Spelling did not activate after site approval: "+
+              json.dumps(diagnostics,ensure_ascii=False)) from error
         ensure(editor.text=="This is a mispeled sentance.",
           "Spellcheck must never silently modify typed words")
         driver.switch_to.window(manager)
