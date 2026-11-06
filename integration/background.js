@@ -43,8 +43,8 @@
     // "tabs" permission. Revalidate every tab by ID, even without URL.
     const tabs=await browser.tabs.query({});
     for(const tab of tabs) {
-      if(!Number.isInteger(tab.id)||tab.incognito)continue;
-      if(inject&&allowed&&modes.spellMode==="all"&&/^https:\/\//i.test(tab.url||"")) {
+      if(!Number.isInteger(tab.id))continue;
+      if(inject&&!tab.incognito&&allowed&&modes.spellMode==="all"&&/^https:\/\//i.test(tab.url||"")) {
         try{await browser.scripting.insertCSS({
           target:{tabId:tab.id},files:["spelling/content.css"]});
           await browser.scripting.executeScript({
