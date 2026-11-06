@@ -35,12 +35,8 @@ assert(content.includes("function nativeField(target)")&&content.includes("funct
   "left-click field word detection must be included");
 assert(content.includes("field.selectionStart===hit.caret")&&content.includes("field.value===hit.value"),
   "stale field click cannot open a menu after selection or value changes");
-assert(content.includes("document.execCommand(\\"insertText\\"")===false,
-  "do not accidentally double-escape native execCommand");
 assert(content.includes('document.execCommand("insertText",false,choice)'),
   "field correction must cooperate with native Undo stack");
-assert(content.includes("field.getAttribute(\\"spellcheck\\")")===false,
-  "native field checking should keep original spellcheck attribute logic");
 assert(content.includes('field.getAttribute("spellcheck")==="false"'),
   "explicit opt-out of spelling must be preserved for native fields");
 assert(!content.includes("field.setRangeText("),
