@@ -125,7 +125,18 @@ try:
     check("native Firefox Allow registers the site script from real click",allow)
 
     def inspect():
+        driver.switch_to.window(manager)
+        warning=driver.find_element(By.ID,"status").text
+        report["activationWarning"]=warning if "Reload the website tab" in warning else None
         driver.switch_to.window(site)
+        if "Reload the website tab" in warning:
+            driver.refresh()
+            driver.execute_script("""
+              const div=document.createElement("div");div.id="test-editor";
+              div.contentEditable="true";div.spellcheck=true;
+              div.style.cssText="font:24px sans-serif;min-height:80px;padding:16px;border:1px solid #777";
+              document.body.prepend(div);
+            """)
         editor=driver.find_element(By.ID,"test-editor")
         editor.click();editor.send_keys("This is a mispeled sentance.")
         try:
