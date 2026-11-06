@@ -69,8 +69,49 @@ The original source art must not be regenerated, recropped, or replaced with
 remote image URLs. Before approving integration, review captions in both
 languages and inspect image scaling, offline loading, and packaging in Firefox.
 
+## Implemented reader (draft PR #22)
+
+The archive is now a standalone offline Firefox extension page at
+`stories/archive.html`, with bundled `archive.css` and `archive.js`.
+The native 1672×941 PNGs are used directly from `stories/assets/`;
+no external image provider or runtime permission is involved.
+
+It follows the approved desktop composition: story index on the left,
+large original four- or three-sliver spread in the centre, adjacent record
+inspector, selectable sequence thumbnails and an expandable image modal.
+Responsive breakpoints collapse the inspector and stack the panels on
+narrower displays, preserving image aspect ratio and original captions.
+
+Reach it from Memory Trace, the `✧ STATION` menu, or Ctrl+K by searching
+for “illustrated”. All links open the reader in a separate extension tab,
+so the original six quick links remain unchanged.
+
+Keyboard: **Left / Right** changes spreads; **Escape** closes the native
+expanded-art dialog. The optional `#letters/0` or `#beans/2` fragment
+identifies a selected spread and can be shared inside the same Firefox profile.
+
+The AMO build's strict whitelist now includes the three reader files and
+**only the five reviewed original PNG masters**. Existing `manifest.json`,
+permissions, release version, default browser tabs and shortcut URLs were
+not changed.
+
+### Acceptance checks
+
+- Node suite: `npm test` (includes `tests/illustrated_archive.cjs`).
+- Package integrity: `python3 scripts/package.py` followed by
+  `python3 scripts/package.py --verify-only` (local validation only;
+  do not submit the ZIP to Mozilla).
+- Live Firefox: load the draft branch temporarily, select both story
+  volumes, test each spread, inspect full-size bilingual artwork, close
+  with Esc, use Ctrl+K and confirm all six existing shortcut links.
+- Check mobile/tablet reflow, font fallback, keyboard focus, zoom and
+  remote/network requests in Firefox Developer Tools.
+- The five original PNGs were checked against their SHA-256 manifest
+  before the user committed them to the branch.
+
 ## Status
 
-**Draft artwork and curator handoff; no runtime integration yet.**
-No existing ELF//SHELL runtime files or shortcut URLs were changed.
-Explicit human permission is required before merge, Mozilla packaging or release.
+**Implementation committed for review — NOT MERGED.**
+No existing Firefox shortcut destinations or runtime permissions were
+changed. Human approval is still required before merge and separately
+before any Mozilla publication.
