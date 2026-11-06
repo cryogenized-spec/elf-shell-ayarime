@@ -18,6 +18,8 @@ assert(popup.includes("scripting.registerContentScripts"),"dynamic site scripts 
 assert(popup.includes("scripting.unregisterContentScripts"),"site opt-out required");
 assert(popup.includes('tabs.query({url:origin+"/*"})')&&popup.includes('tabs.sendMessage(other.id'),
   "site opt-out must notify all matching open tabs, not just the popup tab");
+assert(content.includes('CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")'),
+  "native Firefox spelling must stay active when custom underline rendering is unsupported");
 assert(content.includes('if(!scan.complete)')&&content.includes('root.removeAttribute("spellcheck")'),
   "incomplete editor scan must restore Firefox native spelling");
 assert(bg.includes("spellWordChain=mutation.then"),"dictionary updates must be serialized across tabs");
