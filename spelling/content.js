@@ -21,7 +21,11 @@
   function canManage(root){
     if(!root||!root.isConnected||root.closest('code,pre,[role="code"],[data-elfshell-spelling-off]'))return false;
     if(root.getAttribute("spellcheck")==="false")return false;
-    return !!(globalThis.CSS?.highlights&&globalThis.Highlight&&document.caretPositionFromPoint);
+    // Firefox 142-148 exposed parts of the Highlight API without painting
+    // ::highlight text decorations. Keep native spellcheck on those versions.
+    return !!(globalThis.CSS?.highlights&&globalThis.Highlight&&
+      globalThis.CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")&&
+      document.caretPositionFromPoint);
   }
   function closeMenu(){
     if(menu){menu.remove();menu=null;}
