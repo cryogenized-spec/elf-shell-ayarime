@@ -80,3 +80,15 @@
 - [x] Merge `checkedAt`-qualified successful content separately from last `attemptedAt` / `error`.
 - [x] Test the specific inverse-order race: failed T300 is persisted before a newer successful T200 batch.
 - [ ] Confirm GitHub CI and Codex re-review on this fix.
+
+
+### Final simplification: Firefox native spelling; desktop cursors separate
+
+- [x] Remove experimental spelling scripts, dictionary, popup, registration
+      and unnecessary scripting/activeTab permissions from Firefox candidate.
+- [ ] Validate Mozilla lint, reproducible source package and native Firefox
+      RSS/permission regression on the final post-merge release commit.
+- [ ] Test optional native Linux cursor archive on Linux Mint Cinnamon at
+      normal and scaled display sizes (7 variants, hotspots, fallback, removal).
+- [ ] Verify AMO ZIP does not contain custom spelling or native cursor installer.
+- [ ] Owner explicitly approves Mozilla Add-ons Developer Hub signing/upload.

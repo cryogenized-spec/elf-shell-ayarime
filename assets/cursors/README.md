@@ -27,7 +27,7 @@ The pointer is **only applied to the ELF//SHELL dashboard**. Firefox's address b
 - 64 × 64 with a top-left 2 × 2 hotspot for every design; this is an initial alignment subject to live Firefox and high-DPI testing.
 - Verify under 100%, 150%, 200% display scaling, with left/right mouse handedness and high-contrast system settings.
 - Browser cursor size support may differ by platform; the final theme can include 32/48-pixel versions if necessary.
-- No OS-wide theme installer or persistent cursor changes to Linux Mint are made.
+- The separate optional native Linux Xcursor distribution in linux-cursors/ can install these designs per-user, reversibly, without changing system preferences automatically.
 
 All assets are local: no runtime downloads, external image hosts, telemetry, or remote assets.
 
