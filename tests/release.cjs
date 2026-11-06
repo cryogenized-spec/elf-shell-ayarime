@@ -10,7 +10,7 @@ assert.deepEqual(m.browser_specific_settings.gecko.data_collection_permissions,{
 assert.equal(m.browser_specific_settings.gecko.strict_min_version,'142.0');
 assert(m.content_security_policy.extension_pages.includes("script-src 'self'"));
 assert(m.content_security_policy.extension_pages.includes("object-src 'none'"));
-assert.deepEqual(m.permissions.slice().sort(),['activeTab','scripting','search','storage','theme']);
+assert.deepEqual(m.permissions.slice().sort(),['search','storage','theme']);
 assert.deepEqual(m.optional_permissions.slice().sort(),['bookmarks','history','sessions','tabs']);
 assert.deepEqual(m.optional_host_permissions,['https://*/*']);
 for(const fn of ['LICENSE','ARTWORK_LICENSE.md','PRIVACY.md','RELEASE_CHECKLIST.md','scripts/package.py'])assert(fs.statSync(path.join(root,fn)).size>100);

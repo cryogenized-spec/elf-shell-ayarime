@@ -32,26 +32,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_smoke.py
-      - name: Test pre-consent spelling isolation and RSS imports in real Firefox
-        env:
-          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
-        run: python3 tests/native_firefox_consent.py
       - name: Exercise actual optional permission prompt from RSS user gesture
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_permissions.py
-      - name: Test native Firefox offline spelling activation and revocation
-        env:
-          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
-        run: python3 tests/native_firefox_spelling.py
-      - name: Test real Firefox browser-wide integration consent, injection and revocation
-        env:
-          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
-        run: python3 tests/native_firefox_integration.py
-      - name: Test persistent per-site spelling permission manager in native Firefox
-        env:
-          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
-        run: python3 tests/native_firefox_popup.py
       - name: Upload Firefox screenshot and structured test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,9 +43,5 @@ jobs:
           name: native-firefox-qa
           path: |
             dist/native-firefox-qa/
-            dist/firefox-consent-qa/
             dist/firefox-permission-qa/
-            dist/firefox-spelling-qa/
-            dist/firefox-integration-qa/
-            dist/firefox-spell-popup-qa/
           if-no-files-found: warn

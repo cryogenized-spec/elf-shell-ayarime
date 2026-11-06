@@ -39,7 +39,7 @@ The extension reads previous `elfshell-workspace-v3` and `elfshell-workspace-v2`
 
 ## Privacy details
 
-Required: `theme`, `search`, `storage`. Optional: `tabs`, `sessions`, `bookmarks`, `history`. Optional HTTPS site access is declared for custom RSS feeds but is requested **per exact publication host at the time you subscribe**. No content scripts, management permission, native messaging or developer-controlled analytics. Browser-chrome colours are applied through `browser.theme.update()`.
+Required: theme, search, storage. Optional: tabs, sessions, bookmarks, history. Optional HTTPS site access is declared for RSS feeds but requested **per exact publication host when you subscribe**. No injected content scripts, custom spelling, management permission, native messaging or developer-controlled analytics. Browser-chrome colours are applied through `browser.theme.update()`.
 
 Notes, settings, user-defined URLs, and named session URLs are stored in Firefox extension-local storage **without encryption**. Avoid putting secrets or authentication tokens in notes and be careful when exporting session URLs (URLs can have sensitive query strings). Local backup JSON files may contain this information. The extension does not automatically read or upload page content. Opt-in subscribed RSS feeds are downloaded directly from their original websites after you grant host access.
 
@@ -170,29 +170,30 @@ The v0.5.4 review branch also incorporates the observations recorded in [GitHub 
 
 The remaining release gates are a disposable-profile Firefox 142+ test (including restarts and real RSS feeds), the Codex review of issue #2's changes, and Mozilla signing. Do not describe a source ZIP as a permanently installable add-on.
 
-## Experimental left-click spelling and theme (draft PR #4)
+## Firefox-native spelling and separate Linux cursor package
 
-The feature branch `feature/spell-left-click-window-theme` adds a user-enabled,
-offline British-English spelling module for supported rich-text editors. Click the ELF//SHELL
-toolbar button on an HTTPS site to opt in, then left-click a misspelled word
-to choose a correction, ignore it, or add it to an extension-owned personal
-dictionary. Unsupported fields retain Firefox's native spelling UI. The
-extension **does not** rewrite Firefox's native personal dictionary.
-See [spelling/README.md](spelling/README.md) for limitations and testing.
+**The experimental custom spellchecker has been retired from this Firefox
+release candidate** after failed hands-on acceptance. ELF//SHELL no longer
+injects spelling scripts, reads typed website text, stores custom spelling
+words or asks for spelling permissions. Use Firefox's built-in spellchecker
+and ordinary right-click correction options. Previous experiments remain in
+repository history but are not shipped.
 
-ELF//SHELL also coordinates sidebar, popup, and inactive-window colours and
-requests dark-colour browser chrome. Native Linux Mint window themes and
-system pointers are outside WebExtension control.
+Ayarime's six alternative pointers and the Core Six States style remain
+available inside the Station dashboard. An independent native Linux Xcursor
+pack can extend matching artwork to Linux Mint Cinnamon, Firefox chrome and
+other compatible applications. It is optional, **not part of the Mozilla
+extension**, and contains no system-wide spelling component.
 
-The feature branch also includes **six optional Ayarime pointer designs**
-derived from the original Classic Spearhead / Crystal-Tech Shard / Elven
-Feather / Hollow Frame / Rune-Edged / Minimal Precision concept sheet.
-Open **Station Configuration → Pointer Design** to select one, or retain
-**System Default** (the initial setting). Cursor art applies **only to the
-ELF//SHELL new-tab dashboard**, never the operating system or other websites.
-See [the cursor gallery](assets/cursors/README.md) for previews, asset details,
-and native Firefox QA limitations.
+On Linux Mint 22:
 
+    sudo apt install x11-apps
+    python3 linux-cursors/build.py
+
+Extract the generated dist/linux-cursors/Ayarime-Cursors-Linux-Mint.tar.gz
+and run "bash install.sh" inside its extracted Ayarime-Cursors directory.
+Choose the resulting theme under Cinnamon → Themes → Mouse Pointer.
+See linux-cursors/README.md for safeguards and removal instructions.
 
 ## Typography presets (PR #4, experimental)
 
