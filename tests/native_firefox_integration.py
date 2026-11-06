@@ -119,7 +119,7 @@ try:
         driver.find_element(By.ID,"integration-apply").click()
         prompt("deny")
         WebDriverWait(driver,12).until(lambda d:
-            "Permission denied" in d.find_element(By.ID,"integration-status").text)
+            "Permission declined" in d.find_element(By.ID,"integration-status").text)
         ensure(permission() is False,"Deny must not grant blanket host access")
         ensure(not registrations(),"Deny must not register any site-wide script")
         ensure(modes() is None,"Deny must not change stored preference")
