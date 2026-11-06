@@ -135,10 +135,18 @@ async function toggle() {
           target:{tabId:tab.id},files:["spelling/content.js"]}));
         setStatus("Enabled for this site. Left-click a misspelled word in a compatible editor.");
       }catch(error){
-        // Never falsely claim the current page is active: registration is
-        // durable for the next navigation, but this page needs user reload.
-        setStatus("Spelling registered, but could not activate this open tab ("+
-          String(error.message||error)+"). Reload the website tab to activate it.");
+        // Firefox's per-site permission can be granted before this extension
+        // tab's scripting API sees the site. Ask the background to attempt
+        // the exact, still-authorized target once before suggesting a reload.
+        const fallback=await browser.runtime.sendMessage({
+          type:"elfshell:spelling:activate-site",tabId:tab.id,origin
+        }).catch(e=>({ok:false,error:String(e.message||e)}));
+        if(fallback?.ok)
+          setStatus("Enabled for this site. Left-click a misspelled word in a compatible editor.");
+        else
+          setStatus("Spelling registered, but could not activate this open tab ("+
+            String(error.message||error)+"; "+String(fallback?.error||"background unavailable")+
+            "). Reload the website tab to activate it.");
       }
     }
   } catch(error){
