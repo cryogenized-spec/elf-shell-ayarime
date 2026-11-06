@@ -107,9 +107,39 @@ async function toggle() {
           js:["spelling/content.js"],css:["spelling/content.css"],
           runAt:"document_idle",persistAcrossSessions:true
         }]);
-      await browser.scripting.insertCSS({target:{tabId:tab.id},files:["spelling/content.css"]});
-      await browser.scripting.executeScript({target:{tabId:tab.id},files:["spelling/content.js"]});
-      setStatus("Enabled for this site. Left-click a misspelled word in a compatible editor.");
+      // Permission changes can arrive in Firefox content processes after the
+      // permission promise resolves. Retry only the two immediate injections;
+      // the registered content script always handles later navigations.
+      async function inject(operation,fn){
+        let last=null;
+        for(let attempt=0;attempt<3;attempt++){
+          try{
+            const result=await fn();
+            if(Array.isArray(result)){
+              const error=result.find(item=>item?.error)?.error;
+              if(error)throw Error(String(error.message||error));
+            }
+            return;
+          }catch(error){
+            last=error;
+            if(attempt<2)
+              await new Promise(resolve=>setTimeout(resolve,120*(attempt+1)));
+          }
+        }
+        throw Error(operation+": "+String(last?.message||last));
+      }
+      try{
+        await inject("CSS injection",()=>browser.scripting.insertCSS({
+          target:{tabId:tab.id},files:["spelling/content.css"]}));
+        await inject("Script injection",()=>browser.scripting.executeScript({
+          target:{tabId:tab.id},files:["spelling/content.js"]}));
+        setStatus("Enabled for this site. Left-click a misspelled word in a compatible editor.");
+      }catch(error){
+        // Never falsely claim the current page is active: registration is
+        // durable for the next navigation, but this page needs user reload.
+        setStatus("Spelling registered, but could not activate this open tab ("+
+          String(error.message||error)+"). Reload the website tab to activate it.");
+      }
     }
   } catch(error){
     setStatus("Website spelling could not be updated: "+String(error.message||error));
