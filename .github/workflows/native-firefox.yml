@@ -44,6 +44,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_spelling.py
+      - name: Test real Firefox browser-wide integration consent, injection and revocation
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_firefox_integration.py
       - name: Upload Firefox screenshot and structured test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,4 +58,5 @@ jobs:
             dist/firefox-consent-qa/
             dist/firefox-permission-qa/
             dist/firefox-spelling-qa/
+            dist/firefox-integration-qa/
           if-no-files-found: warn
