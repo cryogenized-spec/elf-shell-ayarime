@@ -29,7 +29,7 @@ assert(content.includes("focusMenuFirst")&&content.includes('!menu?.contains(e.t
 assert(content.includes('["text","search"].includes(field.type)'),
   "input default type text must receive optional suggestions");
 assert(content.includes('if(e.key==="Escape"){++fieldRequest;closeMenu()'),
-  "Escape must cancel pending asynchronous suggestions";
+  "Escape must cancel pending asynchronous suggestions");
 assert(content.includes('CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")'),
   "native Firefox spelling must stay active when custom underline rendering is unsupported");
 assert(content.includes('if(!scan.complete)')&&content.includes('root.removeAttribute("spellcheck")'),
