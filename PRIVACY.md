@@ -1,27 +1,57 @@
-# Privacy statement — ELF//SHELL
+# Privacy statement — ELF//SHELL — Ayarime
 
-ELF//SHELL does not collect or transmit analytics, telemetry, crash reports, browsing history, page contents, or personal information to a developer-controlled server. It has no developer-controlled server. Scripts, styles, wallpaper and launcher images are included in the extension package.
+ELF//SHELL is a locally run Firefox new-tab dashboard and optional browser
+theme. It has no developer-operated server and does not collect or transmit
+analytics, telemetry, crash reports, or browsing history to the developer.
+Runtime artwork, fonts, scripts and icons are bundled locally.
 
-Firefox extension-local storage holds local notes, preferences, quick-link URLs, editable search templates and optionally saved sets of tab URLs and duplicate-tab recovery URLs until reopened or manually cleared. These recovery URLs may contain private query parameters. This storage is not encrypted. A JSON export includes this information. Users should avoid storing credentials or exporting private session URLs.
+**There is no custom website spellchecker in this release.** The extension
+does not inject content scripts into other sites, read typed words in
+webpage editors or send text to an AI/spelling service. Firefox's own
+native spelling checker remains the user's choice.
 
-The extension uses `theme`, `search` and `storage` for browser appearance, user-initiated search and local settings; `scripting` and `activeTab` support optional website integration. The `tabs`, `sessions`, `bookmarks` and `history` permissions are optional, explained in the interface and revocable. The optional `https://*/*` declaration permits requests for individual HTTPS publication access (RSS/Atom), individual-site spelling, or broader HTTPS site access for the optional browser-wide offline spelling mode. **Broad HTTPS access is not granted on installation.** A user must select browser-wide spelling and explicitly approve Firefox's permission request from Station configuration. Denying permission leaves browser-wide spelling inactive. Existing RSS grants are not silently converted into spelling opt-in.
+Firefox extension-local storage holds dashboard notes, focus, configuration,
+launcher URLs, memory-quote preferences, subscriptions, locally cached
+public feed headlines, and optionally named browser tab sets and duplicate
+recovery URLs. It is **not encrypted**. URLs sometimes contain private
+tokens and query parameters. JSON and OPML exports contain user-defined
+settings/URLs and should be handled as potentially sensitive documents.
+Bookmark and browsing-history APIs are used only when the user explicitly
+requests the corresponding feature.
 
-Searches submitted through Firefox or a custom bang, quick links clicked by the user and websites restored from saved sessions necessarily contact the corresponding external service. Those services' own privacy policies apply. ELF//SHELL does not send anything to these services except in response to the user's chosen action, or periodic RSS feed checks after the user has opted into a subscription and granted its website access. These requests go directly to the chosen publication and disclose the normal connection information such as IP address to that publication. RSS checks omit cookies and referrer headers. No developer-controlled tracking service is involved.
+## Browser permissions
 
-RSS publication URLs, custom titles, groups, source status and recent article headlines and URLs are stored locally without encryption. JSON export contains subscriptions, but not cached headline data; OPML export contains feed addresses and names. Importing OPML does not contact those publications until the user separately approves the feed through NET FEED. Firefox's all-HTTPS spelling grant is **never** treated as RSS approval. A separate locally stored set of explicitly approved feed URLs must match the subscribed URL before network fetching can begin, in addition to Firefox's host permission. Removing a subscription or selecting Revoke Host clears the corresponding RSS approvals, regardless of any broad spelling permission. Previously subscribed feeds created before this stricter approval record may need a **one-time Allow Host confirmation** after upgrading; no automatic RSS permission is inferred from existing grants.
+- Required: theme, search, storage. Firefox chrome tint and user-initiated
+  searches use Mozilla's supported browser APIs.
+- Optional: tabs, sessions, bookmarks, history for explicitly requested
+  workspace utilities; these may be denied or revoked.
+- Optional HTTPS host access (https://*/* declaration): **only** for
+  user-chosen RSS/Atom publications. This is not an installation-time blanket
+  grant. Each publisher requires explicit Firefox permission during
+  subscription, plus a distinct stored record of approved feed URLs.
+  Importing an OPML/JSON backup never grants RSS approval. Previously saved
+  feeds may require a one-time reapproval.
 
-Ayarime Memory Trace quotations are packaged in a local JSON asset and involve no external requests. Quote display preferences, favourites, pinned entries, category filters and rotation timestamp are stored in Firefox extension-local storage without encryption. JSON station exports include these quote preferences.
+The extension never sends a user's notes, saved tabs, locally stored
+settings or editor text to a developer-controlled server. Search terms,
+user-opened links and restored tabs naturally contact websites selected by
+the user. Opt-in RSS requests go **directly** to approved publishers;
+those hosts see ordinary connection metadata, including IP addresses.
+RSS requests omit credentials and referrers and reject redirects.
+Cached feed metadata contains titles, dates and URLs, not article bodies.
 
-## Optional website spelling and left-click corrections
+## Native Linux cursor package
 
-The release has **no cursor injection into websites**. Optional pointer artwork is confined to Ayarime's own new-tab page. It does not override Firefox's toolbar cursor or the Linux desktop.
+The optional Ayarime Linux cursor archive is **not a Firefox extension
+dependency** and contains no networking or spelling component. Its installer
+copies locally compiled Xcursor theme files into the user's
+~/.local/share/icons directory without sudo or automatically changing
+the active cursor. It can be removed independently. Artwork licensing
+is documented in ARTWORK_LICENSE.md.
 
-The website spelling modes are **per-site (default)**, **all approved HTTPS websites**, or **Firefox native only**. Permission is requested explicitly on a real user click, never during installation or silently in the background. Individual-site activation opens a stable extension tab so Firefox's permission prompt cannot destroy the requesting toolbar popup. The broader mode requests the optional all-HTTPS permission on the Station settings page; denying it keeps the previous mode and does not register scripts.
+## Mozilla data-collection disclosure
 
-On supported contenteditable rich-text editors, the extension checks text locally using the bundled British-English dictionary, draws custom underlines, and disables Firefox's own spellcheck only **after** the replacement succeeds. On ordinary textarea and text/search controls it checks the **specific clicked word** against the offline dictionary and may offer a left-click correction menu; the native Firefox underline and right-click context menu remain enabled. No custom correction is forced into unsupported web editors. Password, disabled, read-only, marked-private and recognised code controls are excluded. User text and dictionary queries are never sent to a developer-controlled service, AI or third-party spelling endpoint. Only words expressly added to the extension personal dictionary are stored (unencrypted) in Firefox extension-local storage, independent of Firefox's native dictionary.
-
-Revoking site permission stops new spelling requests and attempts to restore native spelling across already-open tabs. Protected or inaccessible tabs may require reload. Turning off spelling does not silently revoke an RSS host permission; the explicit broad Revoke control removes only the wildcard grant, while individual approved hosts remain manageable through Firefox's permissions UI.
-
-## Mozilla manifest disclosure (0.5.1)
-
-`browser_specific_settings.gecko.data_collection_permissions.required` is `['none']`: the extension itself does not collect or transmit user data to a developer, analytics provider, or its own servers. Users can **optionally** authorise direct HTTPS fetches to their selected public RSS/Atom publishers. The destination sees the usual network request/IP address, but the extension does not relay browsing history, personal notes, or quick links to those publishers. Redirects are refused. As with any browser, manually opening search results or quick links contacts the selected website.
+The manifest's Firefox data-collection declaration is required: none.
+This means there is no developer data-collection endpoint; it does
+not claim user-authorized searches and RSS requests never contact
+external websites.
