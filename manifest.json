@@ -21,7 +21,8 @@
   "background": {
     "scripts": [
       "background.js",
-      "spelling/background.js"
+      "spelling/background.js",
+      "integration/background.js"
     ]
   },
   "browser_specific_settings": {

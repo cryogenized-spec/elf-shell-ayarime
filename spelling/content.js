@@ -1,6 +1,6 @@
 "use strict";
-/* ELF//SHELL optional spelling UI. Handles supported contenteditable editors
-   only; keeps Firefox's native spellchecker on unsupported fields. */
+/* ELF//SHELL optional spelling UI. Custom highlights on compatible contenteditables;
+   left-click suggestions on ordinary text fields use Firefox native squiggles and Undo. */
 (() => {
   if(globalThis.__elfshellSpelling){
     // Reuse an injected instance only after a fresh background authorization.
@@ -11,6 +11,8 @@
   const ignored=new Set();
   let enabled=false, editor=null, originalSpell=null, revision=0, composing=false, timer=0;
   let mistakes=new Set(), menu=null, menuRange=null, menuWord="";
+  let menuField=null,menuFieldStart=0,menuFieldEnd=0,menuFieldValue="",menuFieldCaret=null,fieldRequest=0;
+  let focusMenuFirst=null;
   const WORD=/[A-Za-z]+(?:['’\-][A-Za-z]+)*/g;
   const request=(type,extra={})=>browser.runtime.sendMessage({type:"elfshell:spelling:"+type,...extra});
   const asElement=n=>n instanceof Element?n:n?.parentElement;
@@ -18,14 +20,61 @@
     const el=asElement(n);
     return el?.closest?.('[contenteditable="true"],[contenteditable="plaintext-only"]')||null;
   }
+  function spellcheckDisabled(node){
+    // HTML's spellcheck attribute is inherited. A child's explicit true
+    // overrides an ancestor false; values are case-insensitive.
+    for(let el=node;el&&el.nodeType===Node.ELEMENT_NODE;el=el.parentElement){
+      const attr=el.getAttribute("spellcheck");
+      if(attr===null)continue;
+      const value=attr.trim().toLowerCase();
+      if(value==="false")return true;
+      if(value==="true")return false;
+    }
+    return false;
+  }
+  function nativeField(target){
+    // Standard controls retain Firefox's own underlines. Never read or
+    // interact with password, code, private, disabled or readonly controls.
+    const el=asElement(target);
+    const field=el?.closest?.("textarea,input")||null;
+    if(!field||!field.isConnected||field.disabled||field.readOnly)return null;
+    // HTML <input> without a type attribute defaults to "text".
+    if(field.tagName==="INPUT"&&!["text","search"].includes(field.type))return null;
+    if(spellcheckDisabled(field))return null;
+    if(field.closest("code,pre,[role='code'],[data-elfshell-spelling-off],"+
+      "[data-private],[data-sensitive],.CodeMirror,.cm-editor,.monaco-editor,.ace_editor"))return null;
+    const detail=[field.name,field.id,field.getAttribute("autocomplete"),field.getAttribute("aria-label")]
+      .filter(Boolean).join(" ").toLowerCase();
+    if(/password|passphrase|secret|token|otp|one.time.code|verification.code|api.key|credit.card|card.number/.test(detail))
+      return null;
+    return field;
+  }
+  function clickedFieldWord(field){
+    // A single collapsed caret inside a word demonstrates a genuine click
+    // on that token. Clicking empty space (caret at token boundary) does not.
+    const start=field.selectionStart,end=field.selectionEnd;
+    if(start===null||end===null||start!==end)return null;
+    for(const match of field.value.matchAll(WORD)){
+      const first=match.index,last=first+match[0].length;
+      if(start>first&&start<last&&match[0].length>=3&&match[0].length<=78)
+        return {field,word:match[0],start:first,end:last,value:field.value,caret:start};
+    }
+    return null;
+  }
   function canManage(root){
     if(!root||!root.isConnected||root.closest('code,pre,[role="code"],[data-elfshell-spelling-off]'))return false;
     if(root.getAttribute("spellcheck")==="false")return false;
-    return !!(globalThis.CSS?.highlights&&globalThis.Highlight&&document.caretPositionFromPoint);
+    // Firefox 142-148 exposed parts of the Highlight API without painting
+    // ::highlight text decorations. Keep native spellcheck on those versions.
+    return !!(globalThis.CSS?.highlights&&globalThis.Highlight&&
+      globalThis.CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")&&
+      document.caretPositionFromPoint);
   }
   function closeMenu(){
     if(menu){menu.remove();menu=null;}
     menuRange=null;menuWord="";
+    menuField=null;menuFieldStart=0;menuFieldEnd=0;menuFieldValue="";
+    menuFieldCaret=null;focusMenuFirst=null;
   }
   function clearMark(){if(globalThis.CSS?.highlights)CSS.highlights.delete(MARK);mistakes.clear();}
   function restore(){
@@ -117,6 +166,26 @@
     return null;
   }
   function replace(choice){
+    if(menuField){
+      const field=menuField,start=menuFieldStart,end=menuFieldEnd;
+      const original=menuFieldValue,word=menuWord,caret=menuFieldCaret;
+      // The text AND collapsed selection must still be at the original click.
+      // Never silently replace a word after the user moved the caret.
+      if(!field.isConnected||field.disabled||field.readOnly||
+         field.value!==original||field.value.slice(start,end)!==word||
+         field.selectionStart!==caret||field.selectionEnd!==caret)
+        return closeMenu();
+      closeMenu();
+      try{
+        field.focus();
+        field.setSelectionRange(start,end);
+        // Firefox's native editor command preserves Undo and input events.
+        // Never overwrite React's managed value or fall back to setRangeText.
+        if(!document.execCommand("insertText",false,choice))
+          console.warn("ELF//SHELL: this field rejected correction; native spelling remains.");
+      }catch(error){console.warn("ELF//SHELL text control correction unavailable",error);}
+      return;
+    }
     if(!editor||!menuRange||!menuRange.startContainer.isConnected||
        !editor.contains(menuRange.startContainer)||menuRange.toString()!==menuWord)
       return closeMenu();
@@ -134,8 +203,13 @@
       schedule();
     }catch(error){console.warn("ELF//SHELL: replacement unavailable",error);}
   }
-  function placeMenu(evt,word,range,suggestions){
+  function placeMenu(evt,word,range,suggestions,fieldHit=null){
     closeMenu();menuWord=word;menuRange=range;
+    if(fieldHit){
+      menuField=fieldHit.field;menuFieldStart=fieldHit.start;
+      menuFieldEnd=fieldHit.end;menuFieldValue=fieldHit.value;
+      menuFieldCaret=fieldHit.caret;
+    }
     const pane=document.createElement("div");
     pane.className="elfshell-spell-menu";
     pane.setAttribute("role","menu");
@@ -171,30 +245,61 @@
     pane.style.left=Math.max(5,Math.min(evt.clientX,innerWidth-rect.width-5))+"px";
     pane.style.top=Math.max(5,Math.min(evt.clientY+9,innerHeight-rect.height-5))+"px";
     menu=pane;
+    // A menu appended after the editor is not always next in tab order.
+    // Let the user's keyboard focus enter its real buttons deliberately.
+    focusMenuFirst=()=>shadow.querySelector("button")?.focus();
     pane.addEventListener("keydown",e=>{
       const items=[...shadow.querySelectorAll("button")],idx=items.indexOf(shadow.activeElement);
-      if(e.key==="Escape"){e.preventDefault();closeMenu();editor?.focus();}
+      if(e.key==="Escape"){
+        e.preventDefault();const target=menuField||editor;closeMenu();target?.focus();
+      }
       if(e.key==="ArrowDown"||e.key==="ArrowUp"){
         e.preventDefault();items[(idx+items.length+(e.key==="ArrowDown"?1:-1))%items.length].focus();
       }
     });
   }
   async function onClick(event){
-    if(!enabled||!event.isTrusted)return;
+    if(!enabled||!event.isTrusted||event.button!==0||composing||
+       event.ctrlKey||event.altKey||event.metaKey||event.shiftKey)return;
     if(menu&&menu.contains(event.target))return;
+    const requestId=++fieldRequest;
     closeMenu();
+    const field=nativeField(event.target);
+    if(field){
+      // Standard inputs/textarea use the already-visible native squiggles.
+      // Firefox doesn't expose their mistake list to WebExtensions; verify
+      // the exact clicked word locally instead of hijacking its context menu.
+      const hit=clickedFieldWord(field);
+      if(!hit||ignored.has(hit.word))return;
+      const stillValid=()=>enabled&&requestId===fieldRequest&&
+        field.isConnected&&document.activeElement===field&&
+        field.value===hit.value&&field.selectionStart===hit.caret&&
+        field.selectionEnd===hit.caret;
+      try{
+        const result=await request("check",{words:[hit.word]});
+        if(!result?.ok||!Array.isArray(result.incorrect)||
+           !result.incorrect.includes(hit.word)||!stillValid())return;
+        const response=await request("suggest",{word:hit.word});
+        if(!response?.ok||!stillValid())return;
+        const options=(response.suggestions||[])
+          .filter(w=>typeof w==="string"&&w!==hit.word).slice(0,6);
+        placeMenu(event,hit.word,null,options,hit);
+      }catch(error){console.warn("ELF//SHELL field spelling unavailable; using Firefox spelling.",error);}
+      return;
+    }
     if(!editor||!editor.contains(event.target)||editor.getAttribute("spellcheck")!=="false")return;
     const hit=clickedToken(event);
     if(!hit)return;
-    const targetEditor=editor, targetRevision=revision;
+    const targetEditor=editor,targetRevision=revision;
     try{
       const response=await request("suggest",{word:hit.word});
-      if(!response?.ok||!enabled||editor!==targetEditor||revision!==targetRevision||editor?.getAttribute("spellcheck")!=="false")return;
+      if(!response?.ok||!enabled||editor!==targetEditor||revision!==targetRevision||
+         editor?.getAttribute("spellcheck")!=="false")return;
       const options=(response.suggestions||[]).filter(w=>typeof w==="string"&&w!==hit.word).slice(0,6);
       placeMenu(event,hit.word,hit.range,options);
     }catch(error){console.warn("ELF//SHELL suggestion unavailable",error);}
   }
-  function disable(){enabled=false;restore();}
+  function disable(){enabled=false;++fieldRequest;restore();}
   function enable(){enabled=true;selectEditor(closestEditor(document.activeElement));}
   async function reauthorize(){
     // A tab ID and a previously injected script do not confer continued
@@ -207,12 +312,48 @@
   globalThis.__elfshellSpelling={disable,reauthorize};
   document.addEventListener("focusin",e=>{if(!menu?.contains(e.target))selectEditor(closestEditor(e.target));},true);
   document.addEventListener("click",onClick,true);
-  document.addEventListener("beforeinput",e=>{if(editor?.contains(e.target)){closeMenu();++revision;}},true);
-  document.addEventListener("input",e=>{if(editor?.contains(e.target)){closeMenu();++revision;schedule();}},true);
-  document.addEventListener("compositionstart",()=>{composing=true;closeMenu();++revision;},true);
-  document.addEventListener("compositionend",()=>{composing=false;closeMenu();++revision;schedule();},true);
-  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu();},true);
-  document.addEventListener("scroll",()=>closeMenu(),true);
+  document.addEventListener("beforeinput",e=>{
+    if(nativeField(e.target)){++fieldRequest;closeMenu();}
+    if(editor?.contains(e.target)){closeMenu();++revision;}
+  },true);
+  document.addEventListener("input",e=>{
+    if(nativeField(e.target)){++fieldRequest;closeMenu();}
+    if(editor?.contains(e.target)){closeMenu();++revision;schedule();}
+  },true);
+  document.addEventListener("compositionstart",()=>{composing=true;++fieldRequest;closeMenu();++revision;},true);
+  document.addEventListener("compositionend",()=>{composing=false;++fieldRequest;closeMenu();++revision;schedule();},true);
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){
+      ++fieldRequest;
+      const target=menuField||editor;
+      const focusedMenu=!!menu && (document.activeElement===menu||
+        menu.contains(document.activeElement));
+      closeMenu();
+      if(focusedMenu&&target?.isConnected)target.focus({preventScroll:true});
+      return;
+    }
+    if(menu&&focusMenuFirst&&
+       (document.activeElement===menuField||document.activeElement===editor)&&
+       (e.key==="Tab"||e.key==="ArrowDown")){
+      e.preventDefault();focusMenuFirst();return;
+    }
+    if(menuField&&document.activeElement===menuField&&
+       ["ArrowLeft","ArrowRight","Home","End","PageUp","PageDown"].includes(e.key)){
+      ++fieldRequest;closeMenu();
+    }
+  },true);
+  document.addEventListener("scroll",()=>{++fieldRequest;closeMenu();},true);
+  document.addEventListener("selectionchange",()=>{
+    if(menuField&&(menuField.selectionStart!==menuFieldCaret||
+                   menuField.selectionEnd!==menuFieldCaret)){
+      ++fieldRequest;closeMenu();
+    }
+  },true);
+  document.addEventListener("focusin",e=>{
+    if(menuField&&e.target!==menuField&&!menu?.contains(e.target)){
+      ++fieldRequest;closeMenu();
+    }
+  },true);
   browser.runtime.onMessage.addListener(msg=>{
     if(msg?.type==="elfshell:spell:disable")disable();
     if(msg?.type==="elfshell:spell:revalidate")reauthorize();

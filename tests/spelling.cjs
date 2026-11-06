@@ -16,8 +16,22 @@ const bg=read("spelling/background.js");
 assert(popup.includes("permissions.request"),"per-site opt-in required");
 assert(popup.includes("scripting.registerContentScripts"),"dynamic site scripts required");
 assert(popup.includes("scripting.unregisterContentScripts"),"site opt-out required");
-assert(popup.includes('tabs.query({url:origin+"/*"})')&&popup.includes('tabs.sendMessage(other.id'),
-  "site opt-out must notify all matching open tabs, not just the popup tab");
+assert(popup.includes('browser.tabs.query({})')&&popup.includes('browser.tabs.sendMessage(t.id'),
+  "site opt-out must revalidate open tabs by ID even without host URL access");
+assert(popup.includes('browser.tabs.create({url})')&&popup.includes('if(!manager)'),
+  "toolbar popup must open a persistent extension tab for site permissions");
+assert(popup.includes('browser.permissions.request({origins:[origin+"/*"]})'),
+  "site permission must originate from a click in the persistent manager");
+assert(content.includes("menuFieldCaret")&&content.includes("field.selectionStart!==caret"),
+  "changing caret before choosing a correction must cancel it");
+assert(content.includes("focusMenuFirst")&&content.includes('!menu?.contains(e.target)'),
+  "keyboard focus entering the closed-shadow suggestions must not dismiss them");
+assert(content.includes('["text","search"].includes(field.type)'),
+  "input default type text must receive optional suggestions");
+assert(/if\(e\.key==="Escape"\)\s*\{\s*\+\+fieldRequest;/.test(content),
+  "Escape must cancel pending asynchronous suggestions");
+assert(content.includes('CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")'),
+  "native Firefox spelling must stay active when custom underline rendering is unsupported");
 assert(content.includes('if(!scan.complete)')&&content.includes('root.removeAttribute("spellcheck")'),
   "incomplete editor scan must restore Firefox native spelling");
 assert(bg.includes("spellWordChain=mutation.then"),"dictionary updates must be serialized across tabs");
@@ -25,10 +39,24 @@ assert(popup.includes("browser.tabs.get(tab.id)")&&popup.includes('!==origin'),"
 assert(bg.includes("spellingSenderAllowed(sender)")&&bg.includes('browser.permissions.contains({origins:[origin]})'),"all spelling messages must verify actual sender and permission");
 assert(bg.includes('message.type==="elfshell:spelling:authorize"'),"spelling initialization requires background authorization");
 assert(bg.includes('type:"elfshell:spell:revalidate"'),"revocation must revalidate existing tabs");
-assert(content.includes('if(!enabled||!event.isTrusted)return;'),"synthetic site clicks may not open correction controls");
+assert(content.includes('if(!enabled||!event.isTrusted||event.button!==0'),"only trusted, genuine left clicks may open correction controls");
 assert(content.includes('if(!e.isTrusted)return;'),"synthetic clicks may not activate dictionary buttons");
 assert(content.includes('attachShadow({mode:"closed"})'),"correction controls must be hidden from host scripts");
 assert(content.includes("menuRange.toString()!==menuWord"),"stale replacement ranges must be rejected");
+assert(content.includes("function nativeField(target)")&&content.includes("function clickedFieldWord(field)"),
+  "left-click field word detection must be included");
+assert(content.includes("field.selectionStart===hit.caret")&&content.includes("field.value===hit.value"),
+  "stale field click cannot open a menu after selection or value changes");
+assert(content.includes('document.execCommand("insertText",false,choice)'),
+  "field correction must cooperate with native Undo stack");
+assert(content.includes("if(spellcheckDisabled(field))return null;") &&
+  content.includes('const value=attr.trim().toLowerCase();'),
+  "inherited and case-insensitive spelling opt-outs must be preserved");
+assert(!content.includes("field.setRangeText("),
+  "no setRangeText fallback that could corrupt framework state or Undo");
+assert(content.includes('field.type="password"')===false,
+  "never retype or synthesize password data");
+
 assert(content.includes('"beforeinput"')&&content.includes("closeMenu();++revision"),"typing invalidates correction menus");
 
 
