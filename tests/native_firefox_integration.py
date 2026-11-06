@@ -141,6 +141,35 @@ try:
         record["registeredIds"]=[x["id"] for x in current]
     check("native Firefox Allow registers only the consented all-HTTPS spelling script",allow)
 
+    def spelling_grant_does_not_authorize_imported_rss():
+        driver.switch_to.window(dashboard)
+        import_result=api('''
+          return await browser.runtime.sendMessage({
+            type:"elfshell:rss:mutate:v1",action:"import",
+            feeds:[{url:"https://github.blog/feed/",title:"Unapproved QA RSS",group:"QA",enabled:true}]
+          });
+        ''')
+        ensure(import_result.get("ok"),"RSS import should store feed metadata only")
+        ensure(api('return browser.permissions.contains({origins:["https://github.blog/*"]});') is True,
+            "Wildcard spelling grant must technically cover the RSS host")
+        approved=api('''
+          return (await browser.storage.local.get("elfshell-rss-approved-urls-v1"))
+             ["elfshell-rss-approved-urls-v1"]||[];
+        ''')
+        ensure("https://github.blog/feed/" not in approved,
+               "Spelling permission must not approve an imported publication")
+        driver.execute_script('document.getElementById("feed-refresh").click();')
+        WebDriverWait(driver,12).until(lambda d:
+            "Feed check complete" in d.find_element(By.ID,"feed-message").text)
+        cache=api('''
+          return (await browser.storage.local.get("elfshell-rss-cache-v1"))
+            ["elfshell-rss-cache-v1"]||{};
+        ''')
+        ensure(not cache.get("https://github.blog/feed/"),
+            "RSS refresh must not contact an imported feed under spelling wildcard grant")
+        record["rssConsentIsolation"]=True
+    check("wildcard spelling permission cannot auto-authorize OPML RSS imports",spelling_grant_does_not_authorize_imported_rss)
+
     def existing_tab():
         driver.switch_to.window(site)
         ensure(not driver.execute_script("""
