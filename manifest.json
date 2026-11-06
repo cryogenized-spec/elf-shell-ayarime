@@ -55,16 +55,5 @@
       "48": "assets/icon-48.png",
       "96": "assets/icon-96.png"
     }
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "assets/cursors/*.png",
-        "assets/cursors/states/*.png"
-      ],
-      "matches": [
-        "https://*/*"
-      ]
-    }
-  ]
+  }
 }

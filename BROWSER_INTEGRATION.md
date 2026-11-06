@@ -5,44 +5,31 @@ merged into the Firefox release candidate by adding this document.
 
 ## Settings
 
-Open a new Ayarime tab → **STATION → CONFIGURE STATION → BROWSER INTEGRATION**.
+Open a new Ayarime tab → **STATION → CONFIGURE STATION → FIREFOX SPELLING INTEGRATION**.
 
-- **Cursors → Across approved HTTPS websites:** Uses Ayarime's bundled
-  six-state cursor artwork on eligible HTTPS pages, and follows the current
-  dashboard pointer selection for the default cursor where possible.
-- **Offline spelling → Across approved HTTPS websites:** Enables the bundled,
-  offline British-English checker on **compatible contenteditable editors**
-  and left-click suggestions on standard textareas and single-line text/search
-  inputs. Contenteditable words use an experimental custom highlight; ordinary
-  controls retain Firefox's native underlines, native right-click suggestions
-  and Undo while the extension provides an additional left-click menu. Password,
-  private, code and unsupported fields are excluded.
-- Choose each mode independently. Both broader modes share one optional
-  Firefox grant for **all HTTPS sites**. Neither feature is activated by
-  installation, and a per-site RSS grant does not turn on broad spelling.
-- **APPLY** requests this optional Firefox host grant from a genuine click
-  on the new-tab extension page. Denying the request preserves the previous
-  settings. The background process **cannot request it silently**.
-- **REVOKE BROAD HTTPS ACCESS** deactivates both global modes and removes
-  the all-HTTPS grant. Individually granted RSS/spelling hosts remain under
-  Firefox's independent permissions settings. If an inaccessible tab retains
-  old injected styles or spelling state, reload that tab.
+- **Per-site (default):** use the extension toolbar icon to open a stable
+  site-spelling settings tab. A second explicit click requests that one HTTPS
+  site's optional permission. The toolbar popup itself never owns the Firefox
+  permission prompt.
+- **All approved HTTPS websites:** the user clicks Apply in Station and
+  explicitly approves Firefox's broader optional host permission.
+- **Firefox native only:** disables Ayarime's injected spelling and unregisters
+  old per-site registrations. Native Firefox spelling remains active.
+- **Revoke broad HTTPS access:** removes the optional wildcard permission;
+  individual RSS and spelling host grants remain independently manageable.
 
-Defaults on existing installs remain dashboard-only cursors and per-site
-spelling. These are **opt-in capabilities**, not a new silent default.
+The **website-wide cursor injector has been removed**; bundled custom cursors
+are supported only on Ayarime's own new-tab dashboard. Linux-wide cursors are
+a separate, optional future package.
 
 ## Scope and limits
 
-The extension cannot style the Firefox address bar, tab strip, privileged
-browser pages or the Linux desktop pointer. Some webpages with custom mouse
-interaction may use native cursor shapes; user-selected high-contrast cursor
-settings or important accessibility requirements may call for disabling
-the custom cursor mode.
-
-Offline spelling never contacts an external text service; scanned word tokens
-stay within the browser extension's background worker. It provides correction
-menus only after successful local checking and restores native Firefox checking
-when a field cannot be processed safely. **No claim of universal editor support**.
+Compatible rich-text editors use non-DOM-mutating highlight ranges. Ordinary
+textarea and text/search fields retain native Firefox underlines/right-click
+menus while Ayarime offers additional local left-click word suggestions.
+Password, sensitive and code editors are excluded. Neither a Firefox
+WebExtension nor a custom Linux theme can modify Firefox's privileged
+internal page controls. No spellcheck network traffic or page text telemetry.
 
 ## Test and review gates
 

@@ -18,7 +18,7 @@ SOURCES = [
     'LICENSE', 'LICENSE_SCOPE.md', 'LICENSES/MIT-legacy.txt', 'ARTWORK_LICENSE.md',
     'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
     'memory.js', 'feeds.js', 'styles.css', 'typography.css',
-    'integration/background.js', 'integration/cursors.js', 'integration/ui.js', 'integration/ui.css',
+    'integration/background.js', 'integration/ui.js', 'integration/ui.css',
     # Runtime whitelist: never ship npm/vendor source or node_modules to AMO.
     *['spelling/' + name for name in (
         'DICTIONARY-LICENSE.txt', 'NSPELL-LICENSE.txt', 'IS-BUFFER-LICENSE.txt',
