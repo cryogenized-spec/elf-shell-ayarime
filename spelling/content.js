@@ -20,6 +20,18 @@
     const el=asElement(n);
     return el?.closest?.('[contenteditable="true"],[contenteditable="plaintext-only"]')||null;
   }
+  function spellcheckDisabled(node){
+    // HTML's spellcheck attribute is inherited. A child's explicit true
+    // overrides an ancestor false; values are case-insensitive.
+    for(let el=node;el&&el.nodeType===Node.ELEMENT_NODE;el=el.parentElement){
+      const attr=el.getAttribute("spellcheck");
+      if(attr===null)continue;
+      const value=attr.trim().toLowerCase();
+      if(value==="false")return true;
+      if(value==="true")return false;
+    }
+    return false;
+  }
   function nativeField(target){
     // Standard controls retain Firefox's own underlines. Never read or
     // interact with password, code, private, disabled or readonly controls.
@@ -28,7 +40,7 @@
     if(!field||!field.isConnected||field.disabled||field.readOnly)return null;
     // HTML <input> without a type attribute defaults to "text".
     if(field.tagName==="INPUT"&&!["text","search"].includes(field.type))return null;
-    if(field.getAttribute("spellcheck")==="false")return null;
+    if(spellcheckDisabled(field))return null;
     if(field.closest("code,pre,[role='code'],[data-elfshell-spelling-off],"+
       "[data-private],[data-sensitive],.CodeMirror,.cm-editor,.monaco-editor,.ace_editor"))return null;
     const detail=[field.name,field.id,field.getAttribute("autocomplete"),field.getAttribute("aria-label")]
@@ -311,7 +323,15 @@
   document.addEventListener("compositionstart",()=>{composing=true;++fieldRequest;closeMenu();++revision;},true);
   document.addEventListener("compositionend",()=>{composing=false;++fieldRequest;closeMenu();++revision;schedule();},true);
   document.addEventListener("keydown",e=>{
-    if(e.key==="Escape"){++fieldRequest;closeMenu();return;}
+    if(e.key==="Escape"){
+      ++fieldRequest;
+      const target=menuField||editor;
+      const focusedMenu=!!menu && (document.activeElement===menu||
+        menu.contains(document.activeElement));
+      closeMenu();
+      if(focusedMenu&&target?.isConnected)target.focus({preventScroll:true});
+      return;
+    }
     if(menu&&focusMenuFirst&&
        (document.activeElement===menuField||document.activeElement===editor)&&
        (e.key==="Tab"||e.key==="ArrowDown")){
