@@ -3,6 +3,7 @@
 (() => {
   const settingsKey = "elfshell-rss-settings-v1";
   const cacheKey = "elfshell-rss-cache-v1";
+  const approvedKey = "elfshell-rss-approved-urls-v1";
   const maxFeeds = 32;
   const maxArticles = 180;
   const validMinutes = [15, 30, 60, 180, 360];
@@ -220,7 +221,16 @@
   }
   async function hasHost(url) {
     if (typeof browser === "undefined" || !browser.permissions) return false;
-    try { return await browser.permissions.contains({origins:[originPattern(url)]}); } catch {return false;}
+    try {
+      // A wildcard grant for spelling MUST NOT silently authorize RSS feeds.
+      // Only the exact feed URLs approved via RSS Subscribe/Allow are fetchable.
+      const [stored,host]=await Promise.all([
+        browser.storage.local.get(approvedKey),
+        browser.permissions.contains({origins:[originPattern(url)]})
+      ]);
+      return !!host && Array.isArray(stored[approvedKey]) &&
+        stored[approvedKey].includes(url);
+    } catch {return false;}
   }
   // IMPORTANT: Called directly inside an actual button click, before any async work.
   function requestHost(url) {return browser.permissions.request({origins:[originPattern(url)]});}
@@ -284,9 +294,25 @@
         if(!checked) {
           // Do not await before triggering permissions.request: Firefox requires user activation.
           const request=requestHost(feed.url);
-          request.then(async ok=>{status(ok?"Permission granted for "+new URL(feed.url).hostname:"Permission declined.");await renderFeeds();if(ok){const result=await fetchOne(feed,true);await saveCache();rebuildHeadlines();await renderFeeds();status(result.error?"Feed error: "+result.error:"Access granted. Latest headlines updated.");}}).catch(e=>status("Permission error: "+e.message));
+          request.then(async ok=>{
+            if(!ok){status("RSS permission declined.");await renderFeeds();return;}
+            // Record consent only after this feed-specific user action, not
+            // because a different feature holds the host permission.
+            await mutateFeeds("approve",{url:feed.url});
+            await renderFeeds();
+            const result=await fetchOne(feed,true);
+            await saveCache();rebuildHeadlines();await renderFeeds();
+            status(result.error?"Feed error: "+result.error:"RSS approved. Latest headlines updated.");
+          }).catch(e=>status("RSS approval error: "+e.message));
         }else {
-          browser.permissions.remove({origins:[originPattern(feed.url)]}).then(async()=>{status("Host access revoked; other feeds at this site will also lose access.");await renderFeeds();}).catch(e=>status("Revoke failed: "+e.message));
+          (async()=>{
+            // Withdraw RSS consent FIRST, so broad spelling permission cannot
+            // re-enable feeds even when Firefox still has a wildcard grant.
+            await mutateFeeds("revoke-host",{url:feed.url});
+            await browser.permissions.remove({origins:[originPattern(feed.url)]});
+            status("RSS consent revoked for this host. Any broad spelling access is separate.");
+            await renderFeeds();
+          })().catch(e=>status("RSS revoke failed: "+e.message));
         }
       });
       const edit=makeButton("EDIT",()=>{
@@ -376,7 +402,7 @@
       if(bgMode()){const outcome=await mutateFeeds("import",{feeds:additions});count=outcome.added;}
       else{const current=new Set(prefs.feeds.map(f=>f.url));for(const f of additions){if(prefs.feeds.length>=maxFeeds)break;if(current.has(f.url))continue;current.add(f.url);prefs.feeds.push(f);count++;}await mutateFeeds("preview");}
       await renderFeeds();rebuildHeadlines();
-      status(`Imported ${count} subscriptions. Grant host access to each source before fetching; no external requests were made.`);
+      status(`Imported ${count} subscriptions. Approve RSS access for each feed before fetching; spelling permissions never approve imported feeds.`);
     }catch(error){status("OPML import rejected: "+error.message);}
   }
   function show(){renderFeeds();renderArticles();$("feeds-dialog").showModal();}
