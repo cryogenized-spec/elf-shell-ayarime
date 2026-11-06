@@ -48,6 +48,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_integration.py
+      - name: Test persistent per-site spelling permission manager in native Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_firefox_popup.py
       - name: Upload Firefox screenshot and structured test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,4 +63,5 @@ jobs:
             dist/firefox-permission-qa/
             dist/firefox-spelling-qa/
             dist/firefox-integration-qa/
+            dist/firefox-spell-popup-qa/
           if-no-files-found: warn
