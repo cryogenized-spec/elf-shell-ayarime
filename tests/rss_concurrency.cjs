@@ -35,6 +35,8 @@ const item=url=>({items:[{title:'Article',url,date:Date.now()}],checkedAt:Date.n
  assert(approved.ok&&data[approvedKey].includes(opmlFeed),'explicit Allow should persist separately');
  const revoked=await req('revoke-host',{url:opmlFeed});
  assert(revoked.ok&&!data[approvedKey].includes(opmlFeed),'explicit revoke clears RSS approval');
+ const removedImported=await req('remove',{url:opmlFeed});
+ assert(removedImported.ok,'dispose of imported-only QA feed before legacy concurrency checks');
  // A wildcard spelling permission is NOT equivalent to RSS consent.
  const feedSourceForConsent=fs.readFileSync(path.resolve(__dirname,'../feeds.js'),'utf8');
  const testableSource=feedSourceForConsent.replace('  if(typeof module!==',
