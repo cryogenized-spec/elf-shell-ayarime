@@ -158,9 +158,28 @@ try:
         ''')
         ensure("https://github.blog/feed/" not in approved,
                "Spelling permission must not approve an imported publication")
-        driver.execute_script('document.getElementById("feed-refresh").click();')
-        WebDriverWait(driver,12).until(lambda d:
+        # The imported settings must reach the dashboard before refresh.
+        WebDriverWait(driver,10).until(lambda d:d.execute_script("""
+            return document.querySelector("#feed-subscriptions")?.textContent
+                ?.includes("Unapproved QA RSS")===true;
+        """))
+        # Instrument only this isolated CI extension page. Even a quick
+        # network attempt must be observable before any external request.
+        driver.execute_script("""
+          window.__qaRSSAttempted=[];
+          const old=window.fetch.bind(window);
+          window.fetch=(...args)=>{
+            window.__qaRSSAttempted.push(String(args[0]));
+            return Promise.reject(Error("Unexpected CI RSS fetch"));
+          };
+          document.getElementById("feed-refresh").dispatchEvent(
+            new MouseEvent("click",{bubbles:true}));
+        """)
+        WebDriverWait(driver,10).until(lambda d:
             "Feed check complete" in d.find_element(By.ID,"feed-message").text)
+        attempted=driver.execute_script("return window.__qaRSSAttempted")
+        ensure(not attempted,
+            "Imported RSS must not make a network request under wildcard spelling permission: "+str(attempted))
         cache=api('''
           return (await browser.storage.local.get("elfshell-rss-cache-v1"))
             ["elfshell-rss-cache-v1"]||{};
