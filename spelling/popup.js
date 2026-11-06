@@ -84,7 +84,7 @@ async function toggle() {
       // Send by tab ID even if permissions no longer expose tab URL.
       const tabs=await browser.tabs.query({});
       for(const t of tabs) {
-        if(!Number.isInteger(t.id)||t.incognito)continue;
+        if(!Number.isInteger(t.id))continue; // Include already-injected private tabs in cleanup.
         try{await browser.tabs.sendMessage(t.id,{type:"elfshell:spell:revalidate"});}
         catch{}
       }
