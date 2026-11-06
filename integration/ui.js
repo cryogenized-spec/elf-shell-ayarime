@@ -1,102 +1,81 @@
 "use strict";
-/* Dashboard-only, user-initiated optional browser integration preferences. */
+/* One optional website spelling preference; native Firefox always available. */
 (() => {
-  const scope="https://*/*";
+  const SCOPE="https://*/*";
   const $=id=>document.getElementById(id);
-  const cursor=$("integration-cursors"),spell=$("integration-spelling");
-  const apply=$("integration-apply"),revoke=$("integration-revoke");
-  const status=$("integration-status"),permission=$("integration-permission");
-  if(!cursor||!spell||!apply||!revoke||!status||!permission)return;
-  const setStatus=(message)=>{status.textContent=message;};
-  const supported=typeof browser!=="undefined"&&
-    !!browser.permissions?.request&&!!browser.runtime?.sendMessage;
-  if(!supported) {
+  const spell=$("integration-spelling"),apply=$("integration-apply"),
+    revoke=$("integration-revoke"),status=$("integration-status"),
+    permission=$("integration-permission");
+  if(!spell||!apply||!revoke||!status||!permission)return;
+  const setStatus=text=>{status.textContent=text;};
+  if(typeof browser==="undefined"||!browser.permissions?.request||!browser.runtime?.sendMessage){
     apply.disabled=true;revoke.disabled=true;
-    setStatus("Available only when installed as a Firefox extension.");
+    setStatus("Website spelling settings require the installed Firefox extension.");
     return;
   }
   let busy=false;
-  const setBusy=value=>{
-    busy=value;apply.disabled=value;revoke.disabled=value;
-    cursor.disabled=value;spell.disabled=value;
+  const setBusy=flag=>{
+    busy=flag;apply.disabled=flag;revoke.disabled=flag;spell.disabled=flag;
   };
-  const desired=()=>({cursorMode:cursor.value,spellMode:spell.value});
   async function refresh() {
-    try {
-      const state=await browser.runtime.sendMessage({type:"elfshell:integration:get"});
-      if(!state?.ok)throw Error(state?.error||"Integration status unavailable");
-      if(!busy) {
-        cursor.value=state.modes.cursorMode;
-        spell.value=state.modes.spellMode;
-      }
-      permission.textContent=state.allowed?
-        "All-HTTPS permission granted in Firefox. Broad scripts run only for enabled modes.":
-        "No all-HTTPS permission. Browser-wide features are inactive.";
-      revoke.disabled=busy||!state.allowed;
-      if(!busy&&(state.modes.cursorMode==="all"||state.modes.spellMode==="all")&&!state.allowed)
-        setStatus("Firefox site permission has been revoked. Apply again to request access.");
-    }catch(error) {
-      setStatus("Could not read integration settings: "+String(error.message||error));
-    }
+    try{
+      const result=await browser.runtime.sendMessage({type:"elfshell:integration:get"});
+      if(!result?.ok)throw Error(result?.error||"Could not read spelling mode");
+      if(!busy)spell.value=result.modes.spellMode;
+      permission.textContent=result.allowed?
+        "Optional all-HTTPS permission is granted. Broad spelling only runs if enabled.":
+        "Broad HTTPS permission is not granted. Firefox native spelling remains available.";
+      revoke.disabled=busy||!result.allowed;
+      if(!result.allowed&&result.modes.spellMode==="all")
+        setStatus("Website access was revoked. Approve a new request to resume.");
+    }catch(e){setStatus("Unable to refresh spelling permissions: "+String(e.message||e));}
   }
   apply.addEventListener("click",async()=>{
     if(busy)return;
-    // IMPORTANT: request immediately inside the trusted click gesture,
-    // *before* any await or asynchronous state read. This is an ordinary
-    // extension page, not the toolbar popup that Firefox may close.
-    const modes=desired();
+    const mode=spell.value;
+    // Start the optional Firefox prompt synchronously from the real click.
+    // Prompts from the toolbar popup can be destroyed when the popup closes.
     let request=null;
     try {
-      if(modes.cursorMode==="all"||modes.spellMode==="all")
-        request=browser.permissions.request({origins:[scope]});
-    }catch(error) {
-      setStatus("Firefox could not start the permission request: "+String(error.message||error));
-      return;
+      if(mode==="all")request=browser.permissions.request({origins:[SCOPE]});
+    }catch(e){
+      setStatus("Permission prompt could not open: "+String(e.message||e));return;
     }
-    let success=false;
     setBusy(true);
-    setStatus(request?"Waiting for your explicit Firefox site-access choice…":"Updating integration modes…");
-    try {
-      if(request&&!await request) {
-        setStatus("Permission denied. Your previous settings remain unchanged.");
+    let applied=false;
+    setStatus(request?"Choose Allow or Deny in Firefox's permission prompt…":
+      "Updating spelling preferences…");
+    try{
+      if(request&&!await request){
+        setStatus("Permission declined. Your selected preference is retained for retry.");
         return;
       }
       const result=await browser.runtime.sendMessage({
-        type:"elfshell:integration:set",modes
+        type:"elfshell:integration:set",modes:{spellMode:mode}
       });
-      if(!result?.ok)throw Error(result?.error||"Could not save integration modes");
-      success=true;
-      setStatus("Saved. Existing eligible tabs updated; restricted pages keep Firefox defaults.");
-    }catch(error) {
-      setStatus("Integration was not activated: "+String(error.message||error));
-    }finally {
-      setBusy(false);await refresh();
-      // Denying permission must not erase the user\'s pending choices.
-      // Keep both dropdowns selected so Retry requests consent again.
-      if(!success){cursor.value=modes.cursorMode;spell.value=modes.spellMode;}
+      if(!result?.ok)throw Error(result?.error||"The spelling preference was not applied");
+      applied=true;
+      setStatus("Spelling setting saved. Unsupported editors retain Firefox's native checker.");
+    }catch(e){setStatus("Could not apply spelling settings: "+String(e.message||e));}
+    finally{
+      setBusy(false);
+      await refresh();
+      if(!applied)spell.value=mode;
     }
   });
   revoke.addEventListener("click",async()=>{
     if(busy)return;
     setBusy(true);
-    setStatus("Revoking optional broad HTTPS access…");
-    try {
-      // Switch broad features off first, before revoking their shared grant.
-      // Specific host grants for RSS or manually enabled spelling stay intact.
+    try{
       const result=await browser.runtime.sendMessage({
-        type:"elfshell:integration:set",
-        modes:{cursorMode:"station",spellMode:"sites"}
+        type:"elfshell:integration:set",modes:{spellMode:"sites"}
       });
-      if(!result?.ok)throw Error(result?.error||"Failed to deactivate broad features");
-      const removed=await browser.permissions.remove({origins:[scope]});
-      setStatus(removed?
-        "Broad HTTPS access revoked. Separately approved RSS/site access may remain.":
-        "Broad features disabled. No separate broad grant was removed.");
-    }catch(error) {
-      setStatus("Could not complete revocation: "+String(error.message||error));
-    }finally {
-      setBusy(false);await refresh();
-    }
+      if(!result?.ok)throw Error(result?.error||"Could not disable broad spelling");
+      const removed=await browser.permissions.remove({origins:[SCOPE]});
+      setStatus(removed?"Broad HTTPS permission revoked; individual RSS/site grants may remain.":
+        "Broad spelling disabled; no wildcard permission needed removing.");
+    }catch(e){setStatus("Unable to revoke: "+String(e.message||e));}
+    finally{setBusy(false);await refresh();}
   });
   browser.permissions.onAdded.addListener(()=>{if(!busy)refresh();});
   browser.permissions.onRemoved.addListener(()=>{if(!busy)refresh();});
