@@ -53,6 +53,7 @@
       setStatus("Firefox could not start the permission request: "+String(error.message||error));
       return;
     }
+    let success=false;
     setBusy(true);
     setStatus(request?"Waiting for your explicit Firefox site-access choice…":"Updating integration modes…");
     try {
@@ -64,11 +65,15 @@
         type:"elfshell:integration:set",modes
       });
       if(!result?.ok)throw Error(result?.error||"Could not save integration modes");
+      success=true;
       setStatus("Saved. Existing eligible tabs updated; restricted pages keep Firefox defaults.");
     }catch(error) {
       setStatus("Integration was not activated: "+String(error.message||error));
     }finally {
       setBusy(false);await refresh();
+      // Denying permission must not erase the user\'s pending choices.
+      // Keep both dropdowns selected so Retry requests consent again.
+      if(!success){cursor.value=modes.cursorMode;spell.value=modes.spellMode;}
     }
   });
   revoke.addEventListener("click",async()=>{
