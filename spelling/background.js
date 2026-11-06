@@ -64,6 +64,38 @@ browser.runtime.onMessage.addListener((message,sender)=>{
   if(!message||typeof message.type!=="string"||!message.type.startsWith("elfshell:spelling:"))return undefined;
   return (async()=>{
     try{
+      if(message.type==="elfshell:spelling:activate-site"){
+        // Only the persistent site-settings page may request immediate
+        // injection, and only after an independently approved per-site grant.
+        const manager=browser.runtime.getURL("spelling/popup.html");
+        if(!sender?.url||!sender.url.startsWith(manager+"?"))
+          return {ok:false,error:"Site activation requires the extension's permission manager"};
+        const target=message.tabId;
+        if(!Number.isSafeInteger(target)||target<=0||typeof message.origin!=="string")
+          return {ok:false,error:"Invalid site activation target"};
+        const origin=new URL(message.origin);
+        if(origin.protocol!=="https:"||origin.href!==message.origin+"/")
+          return {ok:false,error:"Invalid HTTPS site origin"};
+        const [live,allowed,registered]=await Promise.all([
+          browser.tabs.get(target),
+          browser.permissions.contains({origins:[message.origin+"/*"]}),
+          browser.scripting.getRegisteredContentScripts()
+        ]);
+        if(!allowed||new URL(live.url||"").origin!==message.origin)
+          return {ok:false,error:"Approved website tab or permission changed"};
+        const id=spellingSiteId(message.origin);
+        if(!registered.some(r=>r.id===id&&r.matches?.includes(message.origin+"/*")))
+          return {ok:false,error:"The spelling script is not registered for this site"};
+        try{
+          await browser.scripting.insertCSS({
+            target:{tabId:target},files:["spelling/content.css"]});
+          await browser.scripting.executeScript({
+            target:{tabId:target},files:["spelling/content.js"]});
+          return {ok:true};
+        }catch(error){
+          return {ok:false,error:"Background injection: "+String(error.message||error)};
+        }
+      }
       if(!await spellingSenderAllowed(sender))return {ok:false,error:"Spelling is disabled or site permission has been revoked"};
       if(message.type==="elfshell:spelling:authorize")return {ok:true};
       await spellReady();
