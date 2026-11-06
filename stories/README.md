@@ -59,19 +59,18 @@ in the events. Consequences may be revealed out of chronological order.
 
 ## Asset staging
 
-The generated master images are retained in the conversation's working files
-and a companion handoff ZIP. **They are not yet embedded in this Git branch**:
-binary transfer through the available GitHub text/tree connector has not been
-completed. Do not substitute reconstructions, placeholders or remote image URLs.
-See `asset-manifest.json` for filenames, hashes, resolutions and intended order.
+All five original PNG masters were imported byte-for-byte and committed to
+this **draft branch** on 6 November 2026, commit `c2d501b`. Before committing,
+the user verified all five files against the SHA-256 values in
+`asset-manifest.json`; GitHub subsequently confirmed all five paths
+in pull request #22.
 
-The source art should be imported **byte-for-byte** by a human-authorized agent
-with local filesystem + Git capability, and independently compared to the
-SHA-256 values in the manifest. After importing, review captions in both
-languages and check downscaling in Firefox.
+The original source art must not be regenerated, recropped, or replaced with
+remote image URLs. Before approving integration, review captions in both
+languages and inspect image scaling, offline loading, and packaging in Firefox.
 
 ## Status
 
-**Draft documentation and curator handoff only.**
+**Draft artwork and curator handoff; no runtime integration yet.**
 No existing ELF//SHELL runtime files or shortcut URLs were changed.
 Explicit human permission is required before merge, Mozilla packaging or release.
