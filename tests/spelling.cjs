@@ -16,8 +16,20 @@ const bg=read("spelling/background.js");
 assert(popup.includes("permissions.request"),"per-site opt-in required");
 assert(popup.includes("scripting.registerContentScripts"),"dynamic site scripts required");
 assert(popup.includes("scripting.unregisterContentScripts"),"site opt-out required");
-assert(popup.includes('tabs.query({url:origin+"/*"})')&&popup.includes('tabs.sendMessage(other.id'),
-  "site opt-out must notify all matching open tabs, not just the popup tab");
+assert(popup.includes('browser.tabs.query({})')&&popup.includes('browser.tabs.sendMessage(t.id'),
+  "site opt-out must revalidate open tabs by ID even without host URL access");
+assert(popup.includes('browser.tabs.create({url})')&&popup.includes('if(!manager)'),
+  "toolbar popup must open a persistent extension tab for site permissions");
+assert(popup.includes('browser.permissions.request({origins:[origin+"/*"]})'),
+  "site permission must originate from a click in the persistent manager");
+assert(content.includes("menuFieldCaret")&&content.includes("field.selectionStart!==caret"),
+  "changing caret before choosing a correction must cancel it");
+assert(content.includes("focusMenuFirst")&&content.includes('!menu?.contains(e.target)'),
+  "keyboard focus entering the closed-shadow suggestions must not dismiss them");
+assert(content.includes('["text","search"].includes(field.type)'),
+  "input default type text must receive optional suggestions");
+assert(content.includes('if(e.key==="Escape"){++fieldRequest;closeMenu()'),
+  "Escape must cancel pending asynchronous suggestions";
 assert(content.includes('CSS?.supports?.("selector(::highlight(elfshell-spelling-errors-v1))")'),
   "native Firefox spelling must stay active when custom underline rendering is unsupported");
 assert(content.includes('if(!scan.complete)')&&content.includes('root.removeAttribute("spellcheck")'),
