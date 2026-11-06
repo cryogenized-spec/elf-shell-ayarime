@@ -89,7 +89,17 @@ try:
         const native=document.createElement("textarea");
         native.id="qa-native-textarea";
         native.setAttribute("spellcheck","true");
+        native.style.cssText="font:24px sans-serif;width:550px;height:120px;padding:10px";
         document.body.prepend(native);
+        const input=document.createElement("input");
+        input.type="text";input.id="qa-native-input";
+        input.setAttribute("spellcheck","true");
+        input.style.cssText="font:24px sans-serif;width:550px;padding:10px";
+        document.body.prepend(input);
+        const password=document.createElement("input");
+        password.type="password";password.id="qa-private-password";
+        password.style.cssText="font:24px sans-serif;width:550px;padding:10px";
+        document.body.prepend(password);
     """)
     driver.switch_to.window(dashboard)
 
@@ -164,6 +174,90 @@ try:
         ensure(editor.text=="This is a mispeled sentance.",
             "Spelling must not rewrite user text without consent")
     check("existing HTTPS tab gets cursor art and offline spelling with native fallback",existing_tab)
+
+    def click_misspelling(field,expected):
+        field.click()
+        # Move the *real browser pointer* over the first word rather than
+        # using a synthetic DOM click (trusted clicks are required).
+        metrics=driver.execute_script("""
+          const e=arguments[0],r=e.getBoundingClientRect(),css=getComputedStyle(e);
+          const c=document.createElement("canvas").getContext("2d");
+          c.font=css.font;
+          const text=c.measureText(arguments[1].slice(0,Math.min(4,arguments[1].length))).width;
+          const left=(parseFloat(css.paddingLeft)||0)+(parseFloat(css.borderLeftWidth)||0);
+          const top=(parseFloat(css.paddingTop)||0)+(parseFloat(css.borderTopWidth)||0);
+          return {dx:left+text-r.width/2,
+            dy:top+(parseFloat(css.fontSize)||24)*.55-r.height/2};
+        """,field,expected)
+        ActionChains(driver).move_to_element_with_offset(field,
+            round(metrics["dx"]),round(metrics["dy"])).click().perform()
+        WebDriverWait(driver,14).until(lambda d:
+            len(d.find_elements(By.CSS_SELECTOR,".elfshell-spell-menu"))==1)
+        menu=driver.find_element(By.CSS_SELECTOR,".elfshell-spell-menu")
+        ensure(expected in (menu.get_attribute("aria-label") or ""),
+               "Left-click suggestions should be for "+expected+
+               ", got "+str(menu.get_attribute("aria-label")))
+        ensure(menu.rect["height"]>40,"No correction items appeared")
+        ActionChains(driver).move_to_element_with_offset(
+            menu,round(35-menu.rect["width"]/2),
+            round(22-menu.rect["height"]/2)).click().perform()
+
+    def textarea_leftclick():
+        driver.switch_to.window(site)
+        native=driver.find_element(By.ID,"qa-native-textarea")
+        original=native.get_attribute("value")
+        ensure(original=="Unusualy spelt word","Unexpected QA textarea content")
+        ensure(native.get_attribute("spellcheck")=="true",
+               "Native textarea squiggle checking must stay enabled")
+        click_misspelling(native,"Unusualy")
+        WebDriverWait(driver,10).until(lambda d:
+            d.find_element(By.ID,"qa-native-textarea").get_attribute("value")!=original)
+        corrected=native.get_attribute("value")
+        record["textareaCorrection"]=corrected
+        ensure(corrected.endswith(" spelt word") and not corrected.startswith("Unusualy"),
+            "Left-click correction changed surrounding textarea text: "+corrected)
+        native.send_keys(Keys.CONTROL,"z")
+        WebDriverWait(driver,10).until(lambda d:
+            d.find_element(By.ID,"qa-native-textarea").get_attribute("value")==original)
+        ensure(native.get_attribute("spellcheck")=="true",
+               "Custom suggestions must never turn native textarea spellcheck off")
+    check("ordinary textarea left-click offers offline correction and native Undo",textarea_leftclick)
+
+    def input_leftclick():
+        driver.switch_to.window(site)
+        native=driver.find_element(By.ID,"qa-native-input")
+        native.click()
+        native.send_keys("Unusualy text")
+        original=native.get_attribute("value")
+        ensure(original=="Unusualy text","Unexpected QA input content")
+        click_misspelling(native,"Unusualy")
+        WebDriverWait(driver,10).until(lambda d:
+            d.find_element(By.ID,"qa-native-input").get_attribute("value")!=original)
+        corrected=native.get_attribute("value")
+        record["inputCorrection"]=corrected
+        ensure(corrected.endswith(" text") and not corrected.startswith("Unusualy"),
+               "Correction changed surrounding input text: "+corrected)
+        native.send_keys(Keys.CONTROL,"z")
+        WebDriverWait(driver,10).until(lambda d:
+            d.find_element(By.ID,"qa-native-input").get_attribute("value")==original)
+        ensure(native.get_attribute("spellcheck")=="true",
+               "Native input spelling must remain enabled")
+    check("single-line text input left-click offers offline correction with Undo",input_leftclick)
+
+    def excluded_private():
+        secret=driver.find_element(By.ID,"qa-private-password")
+        secret.click()
+        secret.send_keys("Unusualy")
+        secret.click()
+        ensure(not driver.find_elements(By.CSS_SELECTOR,".elfshell-spell-menu"),
+               "Never offer spelling in a password field")
+        driver.find_element(By.ID,"qa-integration-editor").click()
+        WebDriverWait(driver,20).until(lambda d:d.execute_script("""
+            const e=document.getElementById("qa-integration-editor");
+            return e.getAttribute("spellcheck")==="false" &&
+                CSS.highlights?.has("elfshell-spelling-errors-v1");
+        """))
+    check("password fields stay excluded and rich-text checker remains usable",excluded_private)
 
     def revoke():
         driver.switch_to.window(dashboard)
