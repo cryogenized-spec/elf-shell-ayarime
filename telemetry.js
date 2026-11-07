@@ -5,6 +5,7 @@
   const ids = ["cpu-temp", "gpu-temp", "ram-usage", "fan-speed", "system-load"];
   let timer = null;
   let busy = false;
+  let enabled = false;
   const numeric = value => typeof value === "number" && Number.isFinite(value) ? value : null;
   const temp = value => numeric(value) === null ? "N/A" : value.toFixed(1) + "°C";
   function clearValues() { ids.forEach(id => $(id).textContent = "N/A"); }
@@ -42,7 +43,7 @@
     } finally { busy=false; }
   }
   async function refresh() {
-    const enabled=await allowed();
+    enabled=await allowed();
     if(timer) { clearInterval(timer); timer=null; }
     if(!enabled) { clearValues();state("OFF","OPT-IN · LINUX MINT");$("telemetry-toggle").textContent="ENABLE TELEMETRY"; return; }
     $("telemetry-toggle").textContent="DISABLE TELEMETRY";
@@ -56,7 +57,9 @@
       return;
     }
     try {
-      if(await allowed()) {
+      // Request optional Firefox permission directly from the click gesture.
+      // Awaiting a permission probe here can lose the user activation token.
+      if(enabled) {
         await browser.permissions.remove({permissions:["nativeMessaging"]});
         await refresh();
       } else {
