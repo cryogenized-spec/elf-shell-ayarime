@@ -1,4 +1,4 @@
-# ELF//SHELL — Ayarime v0.5.5 (public listing candidate)
+# ELF//SHELL — Ayarime v0.5.6 (development snapshot)
 
 **An original, free and open-source Firefox new-tab workstation and matching browser theme.** A 1990s science-fiction OVA aesthetic, locally bundled illustrated and vector shortcut icons, and a softly melancholic cyber-elf called Ayarime (あやりめ).
 
@@ -224,8 +224,13 @@ ELF//SHELL includes two offline illustrated Ayarime side stories, **Letters from
 The compact bilingual Memory Trace now wraps the provided text instead of clipping it after two lines. The NET FEED footer has a separately identified link to ChatGPT; clicking it opens the external website and does not imply affiliation. The optional Linux telemetry panel displays CPU/GPU temperatures, fans, RAM and load **only with** the separately installed and permitted native host. See [telemetry/README.md](telemetry/README.md). No readings are uploaded. The RSS/Atom subscription reader remains opt-in and unchanged.
 
 
-## Mozilla Add-ons — PUBLIC listing preparation (v0.5.5)
+## Mozilla Add-ons — public listing (v0.5.5) and next development (v0.5.6)
 
 On 7 November 2026 the project owner authorised **public (listed)** distribution via Mozilla Add-ons. The existing add-on ID stays `elf-shell-ayarime@local.theme`; the previously unlisted version 0.5.4 is not relabelled. Version **0.5.5** is the first public-listing candidate, not a confirmed live listing.
 
 The old `amo-unlisted.yml` workflow is retired. The new [`amo-listed.yml`](.github/workflows/amo-listed.yml) workflow runs full verification by default, and can submit a **listed** version only after a manual `submit-listed` selection, passing CI and `mozilla-listed` GitHub environment credentials. The existing AMO add-on may need its first listed conversion completed in the Developer Hub. See [docs/AMO_AUTOMATION.md](docs/AMO_AUTOMATION.md) and [amo/LISTING_COPY.md](amo/LISTING_COPY.md). Mozilla review and signing are not automatic guarantees of public availability.
+
+
+## Next development — ELF//SHELL v0.5.6
+
+Version **0.5.6** is an unreleased development snapshot. It builds on v0.5.5, which was submitted to the public Mozilla Add-ons channel, and introduces a direct **opt-in Official Transmissions** preset in NET FEED. It never pre-subscribes, never grants website permissions itself, and protects partially entered custom feed drafts. See [RELEASE_NOTES_0.5.6.md](RELEASE_NOTES_0.5.6.md). Do not run the public AMO submission workflow for v0.5.6 before the new version is accepted for release.
