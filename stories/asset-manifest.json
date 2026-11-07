@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "releaseStatus": "REVIEW_ONLY_DO_NOT_MERGE",
+  "releaseStatus": "GITHUB_SOURCE_MERGE_APPROVED_MOZILLA_PUBLICATION_PENDING",
   "requiresExplicitHumanMergeApproval": true,
   "requiresSeparateMozillaPublicationApproval": true,
-  "assetImportStatus": "COMMITTED_TO_DRAFT_BRANCH",
+  "assetImportStatus": "COMMITTED_TO_FEATURE_BRANCH",
   "artworkRule": "Import originals byte-for-byte. Do not regenerate, restyle, crop, or alter image captions without human approval.",
   "captionRule": "Small dark rectangular caption boxes at foot of each portrait sliver: Japanese line(s) above English line(s), no bubble pointers.",
   "shortcutsUnchanged": true,
@@ -96,5 +96,8 @@
     }
   ],
   "assetImportCommit": "c2d501b8eee01bf9dffdaa149df8006d1480dfad",
-  "assetImportVerifiedDate": "2026-11-06"
+  "assetImportVerifiedDate": "2026-11-06",
+  "mergeApprovalGranted": true,
+  "mergeApprovalDate": "2026-11-07",
+  "mozillaPublicationApprovalGranted": false
 }
