@@ -43,7 +43,7 @@ jobs:
         with:
           name: ayarime-unsigned-test-packages
           path: |
-            dist/ELF-SHELL-Ayarime-v0.5.4-AMO.zip
-            dist/ELF-SHELL-Ayarime-v0.5.4-source.zip
+            dist/ELF-SHELL-Ayarime-v*-AMO.zip
+            dist/ELF-SHELL-Ayarime-v*-source.zip
             dist/linux-cursors/Ayarime-Cursors-Linux-Mint.tar.gz
           if-no-files-found: error

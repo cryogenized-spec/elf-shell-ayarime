@@ -15,7 +15,7 @@ const pkg = read("scripts/package.py");
 const manifest = JSON.parse(read("stories/asset-manifest.json"));
 const extension = JSON.parse(read("manifest.json"));
 
-assert.equal(extension.version,"0.5.4");
+assert.equal(extension.version,JSON.parse(read("package.json")).version);
 assert(!extension.host_permissions,"No new host permissions");
 assert(!/\<script(?![^>]*src=)/.test(html),"No inline script: Firefox CSP");
 assert(!/\<style(?![^>]*href=)/.test(html),"No inline style: Firefox CSP");

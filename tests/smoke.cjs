@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
-assert.equal(manifest.version,'0.5.4');
+assert.equal(manifest.version,JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version);
 assert.equal(manifest.browser_specific_settings.gecko.id,'elf-shell-ayarime@local.theme');
 assert.equal(manifest.browser_specific_settings.gecko.strict_min_version,'142.0');
 assert.deepEqual(manifest.browser_specific_settings.gecko.data_collection_permissions,{required:['none']});
@@ -54,4 +54,4 @@ assert(/permissions\.request\(\{origins:/.test(feedsCode),'feed access must be r
 assert(!/https?:\/\/[^'"\s]+\.(?:js|css|woff|ttf)\b/.test(dom+code),'no remote scripts/styles/fonts');
 assert(code.includes('groups.has(tab.url)')&&code.includes('groups.get(tab.url).push(tab)'),'exact fragment-safe duplicate-tab matching');
 assert(code.includes('$("search-input").value="";endPalette();'),'escape clears the search field');
-console.log(`ELF//SHELL v0.5.4: all smoke tests passed (${icons.length} icons, manifest, DOM, math, commands, search templates, migration and privacy).`);
+console.log(`ELF//SHELL v${manifest.version}: all smoke tests passed (${icons.length} icons, manifest, DOM, math, commands, search templates, migration and privacy).`);
