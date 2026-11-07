@@ -10,6 +10,13 @@
       "published": "2026-11-07T15:00:00Z",
       "category": "Project Journal",
       "summary": "A permanent RSS channel for ELF//SHELL development notes, release announcements and the Illustrated Memory Archive. The channel is distinct from Firefox extension updates and does not report browser activity."
+    },
+    {
+      "id": "firefox-public-submission-055",
+      "title": "Transmission 002 — Ayarime enters public review",
+      "published": "2026-11-07T15:57:37Z",
+      "category": "Release Journal",
+      "summary": "ELF//SHELL — Ayarime v0.5.5 was submitted to Mozilla Add-ons for public (listed) review via the automated GitHub Actions release pipeline. The submission produced a Mozilla version record, but submission does not mean the extension has been reviewed, signed, or publicly published."
     }
   ]
 }
