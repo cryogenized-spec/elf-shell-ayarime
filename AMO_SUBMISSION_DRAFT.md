@@ -1,7 +1,6 @@
-# ELF//SHELL — Ayarime v0.5.4 — Mozilla signing preparation
+# ELF//SHELL — Ayarime v0.5.5 — public Mozilla listing preparation
 
-**Status:** Unsigned review candidate; do not claim Mozilla acceptance or
-upload on behalf of the owner before authorization.
+**Status:** Public Mozilla submission authorised by the owner on 7 November 2026. The verified candidate is v0.5.5. Do not claim a live listing or approved/signed version until Mozilla confirms it. The existing v0.5.4 unlisted add-on must receive a new **listed** version, not a duplicate add-on.
 
 ## Suggested public listing
 
@@ -72,9 +71,14 @@ tarball is not an add-on file and must not be included in AMO.
       safeguards on disposable data.
 - [ ] Final independent security review and resolution of findings.
 - [ ] Genuine screenshots, support contact and publicly accessible privacy URL.
-- [ ] Owner approves Mozilla Developer Hub upload and signing; install
-      resulting signed build and check the upgrade.
+- [x] Owner authorised Mozilla public/listed distribution on 7 November 2026.
+- [ ] Configure API credentials privately, or upload v0.5.5 to the existing add-on via Developer Hub, choosing **On this site (listed)**.
+- [ ] Obtain review/signature, then install and check the signed update.
 - [ ] Merge stable main only after the owner authorizes release.
 
 The optional Linux cursor package has separate visual acceptance and is
 never described as Mozilla-signed.
+
+## Updated public-listing references
+
+The authoritative public listing description and categories are now in [amo/LISTING_COPY.md](amo/LISTING_COPY.md) and [amo/listing-metadata.json](amo/listing-metadata.json). The release workflow is [amo-listed.yml](.github/workflows/amo-listed.yml), and the detailed first-conversion guide is [docs/AMO_AUTOMATION.md](docs/AMO_AUTOMATION.md). These replace the earlier unlisted submission path. Native telemetry is optional and needs a separately installed local companion. The stories are offline and included in the runtime archive. A public AMO release is not asserted until verification of Mozilla's review outcome.
