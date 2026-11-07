@@ -25,3 +25,7 @@ Revoking site permission stops new spelling requests and attempts to restore nat
 ## Mozilla manifest disclosure (0.5.1)
 
 `browser_specific_settings.gecko.data_collection_permissions.required` is `['none']`: the extension itself does not collect or transmit user data to a developer, analytics provider, or its own servers. Users can **optionally** authorise direct HTTPS fetches to their selected public RSS/Atom publishers. The destination sees the usual network request/IP address, but the extension does not relay browsing history, personal notes, or quick links to those publishers. Redirects are refused. As with any browser, manually opening search results or quick links contacts the selected website.
+
+## Optional local hardware monitor
+
+Hardware readings are **not developer analytics**. Only after the user clicks **ENABLE TELEMETRY**, Firefox asks for the optional `nativeMessaging` permission. The independently installed, read-only Linux companion reads supported system temperature, fan, memory and load interfaces (plus local `nvidia-smi` if available). Measurements are returned to the extension entirely over local standard input/output. No daemon or network connection is created by the host, readings are not persisted, and no server receives them. Denying or revoking the permission leaves the feature off. The companion is installed manually, separately from Firefox, and is removable independently.
