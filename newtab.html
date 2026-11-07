@@ -262,6 +262,13 @@
   <dialog id="feeds-dialog" class="settings-dialog feeds-dialog" aria-labelledby="feeds-title">
     <h2 id="feeds-title">// NET FEED · SUBSCRIPTION ARCHIVE</h2>
     <p>Add public Substack publications or direct RSS/Atom addresses. News arrives straight from the sites you authorise, never through an ELF//SHELL server.</p>
+    <div class="feed-official-source" role="group" aria-label="Official ELF//SHELL RSS publication">
+      <div><span class="feed-official-eyebrow">// AYARIME · FIRST-PARTY CHANNEL</span>
+        <strong>ELF//SHELL // TRANSMISSIONS</strong>
+        <small>Project journals, release notices and illustrated archive dispatches. Optional; no access is granted automatically.</small>
+      </div>
+      <button id="feed-official-prefill" type="button">⌁ PREPARE OFFICIAL FEED</button>
+    </div>
     <form id="feed-add-form" class="feed-add-form">
       <label>PUBLICATION / RSS ADDRESS<input id="feed-url" type="text" maxlength="2048" autocomplete="url" required placeholder="publication.substack.com or https://example.org/rss.xml"></label>
       <label>DISPLAY NAME (OPTIONAL)<input id="feed-label" type="text" maxlength="72" placeholder="Publication name"></label>
