@@ -26,3 +26,7 @@ not alter the MPL-2.0 status of the extension's source code.
 The side-story additions remain subject to explicit human approval before
 merging or distribution. No approval to publish to Mozilla is implied by
 their presence in a draft branch.
+
+### Third-party ChatGPT link mark
+
+`assets/chatgpt-mark.svg` uses the monochrome OpenAI symbol as an informational link to ChatGPT, with vector geometry sourced from Bootstrap Icons. The Bootstrap Icons MIT licence is preserved in `LICENSES/bootstrap-icons-MIT.txt`. The **OpenAI and ChatGPT names and marks remain the property of OpenAI**; they are not dedicated to the public by this project's CC0 artwork statement. ELF//SHELL is not affiliated with, sponsored by, or endorsed by OpenAI. The frame styling is original to Ayarime and does not modify the mark itself.
