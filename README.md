@@ -1,4 +1,4 @@
-# ELF//SHELL — Ayarime v0.5.4 (internal release audit)
+# ELF//SHELL — Ayarime v0.5.5 (unlisted update candidate)
 
 **An original, free and open-source Firefox new-tab workstation and matching browser theme.** A 1990s science-fiction OVA aesthetic, locally bundled illustrated and vector shortcut icons, and a softly melancholic cyber-elf called Ayarime (あやりめ).
 
@@ -222,3 +222,8 @@ visual and regression checks are completed.
 ELF//SHELL includes two offline illustrated Ayarime side stories, **Letters from the Lower City** and **Crushed Rainforest Beans**, accessible via Memory Trace, Station, and the command palette. Five original image masters are included unmodified, with SHA-256 references in `stories/asset-manifest.json`. The illustrated archive requires no additional browser permission or remote requests. GitHub integration was expressly approved by the owner on 7 November 2026; publishing or uploading a Mozilla add-on release remains subject to separate approval.
 
 The compact bilingual Memory Trace now wraps the provided text instead of clipping it after two lines. The NET FEED footer has a separately identified link to ChatGPT; clicking it opens the external website and does not imply affiliation. The optional Linux telemetry panel displays CPU/GPU temperatures, fans, RAM and load **only with** the separately installed and permitted native host. See [telemetry/README.md](telemetry/README.md). No readings are uploaded. The RSS/Atom subscription reader remains opt-in and unchanged.
+
+
+## Mozilla Add-ons automated updates (v0.5.5 candidate)
+
+The next unlisted update is prepared as version **0.5.5**; no API upload is triggered by committing this source. The `Mozilla AMO — verify and submit unlisted` GitHub Actions workflow offers verification-only (default) or an explicitly authorised **submit-unlisted** operation. It runs source tests, Firefox smoke tests, Mozilla lint and reproducible runtime/reviewer archives before any upload. The signed unlisted XPI is still distributed separately and will not automatically update installed copies without an HTTPS update manifest. Set the Mozilla API credentials as private `mozilla-unlisted` GitHub environment secrets; see [docs/AMO_AUTOMATION.md](docs/AMO_AUTOMATION.md). Public AMO listing remains a separate publication decision.
