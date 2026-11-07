@@ -1,6 +1,6 @@
 # Privacy statement — ELF//SHELL
 
-ELF//SHELL does not collect or transmit analytics, telemetry, crash reports, browsing history, page contents, or personal information to a developer-controlled server. It has no developer-controlled server. Scripts, styles, wallpaper and launcher images are included in the extension package.
+ELF//SHELL does not transmit analytics, hardware sensor readings, crash reports, browsing history, page contents, or personal information to a developer-controlled server. The separate opt-in Linux sensor host only returns hardware readings locally to the browser. It has no developer-controlled server. Scripts, styles, wallpaper and launcher images are included in the extension package.
 
 Firefox extension-local storage holds local notes, preferences, quick-link URLs, editable search templates and optionally saved sets of tab URLs and duplicate-tab recovery URLs until reopened or manually cleared. These recovery URLs may contain private query parameters. This storage is not encrypted. A JSON export includes this information. Users should avoid storing credentials or exporting private session URLs.
 
@@ -25,3 +25,7 @@ Revoking site permission stops new spelling requests and attempts to restore nat
 ## Mozilla manifest disclosure (0.5.1)
 
 `browser_specific_settings.gecko.data_collection_permissions.required` is `['none']`: the extension itself does not collect or transmit user data to a developer, analytics provider, or its own servers. Users can **optionally** authorise direct HTTPS fetches to their selected public RSS/Atom publishers. The destination sees the usual network request/IP address, but the extension does not relay browsing history, personal notes, or quick links to those publishers. Redirects are refused. As with any browser, manually opening search results or quick links contacts the selected website.
+
+## Optional local hardware monitor
+
+Hardware readings are **not developer analytics**. Only after the user clicks **ENABLE TELEMETRY**, Firefox asks for the optional `nativeMessaging` permission. The independently installed, read-only Linux companion reads supported system temperature, fan, memory and load interfaces (plus local `nvidia-smi` if available). Measurements are returned to the extension entirely over local standard input/output. No daemon or network connection is created by the host, readings are not persisted, and no server receives them. Denying or revoking the permission leaves the feature off. The companion is installed manually, separately from Firefox, and is removable independently.

@@ -2,7 +2,7 @@
 
 **An original, free and open-source Firefox new-tab workstation and matching browser theme.** A 1990s science-fiction OVA aesthetic, locally bundled illustrated and vector shortcut icons, and a softly melancholic cyber-elf called Ayarime (あやりめ).
 
-Source and bundled images run locally. **No analytics, telemetry, advertisements, remote code, remote fonts, or favicon services.** Your normal web searches and any quick links go to the destinations you explicitly choose. **Optional RSS subscriptions contact their chosen publication sites on the user’s behalf after permission is granted.**
+Source and bundled images run locally. **No developer analytics, telemetry uploads, advertisements, remote code, remote fonts, or favicon services. Optional local hardware readings require a separately installed Linux companion and express permission.** Your normal web searches and any quick links go to the destinations you explicitly choose. **Optional RSS subscriptions contact their chosen publication sites on the user’s behalf after permission is granted.**
 
 ## Install in Firefox for testing
 
@@ -215,3 +215,7 @@ on other sites, Firefox's native menus or the OS.
 
 The new type system remains part of draft PR #4 until native Firefox
 visual and regression checks are completed.
+
+## Local hardware readout (opt-in development feature)
+
+The System Diagnostics panel can show CPU and GPU temperatures, fan RPM, RAM use and one-minute system load **only** after installing the optional Linux native-messaging companion and granting `nativeMessaging` in Firefox. This is read-only; no simulated readings are shown. See [telemetry/README.md](telemetry/README.md). Hardware readings remain on the machine and are not uploaded to a developer. The compact Memory Trace panel now wraps excerpts instead of hiding the second half of English lines. The footer includes a direct, separately branded link to ChatGPT; the external website is not an embedded service or affiliated with ELF//SHELL. Existing opt-in RSS subscriptions remain unchanged. Test the experience in a real Firefox installation before release.

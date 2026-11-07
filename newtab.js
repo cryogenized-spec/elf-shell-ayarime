@@ -1,5 +1,5 @@
 "use strict";
-/* ELF//SHELL v0.5.4 audit candidate. No telemetry. RSS network fetches only for opt-in publications. No remote libraries or eval. */
+/* ELF//SHELL v0.5.4 audit candidate. Optional local-only sensor companion. RSS fetches only for opt-in publications; no analytics or remote libraries. */
 const defaults = [
   {label:"Firefox",icon:"firefox",glyph:"◉",url:"https://www.mozilla.org/firefox/",group:"GENERAL"},
   {label:"Mail",icon:"mail",glyph:"✉",url:"https://mail.google.com/",group:"WORK"},

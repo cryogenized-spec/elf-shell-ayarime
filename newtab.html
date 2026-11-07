@@ -12,6 +12,7 @@
 <script defer src="newtab.js"></script>
 <script defer src="memory.js"></script>
 <script defer src="feeds.js"></script>
+<script defer src="telemetry.js"></script>
 <script defer src="integration/ui.js"></script>
 </head>
 <body>
@@ -43,8 +44,16 @@
         <div><span>NETWORK SIGNAL</span><strong id="network-status">—</strong></div>
         <div><span>OPEN TABS</span><strong id="tab-count">—</strong></div>
         <div><span>LOCAL ARCHIVE</span><strong id="archive-status">READY</strong></div>
-        <div><span>TELEMETRY</span><strong>NONE</strong></div>
-        <div class="signal" aria-hidden="true">▂ ▅ ▃ ▇ ▄ ▆ ▂ ▄ ▇ ▃ ▅ ▁ ▆</div>
+        <div><span>LOCAL TELEMETRY</span><strong id="telemetry-status" aria-live="polite">OFF</strong></div>
+        <div class="hardware-readout" aria-label="Live local hardware readings">
+          <span>CPU TEMP</span><strong id="cpu-temp">N/A</strong>
+          <span>GPU TEMP</span><strong id="gpu-temp">N/A</strong>
+          <span>MEMORY</span><strong id="ram-usage">N/A</strong>
+          <span>FAN SPEED</span><strong id="fan-speed">N/A</strong>
+          <span>LOAD / 1M</span><strong id="system-load">N/A</strong>
+        </div>
+        <button id="telemetry-toggle" class="telemetry-toggle" type="button">ENABLE TELEMETRY</button>
+        <p id="telemetry-hint" class="telemetry-hint" role="status">OPT-IN · LINUX MINT</p>
       </div>
     </aside>
     <aside class="right-panels" aria-label="Clock and personal workspace">
@@ -98,6 +107,7 @@
       <span id="feed-placeholder">YOUR NETWORK · ADD A PUBLICATION</span>
       <button type="button" id="feed-next" title="Next headline" aria-label="Next headline">›</button>
       <button type="button" id="feed-manage" title="Manage RSS and Substack subscriptions">+ SUBSCRIBE</button>
+      <a id="chatgpt-workspace" class="chatgpt-workspace" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" title="Open ChatGPT workspace in a new tab" aria-label="Open ChatGPT workspace in a new tab"><img src="assets/chatgpt-mark.svg" width="18" height="18" alt=""><span>CHATGPT</span></a>
       <span class="footer-signature">あやりめ · AYARIME</span>
     </footer>
   </main>
