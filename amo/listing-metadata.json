@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "en-US": "A cyber-elf Firefox dashboard with custom theme, tab tools, local notes, an illustrated memory archive and opt-in RSS."
+  },
+  "categories": [
+    "appearance",
+    "tabs"
+  ],
+  "version": {
+    "license": "MPL-2.0",
+    "release_notes": {
+      "en-US": "First public listing candidate: illustrated Ayarime stories, fully readable bilingual Memory Trace, themed ChatGPT shortcut, optional local hardware telemetry for Linux, and private local workspaces with opt-in RSS. No account or purchase required."
+    },
+    "approval_notes": "Public release v0.5.5, updating the existing add-on GUID elf-shell-ayarime@local.theme; previous version 0.5.4 was unlisted. This package contains local offline artworks (five original 1672x941 PNG masters), CSS/JS and bundled fonts. Optional RSS requests go directly to hosts approved by the user; no analytics service. Native Messaging requires a separately installed local read-only Linux Python companion (telemetry/host.py in reviewer source archive) and user permission, is NOT bundled into the extension runtime, and is unavailable unless installed. The footer contains an external ChatGPT link; no affiliation is implied. Build using python3 scripts/package.py; reviewer source provided as separate ZIP. Please see PRIVACY.md and ARTWORK_LICENSE.md in reviewer source."
+  }
+}
