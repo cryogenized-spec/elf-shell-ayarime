@@ -48,9 +48,6 @@ jobs:
           for name in ('index.html', 'style.css', '.nojekyll'):
               assert (out / name).exists(), name
           PY
-      - name: Configure GitHub Pages
-        if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@v5
       - name: Upload only rendered public site (no repository files)
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
@@ -70,6 +67,8 @@ jobs:
       pages: write
       id-token: write
     steps:
+      - name: Confirm GitHub Pages is enabled for Actions deployment
+        uses: actions/configure-pages@v5
       - name: Publish validated site
         id: publish
         uses: actions/deploy-pages@v4
