@@ -2,6 +2,13 @@
 /* ELF//SHELL RSS/Atom module. Remote requests only to opted-in, site-authorised feeds. */
 (() => {
   const settingsKey = "elfshell-rss-settings-v1";
+  // Optional first-party editorial channel. Never auto-subscribe or auto-grant host access.
+  const officialFeed = Object.freeze({
+    url:"https://cryogenized-spec.github.io/elf-shell-ayarime/feed.xml",
+    title:"ELF//SHELL // TRANSMISSIONS",
+    group:"PROJECT"
+  });
+
   const cacheKey = "elfshell-rss-cache-v1";
   const approvedKey = "elfshell-rss-approved-urls-v1";
   const maxFeeds = 32;
@@ -372,6 +379,25 @@
     } catch(error){status("Feed refresh or cache save failed: "+error.message);console.error("RSS refresh failed",error);}
     finally {fetching=false;$("feed-refresh").removeAttribute("aria-busy");$("feed-refresh").disabled=false;}
   }
+  function prepareOfficialFeed() {
+    if (prefs.feeds.some(feed=>feed.url===officialFeed.url)) {
+      status("ELF//SHELL transmissions are already in your subscriptions.");
+      return;
+    }
+    const url=$("feed-url"), label=$("feed-label"), group=$("feed-group");
+    // Do not erase a partly written personal publication by clicking the suggestion.
+    if ([url.value,label.value,group.value].some(value=>value.trim()) &&
+        (url.value!==officialFeed.url || label.value!==officialFeed.title || group.value!==officialFeed.group)) {
+      status("Your subscription draft is not empty. Finish it or clear the fields before loading the official feed.");
+      url.focus();
+      return;
+    }
+    url.value=officialFeed.url;
+    label.value=officialFeed.title;
+    group.value=officialFeed.group;
+    url.focus();
+    status("Official feed details prepared. Choose + SUBSCRIBE to grant Firefox permission. If GitHub Pages is not yet published, the first fetch may fail.");
+  }
   async function addFeed(event) {
     event.preventDefault();
     const url=normaliseFeedUrl($("feed-url").value);
@@ -452,7 +478,7 @@
     // No periodic background service. Only check saved, already-authorised feeds on an open new tab.
     if(prefs.feeds.some(f=>f.enabled))refreshFeeds(false);
   }
-  if(typeof module!=="undefined" && module.exports)module.exports={normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration};
+  if(typeof module!=="undefined" && module.exports)module.exports={officialFeed,normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration};
   if(typeof document==="undefined")return;
   window.elfFeeds={
     snapshot:()=>({...prefs,feeds:prefs.feeds.map(x=>({...x}))}),
@@ -463,6 +489,7 @@
   $("feeds-toggle").addEventListener("click",show);
   $("feed-manage").addEventListener("click",show);
   $("feed-add-form").addEventListener("submit",addFeed);
+  $("feed-official-prefill").addEventListener("click",prepareOfficialFeed);
   $("feed-close").addEventListener("click",()=>$("feeds-dialog").close());
   $("feed-refresh").addEventListener("click",()=>refreshFeeds(true));
   $("feed-enabled").addEventListener("change",async e=>{try{if(bgMode())await mutateFeeds("config",{enabled:e.target.checked});else{prefs.enabled=e.target.checked;await mutateFeeds("preview");}renderTicker();if(prefs.enabled)refreshFeeds(false);}catch(error){status("Ticker setting not saved: "+error.message);$("feed-enabled").checked=prefs.enabled;}});

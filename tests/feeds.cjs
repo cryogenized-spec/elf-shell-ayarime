@@ -1,6 +1,10 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
+const {officialFeed,normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
+assert.equal(officialFeed.url,'https://cryogenized-spec.github.io/elf-shell-ayarime/feed.xml');
+assert.equal(officialFeed.group,'PROJECT');
+assert.equal(normaliseFeedUrl(officialFeed.url),officialFeed.url,'official RSS remains canonical');
+assert.equal(originPattern(officialFeed.url),'https://cryogenized-spec.github.io/*','official feed still requires explicit site permission');
 assert.equal(normaliseFeedUrl('thebrowser.substack.com'), 'https://thebrowser.substack.com/feed');
 assert.equal(normaliseFeedUrl('https://thebrowser.substack.com/p/a-story?utm_source=test'), 'https://thebrowser.substack.com/feed');
 assert.equal(normaliseFeedUrl('https://www.example.org/rss.xml'), 'https://www.example.org/rss.xml');

@@ -153,6 +153,14 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,2.85vw,54px)
 .net-footer .footer-signature{color:#c8b0c9;white-space:nowrap;font-size:9px;letter-spacing:.1em}
 .feeds-dialog{width:min(850px,94vw);max-height:90vh;overflow:auto}
 .feeds-dialog h3{font:12px ui-monospace,monospace;letter-spacing:.14em;color:#eeb7d5;border-top:1px solid #6d6174;padding-top:15px;margin-top:22px}
+.feed-official-source{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:16px 0;padding:13px 15px;border:1px solid #638e97;background:linear-gradient(110deg,#172234,#30263a);border-radius:4px}
+.feed-official-source>div{min-width:0;display:grid;gap:5px}
+.feed-official-eyebrow{color:#b7dcb3;font:9px ui-monospace,monospace;letter-spacing:.14em}
+.feed-official-source strong{font:14px Georgia,serif;color:#f4e3ef;letter-spacing:.06em}
+.feed-official-source small{color:#c2d7d9;font:11px/1.55 ui-monospace,monospace}
+.feed-official-source button{border:1px solid #b0c4a7;background:#203044;color:#d9f6d9;font:10px ui-monospace,monospace;white-space:nowrap;padding:9px 12px;cursor:pointer}
+.feed-official-source button:hover,.feed-official-source button:focus-visible{border-color:#e0f3c2;background:#3b334d}
+@media(max-width:650px){.feed-official-source{flex-direction:column;align-items:stretch}.feed-official-source button{white-space:normal}}
 .feed-add-form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:18px 0}
 .feed-add-form label{display:grid;gap:6px;color:#bfd6e3;font:10px ui-monospace,monospace;letter-spacing:.07em}
 .feed-add-form label:first-child{grid-column:1/-1}
