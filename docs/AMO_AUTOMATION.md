@@ -1,47 +1,43 @@
-# Mozilla Add-ons automation for ELF//SHELL
+# ELF//SHELL / Mozilla PUBLIC listing — deployment runbook
 
-## Distribution model
+**Owner decision:** switch from self-distributed (unlisted) to a publicly listed Firefox Add-ons extension immediately, authorised on 7 November 2026.
 
-The existing Firefox extension was submitted as **unlisted** at AMO in version `0.5.4`, with the stable extension ID `elf-shell-ayarime@local.theme`. Updating it through the same unlisted channel keeps the same add-on identity. A public/listed release requires a separate channel decision.
+## How the channel conversion works
 
-Mozilla's current `web-ext` (v8+) supports the AMO v5 submission API for listed and unlisted versions. This workflow intentionally allows **unlisted** only.
+The existing unlisted version 0.5.4 cannot itself be reclassified. Instead, upload **a NEW version** of the **existing** add-on ID `elf-shell-ayarime@local.theme`, selecting `On this site (listed)`. Do **not** choose Submit New Add-on: Mozilla will reject a duplicate GUID. The first public release candidate is version `0.5.5`, provided that version has not already been uploaded to Mozilla.
 
-## One-time private setup (human owner)
+Mozilla staff confirmed this workflow in August 2026: https://discourse.mozilla.org/t/help-me-change-my-addon-from-private-to-public/149165
+The current `web-ext` signing reference documents `--channel listed`, `--amo-metadata` and `--upload-source-code`: https://extensionworkshop.com/documentation/develop/web-ext-command-reference/
 
-1. Sign in to the [Mozilla Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/).
-2. Open [Manage API Keys](https://addons.mozilla.org/en-US/developers/addon/api/key/) and generate API credentials after any requested email confirmation. Do **not** paste the issuer or secret into ChatGPT, GitHub source code, issue comments, pull requests, or CI logs.
-3. In GitHub repository Settings → Environments, create the environment **`mozilla-unlisted`**. Where supported, enable required reviewer approval to prevent an unreviewed submission.
-4. Store the Mozilla credentials as **environment secrets**, with these exact names:
-   - `AMO_JWT_ISSUER` = Mozilla JWT issuer / API key
-   - `AMO_JWT_SECRET` = Mozilla JWT secret / API secret
-5. Keep the credentials in GitHub Actions secret storage. The submission job uses the environment values as `WEB_EXT_API_KEY` and `WEB_EXT_API_SECRET` only at the signing step.
+## Current code
 
-## For each update
+- Public release workflow: `.github/workflows/amo-listed.yml`, in default branch `main`; the older `amo-unlisted.yml` workflow was retired.
+- Public listing metadata and reviewer notes: `amo/listing-metadata.json`.
+- Proposed customer-facing description: `amo/LISTING_COPY.md`.
+- Canonical release source: `release/v0.5.4-review`, manifest and package version 0.5.5; stable extension GUID unchanged.
+- All code and artwork are packaged from clean Git-tracked files and validated with `npm test`, strict `web-ext lint`, source-rebuild checks and Firefox smoke tests.
 
-1. Bump the extension's version in `manifest.json` and `package.json` to the same, **new** number; update the visual `V.XX.X` text in `newtab.html` and record release notes. Never reuse a version already submitted to AMO.
-2. Merge the version change into an approved `release/` branch. Let the normal GitHub Actions tests run and resolve any failures.
-3. Open [the AMO submission workflow](https://github.com/cryogenized-spec/elf-shell-ayarime/actions/workflows/amo-unlisted.yml) under Actions. Select the default-branch workflow, then **Run workflow** with:
-   - `release_ref`: `release/v0.5.4-review` (or the active release branch)
-   - `expected_version`: the exact committed version, initially `0.5.5`
-   - `operation`: `verify-only` (safe default) to run all checks without contacting Mozilla.
-4. For a successful candidate, launch the workflow with **`submit-unlisted`**. The verification job runs tests, real Firefox smoke checks, Mozilla lint and reproducible source/runtime packaging before the submission job begins.
-5. If GitHub protected environments are configured, review/approve the `mozilla-unlisted` job. The job downloads the verified unsigned runtime and source archives and uses `web-ext@10.8.0 sign --channel unlisted --upload-source-code … --approval-timeout 0` to submit the update. No public/listed publication is possible from this workflow.
-6. Inspect the status in the Mozilla Developer Hub. **Successful API upload does not mean Mozilla has finished review or signing.** A slow or rejected review is a separate event. Do not retry blindly after a timeout or conflict; check the version in AMO first.
+## One-time GitHub configuration
 
-## Automation boundaries
+In [repo Settings → Environments](https://github.com/cryogenized-spec/elf-shell-ayarime/settings/environments), create `mozilla-listed` with required review if supported. Add the private secrets `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` from the [Mozilla Developer Hub API keys page](https://addons.mozilla.org/en-US/developers/addon/api/key/). **Never put secret values into a chat, PR, GitHub file or logs.** They may already be stored in the old `mozilla-unlisted` environment; copy them using GitHub's secret-input UI into the new listed environment. They are not readable from repository source.
 
-- **No automatic submission on push, merge, pull request or schedule.** A human explicitly chooses `submit-unlisted` in Actions.
-- Workflow requires the original extension ID, unchanged Mozilla privacy declaration, consistent version metadata, and a release branch reference. New versions must exceed 0.5.4.
-- No passwords, API keys or JWT values are stored in this repository. The GitHub environment may be configured to require an additional human approval before credentials become available.
-- Current unlisted releases **do not update installed Firefox copies automatically** without a developer-hosted, HTTPS update manifest (`browser_specific_settings.gecko.update_url`) and a reliable source of signed XPIs. This is a separate future delivery feature; don't confuse upload automation with browser auto-update.
-- The read-only native telemetry host is **not embedded or installed automatically** by the Firefox add-on. Users must independently install it and explicitly approve Firefox's nativeMessaging permission.
+## To submit
 
-## Troubleshooting
+1. Check the existing add-on in the [Developer Hub](https://addons.mozilla.org/en-US/developers/addons). Confirm v0.5.5 has NOT already been submitted. If it has, use a strictly higher version in source first.
+2. Review the listing copy, privacy statement, attribution, real screenshots and Mozilla Add-on policies.
+3. Open [Mozilla AMO — verify and submit PUBLIC listing](https://github.com/cryogenized-spec/elf-shell-ayarime/actions/workflows/amo-listed.yml) under Actions, select **Run workflow**, `release_ref = release/v0.5.4-review`, `expected_version = 0.5.5`, `operation = verify-only`.
+4. Once verification passes, run again choosing `submit-listed`. Only this explicit action exposes secrets to the `mozilla-listed` job and attempts submission via `web-ext@10.8.0 sign --channel listed --amo-metadata dist/amo-listing-metadata.json --upload-source-code <source ZIP> --approval-timeout 0`.
+5. **First listed conversion caveat:** if AMO refuses the API transition or indicates missing add-on-level metadata, open the **existing add-on** → **Upload New Version** → **On this site**, then complete listing details and upload that same 0.5.5 verified runtime ZIP and source ZIP from the Actions artifacts. Do not create a new add-on or blindly retry an accepted upload. Mozilla reviews the listed version before public availability.
+6. In Developer Hub, verify whether the listed version is pending, accepted, signed and publicly accessible. No GitHub CI result proves Mozilla approval by itself.
 
-If GitHub reports missing `AMO_JWT_ISSUER` or `AMO_JWT_SECRET`, create them in the `mozilla-unlisted` environment. If version validation fails, commit the next version to both `manifest.json` and `package.json`. If the AMO upload reports a duplicate version, inspect the Mozilla Developer Hub before attempting another run. The zipped source is already attached to the verified GitHub Actions run.
+## Updates after public listing
 
-**Mozilla Developer Hub:** https://addons.mozilla.org/en-US/developers/
+For subsequent listed versions, bump `manifest.json` + `package.json` and update release notes, run tests and submit with `submit-listed` when desired. Approved AMO-listed add-ons normally receive Firefox-managed updates. We no longer need an independent unlisted-XPI update host for the public channel. RSS announcements remain separate and cannot publish a Mozilla release.
 
-**Mozilla web-ext reference:** https://extensionworkshop.com/documentation/develop/web-ext-command-reference/
+## Privacy and third-party dependencies
 
-**Mozilla self-distribution:** https://extensionworkshop.com/documentation/publish/self-distribution/
+Browser notes/workspaces are stored locally and not encrypted. RSS network access is explicitly opt-in. The Linux hardware sensor bridge requires a separately installed native-messaging host and explicit Firefox permission. The extension does not collect or upload hardware metrics. No service-provider affiliation is implied by optional website links. Full disclosures are in `PRIVACY.md` and `ARTWORK_LICENSE.md`.
+
+## Publication status
+
+**Public channel requested and source prepared; DO NOT claim the listing is live until the Mozilla Developer Hub confirms acceptance.** No API issuer or secret is stored in GitHub files. The owner authorised publication, not bypassing Mozilla review.
