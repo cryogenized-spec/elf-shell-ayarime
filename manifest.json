@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ELF//SHELL — Ayarime",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Original 90s OVA Firefox cyber-elf dashboard with local shortcuts, command palette, bilingual rotating memory fragments, notes, and opt-in RSS/Atom subscriptions.",
   "icons": {
     "48": "assets/icon-48.png",
