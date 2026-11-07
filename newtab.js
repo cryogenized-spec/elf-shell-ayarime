@@ -379,6 +379,13 @@ function bangUrl(key,query){
   return b?b.url.replaceAll("{query}",encodeURIComponent(query)):null;
 }
 function action(label,sub,run,group="RESULTS"){return {label,sub,run,group};}
+function launchAyarimeWorkspace(){
+  if(!window.AyarimeWorkspaceBridge)throw Error("Workspace companion bridge was not loaded");
+  return window.AyarimeWorkspaceBridge.openWorkspace();
+}
+function isAyarimeWorkspaceCommand(input){
+  return /^(?:ayarime[, ]+)?(?:please\s+)?(?:bring up|open|restore)(?:\s+my)?\s+(?:google\s+)?workspace[.!]?$/i.test(input);
+}
 async function suggestions(input){
   const q=input.trim();if(!q)return [];
   if(q.startsWith("@")){
@@ -397,6 +404,7 @@ async function suggestions(input){
     try{let result=await browser.history.search({text:q.slice(1).trim(),startTime:0,maxResults:8});return result.filter(x=>validUrl(x.url)).map(h=>action(h.title||h.url,"HISTORY / "+h.url,()=>window.location.assign(h.url)));}
     catch{return [];}
   }
+  if(isAyarimeWorkspaceCommand(q))return [action("Ayarime, please bring up my workspace","RESTORE / GROUP / PIN GOOGLE TABS",launchAyarimeWorkspace,"WORKSPACE")];
   if(q.startsWith(">"))return commandSuggestions(q.slice(1).trim());
   const match=q.match(/^!([a-z0-9]+)(?:\s+(.*))?$/i);
   if(match){
@@ -568,6 +576,7 @@ function endPalette(){
 }
 function commandSuggestions(term){
   const actions=[
+    action("Ayarime, please bring up my workspace","FIREFOX COMPANION / SUPER TAB",launchAyarimeWorkspace,"WORKSPACE"),
     action("Open quick notes","LOCAL ARCHIVE",()=>$("notes-toggle").click(),"STATION"),
     action("Edit station and search bangs","CUSTOMISE SHORTCUTS",showSettings,"STATION"),
     action("Browser permissions ledger","GRANTED / REVOKE ACCESS",showAccess,"PRIVACY"),
