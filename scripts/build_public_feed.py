@@ -91,14 +91,45 @@ def build(source: Path = SOURCE, out: Path = DEFAULT_OUT) -> dict:
     ET.indent(feed, space="  ")
     rss_bytes = ET.tostring(feed, encoding="utf-8", xml_declaration=True) + b"\n"
 
-    cards = []
-    for post in posts:
-        title, summary, cat, ident = (escape(post[k], quote=True) for k in ("title", "summary", "category", "id"))
-        date = escape(post["published_dt"].strftime("%d %b %Y"), quote=True)
-        iso = escape(post["published_dt"].isoformat(), quote=True)
-        cards.append(f'<article class="transmission" id="{ident}"><div class="meta"><time datetime="{iso}">{date}</time><span>{cat}</span></div><h2>{title}</h2><p>{summary}</p></article>')
+    # Editorial publication page. The RSS document above is deliberately unchanged;
+    # both output formats are produced from the same reviewed source records.
+    index_items = []
+    dispatches = []
+    for position, post in enumerate(posts):
+        ordinal = f"{len(posts) - position:03d}"
+        title, summary, category, ident = (
+            escape(post[field], quote=True)
+            for field in ("title", "summary", "category", "id")
+        )
+        date_label = escape(post["published_dt"].strftime("%d %b %Y").upper(), quote=True)
+        date_iso = escape(post["published_dt"].isoformat(), quote=True)
+        time_label = escape(post["published_dt"].strftime("%H:%M UTC"), quote=True)
+        index_items.append(
+            f'<li><a href="#{ident}" aria-label="Transmission {ordinal}: {title}">'
+            f'<span class="index-number">{ordinal}</span>'
+            f'<span class="index-title">{title}</span></a></li>'
+        )
+        dispatches.append(f"""
+        <article class="dispatch{' dispatch-featured' if position == 0 else ''}" id="{ident}">
+          <div class="dispatch-head">
+            <span class="dispatch-number" aria-hidden="true">{ordinal}<span class="dispatch-number-mark">/</span></span>
+            <div class="dispatch-identity">
+              <p class="dispatch-eyebrow">{category} <span aria-hidden="true">·</span>
+                <time datetime="{date_iso}">{date_label}</time></p>
+              <h2>{title}</h2>
+            </div>
+          </div>
+          <p class="dispatch-copy">{summary}</p>
+          <div class="dispatch-foot">
+            <a class="permalink" href="#{ident}" aria-label="Permanent link to {title}">LINK TO DISPATCH <span aria-hidden="true">↗</span></a>
+            <span class="dispatch-clock">{time_label}</span>
+          </div>
+        </article>""")
+
     safe_title = escape(config["title"], quote=True)
     safe_description = escape(config["description"], quote=True)
+    first_date = escape(posts[0]["published_dt"].strftime("%d %B %Y"), quote=True)
+    count = f"{len(posts):02d}"
     html = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -112,15 +143,85 @@ def build(source: Path = SOURCE, out: Path = DEFAULT_OUT) -> dict:
   <title>{safe_title}</title>
 </head>
 <body>
-<main class="wrap">
-  <div class="brow"><span>// ELF//SHELL · NETWORK TRANSMISSION</span><a href="https://github.com/cryogenized-spec/elf-shell-ayarime" rel="noopener noreferrer">SOURCE ARCHIVE</a></div>
-  <h1>AYARIME <b>//</b> TRANSMISSIONS</h1>
-  <p class="dek">{safe_description}</p>
-  <nav class="links" aria-label="Publication links"><a href="feed.xml" type="application/rss+xml">◉ SUBSCRIBE / RSS</a><a href="https://github.com/cryogenized-spec/elf-shell-ayarime" rel="noopener noreferrer">◈ OPEN PROJECT</a></nav>
-  <div class="section-title">// LATEST TRANSMISSIONS · {len(posts):02d}</div>
-  {''.join(cards)}
-  <footer>Independent open-source project · This feed does not track readers or access Firefox browser information.<br>ELF//SHELL is not affiliated with Mozilla or OpenAI.</footer>
-</main>
+<div class="page-frame" id="top">
+  <a class="skip-link" href="#dispatches">Skip to transmissions</a>
+  <header class="site-head" aria-label="Publication masthead">
+    <a class="brand" href="./" aria-label="ELF//SHELL — Ayarime Transmissions">
+      <span>ELF</span><span class="brand-slashes">//</span><span>SHELL</span>
+    </a>
+    <span class="mast-note">AYARIME <span aria-hidden="true">✳</span> PUBLIC TRANSMISSIONS</span>
+    <nav class="head-links" aria-label="Primary navigation">
+      <a href="#dispatches">ARCHIVE</a>
+      <a href="feed.xml" type="application/rss+xml">RSS <span aria-hidden="true">↗</span></a>
+      <a href="https://github.com/cryogenized-spec/elf-shell-ayarime" rel="noopener noreferrer">SOURCE <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="lead-section" aria-labelledby="page-title">
+      <div class="lead-body">
+        <p class="overline"><span class="signal-dot" aria-hidden="true"></span> THE AYARIME CORRESPONDENCE <span class="overline-number">VOL. 01 / WEB EDITION</span></p>
+        <h1 id="page-title">Dispatches<br>from <em>the shell.</em></h1>
+        <p class="lead-desc">An ongoing field journal from ELF//SHELL — a place for releases, new illustrations, and the smaller things worth writing down.</p>
+        <div class="hero-actions">
+          <a class="primary-link" href="#dispatches">READ THE LOG <span aria-hidden="true">↘</span></a>
+          <a class="quiet-link" href="feed.xml" type="application/rss+xml">SUBSCRIBE VIA RSS <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="illustration" aria-hidden="true">
+        <div class="illustration-head"><span>AYR / 01</span><span>FIELD NOTES</span></div>
+        <div class="orbit orbit-outer"></div>
+        <div class="orbit orbit-middle"></div>
+        <div class="orbit orbit-inner"></div>
+        <div class="orbital-cross orbital-cross-top"></div>
+        <div class="orbital-cross orbital-cross-bottom"></div>
+        <span class="orbit-core">あ</span>
+        <span class="illustration-side">✳ NOISE / SIGNAL / MEMORY</span>
+        <div class="illustration-foot"><span>FROM THE DESK OF AYARIME</span><span>EST. 2026</span></div>
+      </div>
+    </section>
+
+    <div class="section-band" id="dispatches">
+      <h2><span aria-hidden="true">///</span> TRANSMISSION REGISTER</h2>
+      <span>{count} ENTRIES <span aria-hidden="true">·</span> LATEST {first_date}</span>
+    </div>
+
+    <div class="reading-layout">
+      <aside class="archive-rail" aria-label="Transmission index">
+        <h3>INDEX <span>{count}</span></h3>
+        <ol>{''.join(index_items)}</ol>
+        <p class="rail-label">ABOUT THIS CHANNEL</p>
+        <p class="rail-copy">A deliberately small public record. Each dispatch appears here and in the RSS feed. No account required.</p>
+        <a class="rail-rss" href="feed.xml" type="application/rss+xml">GET THE FEED <span aria-hidden="true">↗</span></a>
+      </aside>
+
+      <section class="dispatch-list" aria-label="Published transmissions">
+        {''.join(dispatches)}
+      </section>
+    </div>
+
+    <section class="colophon" aria-label="About the publication">
+      <div class="colophon-left">
+        <p class="colophon-label">/// THE LAST PAGE</p>
+        <h2>Stay for the <em>signal.</em></h2>
+        <p>Read these notes here or add the feed to any RSS reader. The page is intentionally static: no adverts, analytics, pop-ups or scripts competing for your attention.</p>
+      </div>
+      <div class="colophon-right">
+        <span class="colophon-stamp" aria-hidden="true">✳</span>
+        <p>01 / PUBLICATION</p>
+        <strong>ELF//SHELL</strong>
+        <span>INDEPENDENT SOFTWARE &amp; STORIES</span>
+        <a href="feed.xml" type="application/rss+xml">FEED.XML <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>ELF//SHELL — AYARIME / AN INDEPENDENT OPEN-SOURCE PROJECT</span>
+    <span>NO TRACKERS · NO COOKIES · NO THIRD-PARTY SCRIPTS</span>
+    <a href="#top">BACK TO TOP <span aria-hidden="true">↑</span></a>
+  </footer>
+</div>
 </body>
 </html>
 """
