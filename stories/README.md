@@ -1,8 +1,7 @@
 # Illustrated Memory Archive — Ayarime Side Stories
 
-> **⛔ REVIEW-ONLY / DO NOT MERGE OR PUBLISH WITHOUT EXPLICIT HUMAN APPROVAL.**
-> See [DO_NOT_MERGE_UNTIL_HUMAN_APPROVAL.md](DO_NOT_MERGE_UNTIL_HUMAN_APPROVAL.md).
-> This branch is deliberately independent of the v0.5.4 Firefox release.
+> **GitHub source integration approved 7 November 2026; Mozilla publication still requires separate approval.**
+> See [Human approval record](DO_NOT_MERGE_UNTIL_HUMAN_APPROVAL.md).
 
 ## Stories
 
@@ -60,7 +59,7 @@ in the events. Consequences may be revealed out of chronological order.
 ## Asset staging
 
 All five original PNG masters were imported byte-for-byte and committed to
-this **draft branch** on 6 November 2026, commit `c2d501b`. Before committing,
+the feature branch on 6 November 2026, commit `c2d501b`. Before committing,
 the user verified all five files against the SHA-256 values in
 `asset-manifest.json`; GitHub subsequently confirmed all five paths
 in pull request #22.
@@ -69,7 +68,7 @@ The original source art must not be regenerated, recropped, or replaced with
 remote image URLs. Before approving integration, review captions in both
 languages and inspect image scaling, offline loading, and packaging in Firefox.
 
-## Implemented reader (draft PR #22)
+## Implemented reader (PR #22)
 
 The archive is now a standalone offline Firefox extension page at
 `stories/archive.html`, with bundled `archive.css` and `archive.js`.
@@ -90,10 +89,10 @@ Keyboard: **Left / Right** changes spreads; **Escape** closes the native
 expanded-art dialog. The optional `#letters/0` or `#beans/2` fragment
 identifies a selected spread and can be shared inside the same Firefox profile.
 
-The AMO build's strict whitelist now includes the three reader files and
-**only the five reviewed original PNG masters**. Existing `manifest.json`,
-permissions, release version, default browser tabs and shortcut URLs were
-not changed.
+The build's strict whitelist includes the three reader files and
+**only the five reviewed original PNG masters**. The stories themselves require
+no new permissions. The separate opt-in local telemetry feature adds only the
+optional `nativeMessaging` permission; existing shortcut URLs are unchanged.
 
 ### Acceptance checks
 
@@ -111,7 +110,6 @@ not changed.
 
 ## Status
 
-**Implementation committed for review — NOT MERGED.**
-No existing Firefox shortcut destinations or runtime permissions were
-changed. Human approval is still required before merge and separately
-before any Mozilla publication.
+**Source merge authorised by the human owner on 7 November 2026.**
+The original images remain unchanged. Publication or signing through Mozilla
+requires separate approval and real Firefox release verification.
