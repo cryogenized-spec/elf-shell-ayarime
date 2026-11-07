@@ -1,6 +1,6 @@
 # Privacy statement — ELF//SHELL
 
-ELF//SHELL does not collect or transmit analytics, telemetry, crash reports, browsing history, page contents, or personal information to a developer-controlled server. It has no developer-controlled server. Scripts, styles, wallpaper and launcher images are included in the extension package.
+ELF//SHELL does not transmit analytics, hardware sensor readings, crash reports, browsing history, page contents, or personal information to a developer-controlled server. The separate opt-in Linux sensor host only returns hardware readings locally to the browser. It has no developer-controlled server. Scripts, styles, wallpaper and launcher images are included in the extension package.
 
 Firefox extension-local storage holds local notes, preferences, quick-link URLs, editable search templates and optionally saved sets of tab URLs and duplicate-tab recovery URLs until reopened or manually cleared. These recovery URLs may contain private query parameters. This storage is not encrypted. A JSON export includes this information. Users should avoid storing credentials or exporting private session URLs.
 
