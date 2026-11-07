@@ -1,9 +1,9 @@
 name: Validate Firefox extension
 on:
   push:
-    branches: [main]
+    branches: [main, release/v0.5.6-development]
   pull_request:
-    branches: [main, release/v0.5.4-review]
+    branches: [main, release/v0.5.4-review, release/v0.5.6-development]
   workflow_dispatch:
 
 jobs:
