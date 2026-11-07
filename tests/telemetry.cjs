@@ -19,7 +19,7 @@ assert(background.includes('browser.runtime.sendNativeMessage("com.elfshell.ayar
 assert(!ui.includes("localhost")&&!ui.includes("127.0.0.1"),"Local messaging must not use a listening port");
 assert(read("scripts/package.py").includes("'telemetry.js'"),"UI file must ship with extension");
 const host=path.join(root,"telemetry/host.py");
-assert(read("telemetry/install.py").includes(\'"allowed_extensions": [EXTENSION_ID]\'),"Host installer must restrict extension ID");
+assert(read("telemetry/install.py").includes('"allowed_extensions": [EXTENSION_ID]'),"Host installer must restrict extension ID");
 const python=spawnSync("python3",["--version"],{encoding:"utf8"});
 if(python.error) {
   console.log("Python3 unavailable; native-host protocol test skipped.");
