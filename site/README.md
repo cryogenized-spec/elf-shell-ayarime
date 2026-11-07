@@ -6,7 +6,7 @@
 
 Same repository, separate concern. Publication source is kept in `main` under `site/`; Firefox extension release branches remain independent. The generated website uses GitHub Pages, not a maintained `gh-pages` branch.
 
-Proposed public addresses, **not live until GitHub Pages is enabled and deployed**:
+Public subscription and reading addresses (**GitHub Pages deployment verified on 7 November 2026**):
 
 - RSS subscription: https://cryogenized-spec.github.io/elf-shell-ayarime/feed.xml
 - Readable archive: https://cryogenized-spec.github.io/elf-shell-ayarime/
@@ -30,8 +30,14 @@ Open `dist/feed-site/index.html` to inspect the readable archive and `dist/feed-
 
 In GitHub repository **Settings → Pages → Build and deployment → Source**, choose **GitHub Actions**. The committed `.github/workflows/rss-pages.yml` workflow runs public-feed regression tests on pull requests to `main`, and after merging approved content into `main` it builds and deploys the feed automatically. You can also run the workflow manually under GitHub Actions.
 
-GitHub Pages might be disabled or unconfigured initially. A successful build does not mean the public URL is available until a successful Pages deployment has occurred. Do not show the URL as a verified live subscription until that succeeds.
+GitHub Pages was enabled, and the `rss-pages.yml` workflow confirmed successful deployment on 7 November 2026. As a general safeguard, GitHub Actions validation and deployment remain separate: a successful build by itself does not prove publication. Check the deploy job and public page before making a new live-site claim.
 
 The site is independently hosted from Mozilla Add-ons; it **cannot distribute signed Firefox extension updates** and does not contain an `updates.json` manifest. Adding extension auto-update delivery later requires a separate, reviewed pipeline for signed XPI releases, HTTPS hosting, and the Firefox `update_url`.
 
 For authorisation and quality, publish only reviewed announcement copy. No automatic rewriting of change logs into public claims, and no automatic posts about pending Mozilla approvals.
+
+## Visual publication design
+
+The public site is a deliberately art-directed **editorial transmission register**, not a generic dashboard or JavaScript feed viewer. It has an original CSS-only Ayarime signal drawing, a numbered and accessible dispatch index, a typographic reading column, a clear RSS subscription link and responsive, print-friendly layouts. The language and visible text are editorial, not a fake control panel with fabricated signal strength, status telemetry or placeholder headlines. It uses no images from remote hosts, external fonts, JavaScript, trackers or third-party services. The small footer identifies an independent project without overstating legal disclaimers.
+
+The generator uses **the same real published entries** from `site/posts.json` for both the HTML register and its canonical RSS 2.0 XML. Never add invented entries just to fill the layout. All user-supplied editorial strings are escaped in the static HTML. Accessibility and injection tests live in `tests/test_public_feed.py`.
