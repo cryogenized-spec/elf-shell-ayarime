@@ -19,7 +19,6 @@ SOURCES = [
     'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
     'memory.js', 'feeds.js', 'telemetry.js', 'styles.css', 'typography.css',
     'stories/archive.html', 'stories/archive.css', 'stories/archive.js',
-    # Five reviewed, offline illustrated story masters only; no staging docs.
     *['stories/assets/' + name for name in (
         'letters-from-the-lower-city-01-04.png',
         'letters-from-the-lower-city-05-07.png',
@@ -27,14 +26,7 @@ SOURCES = [
         'crushed-rainforest-beans-05-08.png',
         'crushed-rainforest-beans-09-12.png',
     )],
-    'integration/background.js', 'integration/ui.js', 'integration/ui.css',
-    # Runtime whitelist: never ship npm/vendor source or node_modules to AMO.
-    *['spelling/' + name for name in (
-        'DICTIONARY-LICENSE.txt', 'NSPELL-LICENSE.txt', 'IS-BUFFER-LICENSE.txt',
-        'README.md', 'background.js', 'content.css', 'content.js',
-        'en.aff', 'en.dic', 'nspell-bundle.js',
-        'popup.css', 'popup.html', 'popup.js', 'worker.js'
-    )],
+    # Keep the Xcursor desktop theme separate from the signed Firefox ZIP.
 ]
 
 def sources():

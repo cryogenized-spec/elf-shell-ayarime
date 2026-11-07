@@ -68,3 +68,21 @@ Pointer, I-beam, Busy, Crosshair, Diagonal Resize and Link Hand. Transparent
 48/64-pixel offline PNG variants are bundled, with native CSS fallbacks,
 scoped to the extension dashboard. Existing pointer options remain intact.
 The Busy cursor is static; real Firefox hotspot/contrast testing is pending.
+
+
+### Native spelling and independent Linux cursor pack
+
+Following failed hands-on acceptance, the experimental left-click spelling
+feature and bundled Hunspell dictionary have been removed from the Firefox
+package. The manifest no longer requests scripting or activeTab permissions,
+and has no custom spelling toolbar popup or content scripts. Firefox's own
+native spelling behaviour remains untouched. RSS retains its own per-feed
+approval and optional host permissions.
+
+The dashboard pointer gallery is preserved. Separately, an optional
+seven-variation native Linux Xcursor archive is built from the existing
+artwork, with a reversible no-sudo installer. It is **not** included in the
+Mozilla extension ZIP, and contains no system-wide spelling service.
+
+Signing remains conditional on green source/runtime tests, native Firefox
+acceptance, final review and owner's Mozilla Developer Hub approval.

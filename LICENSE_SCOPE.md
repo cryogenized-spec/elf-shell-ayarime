@@ -4,7 +4,7 @@
 
 **Existing MIT rights:** This project was first published with an MIT grant. The exact original notice is preserved in `LICENSES/MIT-legacy.txt` for versions and portions previously made available under MIT. This subsequent MPL-2.0 licensing decision does **not** revoke earlier MIT grants. Do not remove copyright or licence notices from previously licensed material.
 
-**Third-party code and data:** Bundled `spelling/nspell-bundle.js` is covered by nspell's MIT licence (`spelling/NSPELL-LICENSE.txt`) and the MIT licence of its transitive `is-buffer` dependency (`spelling/IS-BUFFER-LICENSE.txt`); the British English dictionary/`en.aff`/`en.dic` retain the bundled MIT/BSD terms (`spelling/DICTIONARY-LICENSE.txt`). Bundled WOFF2 fonts retain each family's OFL-1.1 licence under `assets/fonts/licenses/`.
+**Third-party code and data:** The experimental custom spelling engine, bundled dictionary and vendored spell library were removed from the v0.5.4 Firefox candidate after hands-on acceptance failed; they are not shipped. Bundled WOFF2 fonts retain each family's OFL-1.1 licence under assets/fonts/licenses/. The separate Linux cursor pack uses project-authored PNGs and the operating system's Xcursor compiler.
 
 **Artwork and icons:** The project-generated Ayarime images, cursor artwork and locally authored icons are governed by `ARTWORK_LICENSE.md` (CC0 dedication insofar as relevant rights exist). Nothing here claims ownership of third-party trademarks or overrides third-party licences.
 

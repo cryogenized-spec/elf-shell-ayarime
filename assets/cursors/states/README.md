@@ -17,8 +17,9 @@ hotspots and system keyword fallbacks; 64px variants are provided for previews
 and HiDPI testing. PNG assets contain transparency and are local/offline.
 
 Busy is STATIC. Do not describe it as animated: Firefox does not reliably
-animate GIF/APNG CSS cursor images. This is an opt-in Firefox extension
-dashboard theme, not a desktop or global Firefox window cursor theme.
+animate GIF/APNG CSS cursor images. This remains an opt-in Firefox extension
+dashboard theme, and the independent Linux package in linux-cursors/ can
+compile matching PNGs into native Xcursor files for desktop applications.
 
 Ayarime Core is an additional, opt-in primary cursor choice. The six original
 choices remain available. Functional state images are coordinated with all

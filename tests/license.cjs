@@ -15,6 +15,4 @@ assert(read("LICENSES/MIT-legacy.txt").startsWith("MIT License"));
 const python=read("scripts/package.py");
 for(const f of ["LICENSE","LICENSE_SCOPE.md","LICENSES/MIT-legacy.txt","ARTWORK_LICENSE.md"])
   assert(python.includes("'"+f+"'"),"AMO package must include "+f);
-assert(read("spelling/NSPELL-LICENSE.txt").includes("MIT"));
-assert(fs.existsSync(path.join(root,"spelling/DICTIONARY-LICENSE.txt")));
 console.log("MPL-2.0 licence scope, bundled notices and historical MIT preservation QA PASS.");

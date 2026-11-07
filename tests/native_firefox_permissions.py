@@ -149,8 +149,7 @@ try:
         host_grants=(await_api('return await browser.permissions.getAll();')).get("origins",[])
         if host_grants != ["https://github.blog/*"]:
             raise AssertionError("Allow unexpectedly granted other hosts: "+repr(host_grants))
-        scripts=await_api('return await browser.scripting.getRegisteredContentScripts();')
-        if scripts: raise AssertionError("RSS host consent unexpectedly registered spelling script")
+
         # Wait for the live RSS request to finish, rather than matching the
         # intermediate status "Subscription saved. Fetching...".
         WebDriverWait(driver,26).until(lambda d:

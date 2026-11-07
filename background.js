@@ -210,7 +210,7 @@ async function mutateRecovery(message){
 // dropping other dashboards' additions or cached headlines.
 const RSS_PREFS_KEY="elfshell-rss-settings-v1";
 const RSS_CACHE_KEY="elfshell-rss-cache-v1";
-// Independent RSS consent: broad spelling host access must never approve feeds.
+// Independent RSS consent: importing subscriptions never grants network access.
 const RSS_APPROVED_KEY="elfshell-rss-approved-urls-v1";
 let rssChain=Promise.resolve();
 function publicFeedURL(raw){

@@ -8,12 +8,12 @@
 <link rel="icon" type="image/x-icon" sizes="any" href="favicon.ico">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="typography.css">
-<link rel="stylesheet" href="integration/ui.css">
+
 <script defer src="newtab.js"></script>
 <script defer src="memory.js"></script>
 <script defer src="feeds.js"></script>
 <script defer src="telemetry.js"></script>
-<script defer src="integration/ui.js"></script>
+
 </head>
 <body>
   <div class="backdrop" aria-hidden="true"></div>
@@ -181,7 +181,7 @@
       </fieldset>
       <fieldset class="cursor-settings" aria-label="Cursor style for the ELF SHELL new tab">
         <legend>POINTER DESIGN // AYARIME</legend>
-        <p>These optional pointers affect the Ayarime dashboard only. Ordinary websites, Firefox toolbars and Linux desktop cursors retain their own settings.</p>
+        <p>These pointers affect the Ayarime dashboard only. For Linux Mint desktop and Firefox interface cursors, install the optional standalone Ayarime Linux cursor theme.</p>
         <div class="cursor-gallery" role="group" aria-label="Optional cursor designs">
           <label class="cursor-option"><input type="radio" name="cursor-choice" value="system" checked><span class="cursor-system-preview" aria-hidden="true">↖</span><span>System Default</span></label>
           <label class="cursor-option"><input type="radio" name="cursor-choice" value="classic-spearhead"><img src="assets/cursors/classic-spearhead.png" width="64" height="64" alt="" loading="lazy"><span>Classic Spearhead</span></label>
@@ -202,27 +202,7 @@
           <span data-cursor-state="link">Link</span>
         </div>
       </fieldset>
-      <fieldset class="browser-integration-settings" aria-label="Optional website spelling integration">
-        <legend>FIREFOX SPELLING INTEGRATION // AYARIME</legend>
-        <p>Ayarime's left-click correction menu uses a bundled, offline British-English dictionary. You can enable it on individual sites, across approved HTTPS websites, or leave Firefox's native spelling unchanged. No permission is requested at installation.</p>
-        <div class="browser-integration-controls">
-          <label for="integration-spelling">OFFLINE SPELLING
-            <select id="integration-spelling">
-              <option value="sites">Enable separately per website (default)</option>
-              <option value="all">Across approved HTTPS websites</option>
-              <option value="off">Firefox native spelling only</option>
-            </select>
-          </label>
-        </div>
-        <p>The all-websites mode requests Firefox's optional HTTPS page access. Compatible rich-text editors get custom underlines and corrections; ordinary textareas and text/search inputs keep Firefox's native underlines and context menu, with optional left-click suggestions. Password, sensitive, code and unsupported fields remain untouched. No page text is sent to an external spelling service.</p>
-        <p id="integration-permission">Checking optional Firefox permission…</p>
-        <div class="browser-integration-actions">
-          <button type="button" id="integration-apply">APPLY &amp; REQUEST SPELLING ACCESS IF NEEDED</button>
-          <button type="button" id="integration-revoke">REVOKE BROAD HTTPS ACCESS</button>
-        </div>
-        <p id="integration-status" role="status" aria-live="polite"></p>
-        <p>Disabling spelling does not silently revoke site access already granted for an RSS subscription. The separate Revoke control removes the broad grant while preserving individually approved sites. Firefox's own typing, Undo and spelling are the fallback whenever the extension cannot safely intervene.</p>
-      </fieldset>
+
       <div class="import-actions"><button type="button" id="export-settings">EXPORT JSON</button><button type="button" id="import-settings">IMPORT JSON</button><input type="file" id="import-file" accept="application/json,.json" hidden></div>
       <p id="settings-message" class="message" role="status"></p>
       <div class="dialog-actions"><button type="button" id="reset-links">RESET LINKS</button><button type="button" id="cancel-settings">CANCEL</button><button type="submit" id="save-settings">SAVE CONFIG</button></div>
