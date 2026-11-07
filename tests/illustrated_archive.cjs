@@ -29,7 +29,9 @@ assert(palette.includes('Browse illustrated Ayarime stories'));
 assert(!tab.includes("window.open("),"Shortcuts and toolbar links must remain native");
 assert(manifest.requiresExplicitHumanMergeApproval===true);
 assert(manifest.requiresSeparateMozillaPublicationApproval===true);
-assert.equal(manifest.assetImportStatus,"COMMITTED_TO_DRAFT_BRANCH");
+assert.equal(manifest.assetImportStatus,"COMMITTED_TO_FEATURE_BRANCH");
+assert.equal(manifest.mergeApprovalGranted,true);
+assert.equal(manifest.mozillaPublicationApprovalGranted,false);
 
 let n = 0;
 for(const story of manifest.stories){
