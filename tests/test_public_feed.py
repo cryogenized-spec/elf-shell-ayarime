@@ -3,6 +3,7 @@
 from __future__ import annotations
 import copy
 import json
+from html.parser import HTMLParser
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,6 +13,23 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.build_public_feed import build, validated, ATOM, SOURCE
+
+
+class PublicationParser(HTMLParser):
+    """Collect the structural archive landmarks without a browser dependency."""
+    def __init__(self):
+        super().__init__()
+        self.articles = []
+        self.anchors = []
+        self.skip = False
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if tag == "article":
+            self.articles.append(attributes.get("id"))
+        if tag == "a" and attributes.get("href", "").startswith("#"):
+            self.anchors.append(attributes["href"][1:])
+            self.skip |= attributes["href"] == "#dispatches"
 
 
 class FeedTests(unittest.TestCase):
@@ -42,6 +60,23 @@ class FeedTests(unittest.TestCase):
             html = (out / "index.html").read_text(encoding="utf-8")
             self.assertIn('rel="alternate"', html)
             self.assertIn('id="transmission-log-initialized"', html)
+            doc = PublicationParser()
+            doc.feed(html)
+            ids = {post["id"] for post in source["items"]}
+            self.assertEqual(set(doc.articles), ids)
+            self.assertEqual(len(doc.articles), len(ids))
+            self.assertTrue(ids <= set(doc.anchors), "Each dispatch needs a matching index/permalink")
+            self.assertTrue(doc.skip, "The skip link must reach the main archive section")
+            self.assertIn("class=\"archive-rail\"", html)
+            self.assertIn("class=\"illustration\"", html)
+            self.assertIn("ELF//SHELL", html)
+            self.assertNotIn("is not affiliated with", html)
+            css = (out / "style.css").read_text(encoding="utf-8")
+            self.assertIn("@media (max-width: 490px)", css)
+            self.assertIn("prefers-reduced-motion", css)
+            self.assertNotIn("@import", css)
+            self.assertNotIn("url(http", css)
+
             self.assertNotIn("<script", html)
             self.assertTrue((out / ".nojekyll").exists())
             self.assertTrue((out / "style.css").exists())
