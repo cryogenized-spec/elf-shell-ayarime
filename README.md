@@ -2,7 +2,7 @@
 
 **An original, free and open-source Firefox new-tab workstation and matching browser theme.** A 1990s science-fiction OVA aesthetic, locally bundled illustrated and vector shortcut icons, and a softly melancholic cyber-elf called Ayarime (あやりめ).
 
-Source and bundled images run locally. **No analytics, telemetry, advertisements, remote code, remote fonts, or favicon services.** Your normal web searches and any quick links go to the destinations you explicitly choose. **Optional RSS subscriptions contact their chosen publication sites on the user’s behalf after permission is granted.**
+Source and bundled images run locally. **No developer analytics, telemetry uploads, advertisements, remote code, remote fonts, or favicon services. Optional local hardware readings require a separately installed Linux companion and express permission.** Your normal web searches and any quick links go to the destinations you explicitly choose. **Optional RSS subscriptions contact their chosen publication sites on the user’s behalf after permission is granted.**
 
 ## Install in Firefox for testing
 
