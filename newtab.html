@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="typography.css">
 <link rel="stylesheet" href="integration/ui.css">
+<script defer src="workspace/bridge.js"></script>
 <script defer src="newtab.js"></script>
 <script defer src="memory.js"></script>
 <script defer src="feeds.js"></script>
@@ -87,18 +88,20 @@
       <div class="launcher-caption"><span>QUICK LINKS / 1–6</span><span>PRESS / TO SEARCH</span></div>
       <nav id="shortcuts" class="shortcuts" aria-label="Quick links"></nav>
       <details id="station-menu" class="station-menu">
-        <summary aria-label="Station tools menu"><span class="station-menu-title">✧ STATION</span><span class="station-menu-hint">8 TOOLS · CTRL+K</span></summary>
+        <summary aria-label="Station tools menu"><span class="station-menu-title">✧ STATION</span><span class="station-menu-hint">9 TOOLS · CTRL+K</span></summary>
         <nav class="center-actions" aria-label="Station tools">
           <button id="settings-toggle" class="settings-toggle" type="button">✧ CONFIGURE STATION</button>
           <button id="notes-toggle" class="settings-toggle" type="button">▤ QUICK NOTES</button>
           <button id="recents-toggle" class="settings-toggle" type="button">↶ CLOSED TABS</button>
           <button id="permissions-toggle" class="settings-toggle" type="button">◇ BROWSER ACCESS</button>
           <button id="sessions-toggle" class="settings-toggle" type="button">▣ SAVED WORKSPACES</button>
+          <button id="workspace-companion-toggle" class="settings-toggle" type="button">✧ AYARIME · BRING UP MY WORKSPACE</button>
           <button id="housekeeping-toggle" class="settings-toggle" type="button">⌁ TAB TOOLS</button>
           <button id="feeds-toggle" class="settings-toggle" type="button">⌁ NET FEED / RSS</button>
           <a id="stories-toggle" class="settings-toggle station-story-launch" href="stories/archive.html" target="_blank" rel="noopener noreferrer">▣ ILLUSTRATED STORIES ↗</a>
         </nav>
       </details>
+      <p id="workspace-bridge-status" class="workspace-bridge-status" role="status" aria-live="polite" hidden></p>
     </section>
     <footer class="footer net-footer" aria-label="Subscribed RSS headlines">
       <span class="feed-tag">NET FEED</span>

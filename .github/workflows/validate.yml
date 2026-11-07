@@ -1,9 +1,9 @@
 name: Validate Firefox extension
 on:
   push:
-    branches: [main]
+    branches: [main, feature/ayarime-workspace-companion-command]
   pull_request:
-    branches: [main, release/v0.5.4-review]
+    branches: [main, release/v0.5.4-review, feature/local-hardware-telemetry-memory-chatgpt]
   workflow_dispatch:
 
 jobs:

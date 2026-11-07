@@ -430,3 +430,8 @@ body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="busy"],[ar
   .left-panels{top:74px;max-height:calc(100vh - 148px);overflow-y:auto;overflow-x:hidden;padding-right:4px;scrollbar-width:thin;}
   .indicators{display:block;}
 }
+
+/* Optional Ayarime Workspace AI feedback: visible after command, no extra browser permissions. */
+.workspace-bridge-status{max-width:min(720px,90vw);margin:8px auto 0;padding:9px 15px;border:1px solid var(--cyan);border-radius:3px;background:rgba(14,21,34,.94);color:var(--lime);font:11px/1.55 ui-monospace,"Liberation Mono",monospace;text-align:center;letter-spacing:.04em;overflow-wrap:anywhere}
+.workspace-bridge-status[hidden]{display:none}
+.workspace-bridge-status.error{color:#ffd4df;border-color:#de8c9e}
