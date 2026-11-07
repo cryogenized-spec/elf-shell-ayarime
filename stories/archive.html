@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="ELF//SHELL Ayarime: original illustrated side stories, available completely offline.">
+<title>ELF//SHELL — Illustrated Memory Archive</title>
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="archive.css">
+<script defer src="archive.js"></script>
+</head>
+<body>
+<header class="archive-top">
+  <a class="archive-brand" href="../newtab.html" aria-label="Return to ELF SHELL dashboard">
+    <span aria-hidden="true" class="archive-mark">▰</span>
+    <span><span class="brand-name">ELF<span>//</span>SHELL</span><span class="brand-sub">AYARIME / PERSONAL INSTANCE</span></span>
+  </a>
+  <nav class="archive-top-nav" aria-label="Archive navigation">
+    <span class="station-label">STATION / MEMORY TRACE</span>
+    <strong>ILLUSTRATED ARCHIVE</strong>
+    <span class="offline"><span class="offline-dot" aria-hidden="true"></span>LOCAL / OFFLINE</span>
+    <a href="../newtab.html" class="station-return">↶ STATION</a>
+  </nav>
+</header>
+<div class="archive-wrapper">
+  <header class="archive-hero">
+    <div>
+      <p class="eyebrow">THE SEVEN SAGES / PERSONAL RECORDS / <span id="hero-volume">002</span></p>
+      <h1 id="hero-title">Crushed Rainforest Beans</h1>
+      <p class="intro" id="hero-deck">A cup of coffee. Twelve glimpses of a universe that does not forget.</p>
+    </div>
+    <div class="hero-note">AYARIME / MEMORY RESIDUE<br><span>ILLUSTRATIONS / 1990s OVA</span></div>
+  </header>
+  <div class="archive-columns">
+    <aside class="archive-sidebar" aria-label="Story index">
+      <h2 class="column-label">// ARCHIVE INDEX</h2>
+      <button class="story-card" id="story-letters" type="button" data-story="letters" aria-pressed="false">
+        <img src="assets/letters-from-the-lower-city-01-04.png" width="1672" height="941" decoding="async" alt="Ayarime walks through the ruined postal district in four illustrated slivers">
+        <span class="story-kind">VOL. 001 / SEVEN SLIVERS</span>
+        <span class="story-name">Letters from the Lower City</span>
+        <span class="story-info">POSTAL DISTRICT / THE LOST LETTERS</span>
+      </button>
+      <button class="story-card active" id="story-beans" type="button" data-story="beans" aria-pressed="true">
+        <img src="assets/crushed-rainforest-beans-01-04.png" width="1672" height="941" decoding="async" alt="Ayarime brews coffee beneath the neon lights in four illustrated slivers">
+        <span class="story-kind">VOL. 002 / TWELVE SLIVERS</span>
+        <span class="story-name">Crushed Rainforest Beans</span>
+        <span class="story-info">COFFEE / GREP / CAT / KARMA</span>
+      </button>
+      <div class="archive-protocol">
+        <span>// ARCHIVE PROTOCOL</span>
+        <p>THESE ARE LOCAL, ILLUSTRATED RECORDS. THE SIX STATION LAUNCH SHORTCUTS REMAIN UNCHANGED.</p>
+        <p>NO TELEMETRY. NO REMOTE IMAGES.</p>
+      </div>
+    </aside>
+    <main class="archive-main" id="main" tabindex="-1">
+      <section class="archive-reader" aria-label="Selected illustrated panels">
+        <div class="art-canvas">
+          <img id="main-art" src="assets/crushed-rainforest-beans-09-12.png" width="1672" height="941" alt="Crushed Rainforest Beans, illustrated frames 09 through 12, showing Yama’s court and Ayarime’s return">
+          <button type="button" id="expand-art" class="expand" aria-haspopup="dialog" aria-controls="art-dialog" aria-label="Expand original artwork">EXPAND ↗</button>
+        </div>
+        <div class="reader-metadata"><span id="record-code">MEMORY RECORD / 002 / FRAMES 09–12</span><span>ORIGINAL ART / 日本語 + ENGLISH / OFFLINE</span></div>
+      </section>
+      <div class="sequence-heading"><h2 class="column-label">// ILLUSTRATED SEQUENCES</h2><span>CHOOSE A SET OF SLIVERS · EXPAND TO READ</span></div>
+      <div id="sequence-list" class="sequence-list" role="group" aria-label="Illustrated scene selection">
+        <button class="sequence-card" type="button" data-set="0"><img src="assets/crushed-rainforest-beans-01-04.png" width="1672" height="941" alt=""><span>01 / FRAMES 01–04</span></button>
+        <button class="sequence-card" type="button" data-set="1"><img src="assets/crushed-rainforest-beans-05-08.png" width="1672" height="941" alt=""><span>02 / FRAMES 05–08</span></button>
+        <button class="sequence-card active" type="button" data-set="2" aria-pressed="true"><img src="assets/crushed-rainforest-beans-09-12.png" width="1672" height="941" alt=""><span>03 / FRAMES 09–12</span></button>
+      </div>
+    </main>
+    <aside class="archive-inspector" aria-label="Selected record commentary">
+      <div class="inspector-header"><span>// RECORD INSPECTOR</span><span>RECOVERED</span></div>
+      <p class="inspector-location" id="inspector-location">YAMA’S COURT / THE QUIET RETURN</p>
+      <h2 id="inspector-title">The judgment and return</h2>
+      <p class="inspector-description" id="inspector-body">An entire drama of suffering and judgment arrives as residual impressions. Beyond the phantasmagoria, Ayarime remains at her coffee stall, contemplating the silent night.</p>
+      <blockquote id="inspector-quote">“Retribution cuts deeply, and inevitably. There is no escape.”</blockquote>
+      <div class="record-facts"><div><span>ARCHIVE ID</span><strong id="archive-id">AYR-002-C</strong></div><div><span>TYPE</span><strong>ILLUSTRATED MEMORY</strong></div><div><span>STATUS</span><strong>LOCAL / OFFLINE</strong></div></div>
+      <div class="page-controls"><button id="previous-set" type="button" aria-label="Previous scene">← PREVIOUS</button><button id="next-set" type="button" aria-label="Next scene">NEXT →</button></div>
+      <p class="sr-only" id="archive-announcement" role="status" aria-live="polite"></p>
+    </aside>
+  </div>
+  <footer class="archive-footer"><span>AN ARCHIVE IS AN INVITATION, NOT A NOTIFICATION.</span><span>NO TRACKING · NO EXTERNAL IMAGES</span></footer>
+</div>
+<dialog id="art-dialog" aria-label="Expanded original illustrated story" class="art-dialog">
+  <div class="art-dialog-controls"><span id="art-dialog-label">CRUSHED RAINFOREST BEANS / FRAMES 09–12</span><button type="button" id="close-art">CLOSE ×</button></div>
+  <img id="expanded-art" src="assets/crushed-rainforest-beans-09-12.png" width="1672" height="941" alt="Enlarged Ayarime illustration">
+</dialog>
+</body>
+</html>

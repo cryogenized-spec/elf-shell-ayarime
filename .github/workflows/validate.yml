@@ -1,0 +1,49 @@
+name: Validate Firefox extension
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, release/v0.5.4-review]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Match Mozilla AMO's published reviewer environment (Node 24).
+          node-version: '24.14.0'
+      - name: Source and behaviour tests
+        run: npm test
+      - name: Build AMO submission candidate
+        run: python3 scripts/package.py
+      - name: Mozilla Add-ons validation
+        run: npx --yes web-ext@10.8.0 lint --source-dir dist/amo --warnings-as-errors
+      - name: Check release package contents
+        run: python3 scripts/package.py --verify-only
+      - name: Assemble Mozilla reviewer source archive
+        run: npm run package:amo:source
+      - name: Verify reviewer source excludes untracked files and rebuilds without Git
+        run: python3 tests/source_archive_safety.py
+      - name: Verify runtime ZIP excludes untracked assets and rebuilds from source archive
+        run: python3 tests/runtime_asset_safety.py
+      - name: Install Linux Xcursor compiler
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq x11-apps
+      - name: Build seven Ayarime native Linux cursor themes
+        run: python3 linux-cursors/build.py
+      - name: Verify native Xcursor archive and reversible per-user install
+        run: python3 tests/linux_cursor_package.py
+      - name: Upload unsigned Firefox and independent Linux cursor test packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ayarime-unsigned-test-packages
+          path: |
+            dist/ELF-SHELL-Ayarime-v*-AMO.zip
+            dist/ELF-SHELL-Ayarime-v*-source.zip
+            dist/linux-cursors/Ayarime-Cursors-Linux-Mint.tar.gz
+          if-no-files-found: error
