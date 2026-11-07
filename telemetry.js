@@ -6,6 +6,7 @@
   let timer = null;
   let busy = false;
   let enabled = false;
+  let generation = 0;
   const numeric = value => typeof value === "number" && Number.isFinite(value) ? value : null;
   const temp = value => numeric(value) === null ? "N/A" : value.toFixed(1) + "°C";
   function clearValues() { ids.forEach(id => $(id).textContent = "N/A"); }
@@ -33,16 +34,19 @@
   async function poll() {
     if(busy || document.hidden) return;
     busy = true;
+    const current = generation;
     try {
       const response=await browser.runtime.sendMessage({type:"elfshell:telemetry:read:v1"});
-      showData(response);
+      if(current === generation) showData(response);
     } catch (error) {
+      if(current !== generation) return;
       clearValues();
       const detail = String(error?.message || "Native host unavailable").slice(0,180);
       state("HOST MISSING", "Run python3 telemetry/install.py · " + detail);
     } finally { busy=false; }
   }
   async function refresh() {
+    generation++;
     enabled=await allowed();
     if(timer) { clearInterval(timer); timer=null; }
     if(!enabled) { clearValues();state("OFF","OPT-IN · LINUX MINT");$("telemetry-toggle").textContent="ENABLE TELEMETRY"; return; }
@@ -70,6 +74,10 @@
     } catch(error) {state("ERROR",String(error?.message||error).slice(0,160));}
   });
   document.addEventListener("visibilitychange",()=>{if(!document.hidden && timer)poll();});
+  if(typeof browser!=="undefined" && browser.permissions?.onRemoved)
+    browser.permissions.onRemoved.addListener(change=>{if(change.permissions?.includes("nativeMessaging"))refresh();});
+  if(typeof browser!=="undefined" && browser.permissions?.onAdded)
+    browser.permissions.onAdded.addListener(change=>{if(change.permissions?.includes("nativeMessaging"))refresh();});
   if(typeof browser==="undefined" || !browser.runtime) state("PREVIEW","Install as Firefox extension for live data");
   else refresh();
 })();
