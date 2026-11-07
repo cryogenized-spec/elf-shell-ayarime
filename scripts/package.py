@@ -17,7 +17,7 @@ OUTPUT = DIST / f'ELF-SHELL-Ayarime-v{VERSION}-AMO.zip'
 SOURCES = [
     'LICENSE', 'LICENSE_SCOPE.md', 'LICENSES/MIT-legacy.txt', 'ARTWORK_LICENSE.md',
     'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
-    'memory.js', 'feeds.js', 'styles.css', 'typography.css',
+    'memory.js', 'feeds.js', 'telemetry.js', 'styles.css', 'typography.css',
     'stories/archive.html', 'stories/archive.css', 'stories/archive.js',
     # Five reviewed, offline illustrated story masters only; no staging docs.
     *['stories/assets/' + name for name in (
