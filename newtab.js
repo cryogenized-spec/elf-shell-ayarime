@@ -1,5 +1,5 @@
 "use strict";
-/* ELF//SHELL v0.5.4 audit candidate. No telemetry. RSS network fetches only for opt-in publications. No remote libraries or eval. */
+/* ELF//SHELL v0.5.4 audit candidate. Optional local-only sensor companion. RSS fetches only for opt-in publications; no analytics or remote libraries. */
 const defaults = [
   {label:"Firefox",icon:"firefox",glyph:"◉",url:"https://www.mozilla.org/firefox/",group:"GENERAL"},
   {label:"Mail",icon:"mail",glyph:"✉",url:"https://mail.google.com/",group:"WORK"},
@@ -575,6 +575,7 @@ function commandSuggestions(term){
     action("Restore a closed tab","CURRENT SESSION",()=>$("recents-toggle").click(),"BROWSER"),
     action("Open tab housekeeping","DUPLICATES / DISCARD IDLE",showHousekeeping,"BROWSER"),
     action("Manage RSS subscriptions","SUBSTACK / RSS / ATOM",()=>window.elfFeeds?.show(),"NETWORK"),
+    action("Browse illustrated Ayarime stories","LOCAL ART / MEMORY ARCHIVE",()=>window.open("stories/archive.html","_blank","noopener"),"STATION"),
     action("Toggle reduced effects","LOW MOTION",async()=>{const before=state.motion;state.motion=!before;applyAppearance();if(!await persist(["motion"])){state.motion=before;dirtyFields.delete("motion");applyAppearance();}},"APPEARANCE"),
     action("Export local settings","JSON BACKUP",saveJSON,"STATION")
   ];

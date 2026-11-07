@@ -50,7 +50,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop.png'))
     page.locator('#station-menu summary').click()
     assert page.locator('#station-menu').evaluate('(n)=>n.open')
-    assert page.locator('#station-menu .settings-toggle').count()==7
+    assert page.locator('#station-menu .settings-toggle').count()==8
     page.locator('#permissions-toggle').click()
     assert page.locator('#access-dialog').evaluate('(n)=>n.open')
     assert page.locator('#permission-host-list').inner_text().strip()

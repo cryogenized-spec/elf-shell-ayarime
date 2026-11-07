@@ -15,9 +15,17 @@ DIST = ROOT / 'dist'
 STAGING = DIST / 'amo'
 OUTPUT = DIST / f'ELF-SHELL-Ayarime-v{VERSION}-AMO.zip'
 SOURCES = [
-    'LICENSE', 'LICENSE_SCOPE.md', 'LICENSES/MIT-legacy.txt', 'ARTWORK_LICENSE.md',
+    'LICENSE', 'LICENSE_SCOPE.md', 'LICENSES/MIT-legacy.txt', 'LICENSES/bootstrap-icons-MIT.txt', 'ARTWORK_LICENSE.md',
     'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
-    'memory.js', 'feeds.js', 'styles.css', 'typography.css',
+    'memory.js', 'feeds.js', 'telemetry.js', 'styles.css', 'typography.css',
+    'stories/archive.html', 'stories/archive.css', 'stories/archive.js',
+    *['stories/assets/' + name for name in (
+        'letters-from-the-lower-city-01-04.png',
+        'letters-from-the-lower-city-05-07.png',
+        'crushed-rainforest-beans-01-04.png',
+        'crushed-rainforest-beans-05-08.png',
+        'crushed-rainforest-beans-09-12.png',
+    )],
     # Keep the Xcursor desktop theme separate from the signed Firefox ZIP.
 ]
 

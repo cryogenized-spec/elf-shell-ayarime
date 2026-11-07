@@ -8,9 +8,12 @@
 <link rel="icon" type="image/x-icon" sizes="any" href="favicon.ico">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="typography.css">
+
 <script defer src="newtab.js"></script>
 <script defer src="memory.js"></script>
 <script defer src="feeds.js"></script>
+<script defer src="telemetry.js"></script>
+
 </head>
 <body>
   <div class="backdrop" aria-hidden="true"></div>
@@ -34,14 +37,23 @@
         <div class="memory-bottom"><span class="fine">綾理芽 / MEMORY REMAINS</span>
           <div class="memory-nav"><button id="memory-prev" type="button" aria-label="Previous memory fragment" title="Previous fragment">‹</button><button id="memory-pause" type="button" aria-label="Pause memory rotation" title="Pause or resume">Ⅱ</button><button id="memory-next" type="button" aria-label="Next memory fragment" title="Next fragment">›</button></div>
         </div>
+        <a class="memory-story-launch" href="stories/archive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Illustrated Memory Archive in a new tab">▣ ILLUSTRATED STORIES <span aria-hidden="true">↗</span></a>
       </section>
       <div class="frame indicators" aria-label="Browser diagnostics">
         <span class="label">SYSTEM DIAGNOSTICS</span>
         <div><span>NETWORK SIGNAL</span><strong id="network-status">—</strong></div>
         <div><span>OPEN TABS</span><strong id="tab-count">—</strong></div>
         <div><span>LOCAL ARCHIVE</span><strong id="archive-status">READY</strong></div>
-        <div><span>TELEMETRY</span><strong>NONE</strong></div>
-        <div class="signal" aria-hidden="true">▂ ▅ ▃ ▇ ▄ ▆ ▂ ▄ ▇ ▃ ▅ ▁ ▆</div>
+        <div><span>LOCAL TELEMETRY</span><strong id="telemetry-status" aria-live="polite">OFF</strong></div>
+        <div class="hardware-readout" aria-label="Live local hardware readings">
+          <span>CPU TEMP</span><strong id="cpu-temp">N/A</strong>
+          <span>GPU TEMP</span><strong id="gpu-temp">N/A</strong>
+          <span>MEMORY</span><strong id="ram-usage">N/A</strong>
+          <span>FAN SPEED</span><strong id="fan-speed">N/A</strong>
+          <span>LOAD / 1M</span><strong id="system-load">N/A</strong>
+        </div>
+        <button id="telemetry-toggle" class="telemetry-toggle" type="button">ENABLE TELEMETRY</button>
+        <p id="telemetry-hint" class="telemetry-hint" role="status">OPT-IN · LINUX MINT</p>
       </div>
     </aside>
     <aside class="right-panels" aria-label="Clock and personal workspace">
@@ -75,7 +87,7 @@
       <div class="launcher-caption"><span>QUICK LINKS / 1–6</span><span>PRESS / TO SEARCH</span></div>
       <nav id="shortcuts" class="shortcuts" aria-label="Quick links"></nav>
       <details id="station-menu" class="station-menu">
-        <summary aria-label="Station tools menu"><span class="station-menu-title">✧ STATION</span><span class="station-menu-hint">7 TOOLS · CTRL+K</span></summary>
+        <summary aria-label="Station tools menu"><span class="station-menu-title">✧ STATION</span><span class="station-menu-hint">8 TOOLS · CTRL+K</span></summary>
         <nav class="center-actions" aria-label="Station tools">
           <button id="settings-toggle" class="settings-toggle" type="button">✧ CONFIGURE STATION</button>
           <button id="notes-toggle" class="settings-toggle" type="button">▤ QUICK NOTES</button>
@@ -84,6 +96,7 @@
           <button id="sessions-toggle" class="settings-toggle" type="button">▣ SAVED WORKSPACES</button>
           <button id="housekeeping-toggle" class="settings-toggle" type="button">⌁ TAB TOOLS</button>
           <button id="feeds-toggle" class="settings-toggle" type="button">⌁ NET FEED / RSS</button>
+          <a id="stories-toggle" class="settings-toggle station-story-launch" href="stories/archive.html" target="_blank" rel="noopener noreferrer">▣ ILLUSTRATED STORIES ↗</a>
         </nav>
       </details>
     </section>
@@ -94,6 +107,7 @@
       <span id="feed-placeholder">YOUR NETWORK · ADD A PUBLICATION</span>
       <button type="button" id="feed-next" title="Next headline" aria-label="Next headline">›</button>
       <button type="button" id="feed-manage" title="Manage RSS and Substack subscriptions">+ SUBSCRIBE</button>
+      <a id="chatgpt-workspace" class="chatgpt-workspace" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" title="Open ChatGPT workspace in a new tab" aria-label="Open ChatGPT workspace in a new tab"><img src="assets/chatgpt-mark.svg" width="18" height="18" alt=""><span>CHATGPT</span></a>
       <span class="footer-signature">あやりめ · AYARIME</span>
     </footer>
   </main>
@@ -188,6 +202,7 @@
           <span data-cursor-state="link">Link</span>
         </div>
       </fieldset>
+
       <div class="import-actions"><button type="button" id="export-settings">EXPORT JSON</button><button type="button" id="import-settings">IMPORT JSON</button><input type="file" id="import-file" accept="application/json,.json" hidden></div>
       <p id="settings-message" class="message" role="status"></p>
       <div class="dialog-actions"><button type="button" id="reset-links">RESET LINKS</button><button type="button" id="cancel-settings">CANCEL</button><button type="submit" id="save-settings">SAVE CONFIG</button></div>
@@ -294,7 +309,7 @@
     <div class="memory-category-heading">VISIBLE MEMORY CHANNELS</div>
     <div id="memory-categories" class="memory-category-grid" role="group" aria-label="Included memory categories"></div>
     <p class="message" id="memory-message" role="status"></p>
-    <div class="dialog-actions"><button type="button" id="memory-detail-close">RETURN TO STATION</button></div>
+    <div class="dialog-actions"><a class="memory-dialog-stories" href="stories/archive.html" target="_blank" rel="noopener noreferrer">▣ OPEN ILLUSTRATED STORIES ↗</a><button type="button" id="memory-detail-close">RETURN TO STATION</button></div>
   </dialog>
 </body>
 </html>

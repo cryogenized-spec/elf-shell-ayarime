@@ -362,6 +362,14 @@ browser.runtime.onMessage.addListener(message=>{
     recoveryChain=operation.then(()=>undefined,()=>undefined);
     return operation.catch(error=>({ok:false,error:error?.message||"Recovery storage unavailable."}));
   }
+  if(message.type==="elfshell:telemetry:read:v1"){
+    return browser.permissions.contains({permissions:["nativeMessaging"]})
+      .then(allowed => {
+        if(!allowed) return {ok:false,error:"Native telemetry permission disabled"};
+        return browser.runtime.sendNativeMessage("com.elfshell.ayarime.telemetry",{action:"read"});
+      })
+      .catch(error => ({ok:false,error:"Local sensor bridge unavailable: "+(error?.message||"Unknown error")}));
+  }
   if(message.type==="elfshell:rss:mutate:v1"){
     const operation=rssChain.then(()=>mutateRSS(message));
     rssChain=operation.then(()=>undefined,()=>undefined);

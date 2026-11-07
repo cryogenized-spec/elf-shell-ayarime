@@ -216,3 +216,9 @@ on other sites, Firefox's native menus or the OS.
 
 The new type system remains part of draft PR #4 until native Firefox
 visual and regression checks are completed.
+
+## Illustrated Memories and opt-in Linux telemetry
+
+ELF//SHELL includes two offline illustrated Ayarime side stories, **Letters from the Lower City** and **Crushed Rainforest Beans**, accessible via Memory Trace, Station, and the command palette. Five original image masters are included unmodified, with SHA-256 references in `stories/asset-manifest.json`. The illustrated archive requires no additional browser permission or remote requests. GitHub integration was expressly approved by the owner on 7 November 2026; publishing or uploading a Mozilla add-on release remains subject to separate approval.
+
+The compact bilingual Memory Trace now wraps the provided text instead of clipping it after two lines. The NET FEED footer has a separately identified link to ChatGPT; clicking it opens the external website and does not imply affiliation. The optional Linux telemetry panel displays CPU/GPU temperatures, fans, RAM and load **only with** the separately installed and permitted native host. See [telemetry/README.md](telemetry/README.md). No readings are uploaded. The RSS/Atom subscription reader remains opt-in and unchanged.

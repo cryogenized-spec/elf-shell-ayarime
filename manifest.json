@@ -36,7 +36,8 @@
     "tabs",
     "sessions",
     "bookmarks",
-    "history"
+    "history",
+    "nativeMessaging"
   ],
   "optional_host_permissions": [
     "https://*/*"

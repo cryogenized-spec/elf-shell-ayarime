@@ -4,7 +4,7 @@
   "private": true,
   "description": "Original 90s OVA-inspired Firefox new-tab extension and theme",
   "scripts": {
-    "test": "node --check newtab.js && node --check feeds.js && node --check memory.js && node --check background.js && node tests/smoke.cjs && node tests/feeds.cjs && node tests/memory.cjs && node tests/release.cjs && node tests/workspace_safety.cjs && node tests/session_races.cjs && node tests/recovery_persistence.cjs && node tests/rss_concurrency.cjs && node tests/cursors.cjs && node tests/typography.cjs && node tests/cursor_states.cjs && node tests/license.cjs && node tests/backup_roundtrip.cjs && node tests/spell_retirement.cjs",
+    "test": "node --check newtab.js && node --check feeds.js && node --check memory.js && node --check telemetry.js && node --check stories/archive.js && node --check background.js && node tests/smoke.cjs && node tests/feeds.cjs && node tests/memory.cjs && node tests/telemetry.cjs && node tests/illustrated_archive.cjs && node tests/release.cjs && node tests/workspace_safety.cjs && node tests/session_races.cjs && node tests/recovery_persistence.cjs && node tests/rss_concurrency.cjs && node tests/cursors.cjs && node tests/typography.cjs && node tests/cursor_states.cjs && node tests/license.cjs && node tests/backup_roundtrip.cjs && node tests/spell_retirement.cjs",
     "lint:firefox": "web-ext lint --source-dir . --warnings-as-errors",
     "package:amo": "python3 scripts/package.py",
     "build-for-amo": "npm test && npm run package:amo",

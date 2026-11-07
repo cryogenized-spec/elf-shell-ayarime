@@ -12,7 +12,7 @@ assert.deepEqual(manifest.browser_specific_settings.gecko.data_collection_permis
 assert(manifest.content_security_policy.extension_pages.includes("script-src 'self'"));
 assert(manifest.content_security_policy.extension_pages.includes("object-src 'none'"));
 assert.deepEqual(manifest.permissions.sort(),['search','storage','theme']);
-assert.deepEqual(manifest.optional_permissions.sort(),['bookmarks','history','sessions','tabs']);
+assert.deepEqual(manifest.optional_permissions.sort(),['bookmarks','history','nativeMessaging','sessions','tabs']);
 assert.deepEqual(manifest.optional_host_permissions,['https://*/*']);
 const code=fs.readFileSync(path.join(root,'newtab.js'),'utf8');
 const feedsCode=fs.readFileSync(path.join(root,'feeds.js'),'utf8');

@@ -55,3 +55,9 @@ The manifest's Firefox data-collection declaration is required: none.
 This means there is no developer data-collection endpoint; it does
 not claim user-authorized searches and RSS requests never contact
 external websites.
+
+## Optional local hardware readings
+
+Hardware readings are **not developer analytics**. After the user clicks **ENABLE TELEMETRY**, Firefox requests optional `nativeMessaging` permission. A separately installed, read-only Linux companion reads available CPU/GPU temperatures, fan speed, memory usage and system load using Linux system interfaces or local `nvidia-smi`. It returns readings to the Firefox add-on only over native messaging (local standard input/output). The companion opens no network port, does not upload or persist readings, and exits after each request. The browser shows N/A for unsupported sensors. The optional permission is revocable and the companion is independently uninstallable. No readings are transmitted to the developer or used for analytics.
+
+The illustrated story archive is bundled locally; it makes no network requests. An additional footer link opens https://chatgpt.com/ in a separate browser tab **only when selected by the user**. ELF//SHELL is not affiliated with OpenAI.
