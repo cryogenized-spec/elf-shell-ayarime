@@ -1,4 +1,4 @@
-name: Mozilla AMO — verify and submit unlisted
+name: Mozilla AMO — verify and submit PUBLIC listing
 
 # Manual on purpose. Ordinary commits and merges MUST NOT submit to Mozilla.
 on:
@@ -15,19 +15,19 @@ on:
         required: true
         default: "0.5.5"
       operation:
-        description: "Verification only, or submit a signed unlisted update to Mozilla"
+        description: "Verification only, or submit public listed version for Mozilla review"
         required: true
         type: choice
         options:
           - verify-only
-          - submit-unlisted
+          - submit-listed
         default: verify-only
 
 permissions:
   contents: read
 
 concurrency:
-  group: mozilla-unlisted-${{ inputs.expected_version }}
+  group: mozilla-listed-${{ inputs.expected_version }}
   cancel-in-progress: false
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
               raise SystemExit('Version mismatch: commit and select the SAME new version in manifest and package.json')
           if manifest.get('browser_specific_settings', {}).get('gecko', {}).get('data_collection_permissions') != {'required': ['none']}:
               raise SystemExit('Mozilla data collection declaration changed; review before release')
-          print(f'Eligible for unlisted update: ELF//SHELL {version} ({guid})')
+          print(f'Eligible for public listed update: ELF//SHELL {version} ({guid})')
           PY
 
       - uses: actions/setup-node@v4
@@ -108,6 +108,23 @@ jobs:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_firefox_permissions.py
 
+      - name: Validate required PUBLIC listing metadata
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('amo/listing-metadata.json')
+          obj = json.loads(p.read_text(encoding='utf-8'))
+          if obj.get('version', {}).get('license') != 'MPL-2.0':
+              raise SystemExit('Missing MPL-2.0 version license')
+          if not isinstance(obj.get('summary'), dict) or not obj['summary'].get('en-US'):
+              raise SystemExit('Missing localised AMO summary')
+          if not isinstance(obj.get('categories'), list) or not set(obj['categories']) <= {'appearance','tabs'} or not obj['categories']:
+              raise SystemExit('Invalid AMO public categories')
+          print('Verified public listing metadata, categories, licence and summary')
+          PY
+          cp amo/listing-metadata.json dist/amo-listing-metadata.json
+
       - name: Preserve verified unsigned and reviewer source archives
         uses: actions/upload-artifact@v4
         with:
@@ -115,16 +132,17 @@ jobs:
           path: |
             dist/ELF-SHELL-Ayarime-v*-AMO.zip
             dist/ELF-SHELL-Ayarime-v*-source.zip
+            dist/amo-listing-metadata.json
           if-no-files-found: error
           retention-days: 30
 
   submit:
-    name: Upload checked version to Mozilla (unlisted only)
+    name: Submit reviewed version for PUBLIC Mozilla listing
     needs: verify
-    if: ${{ inputs.operation == 'submit-unlisted' }}
+    if: ${{ inputs.operation == 'submit-listed' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: mozilla-unlisted
+    environment: mozilla-listed
     steps:
       - uses: actions/setup-node@v4
         with:
@@ -149,7 +167,7 @@ jobs:
               raise SystemExit('Refusing to submit: downloaded ZIP identity/version mismatch')
           print('Download and Firefox extension ID checked')
           PY
-      - name: Submit to existing UNLISTED AMO add-on using v5 API
+      - name: Submit a LISTED version to the existing AMO add-on with API v5
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
@@ -157,19 +175,20 @@ jobs:
         shell: bash
         run: |
           if [[ -z "${WEB_EXT_API_KEY}" || -z "${WEB_EXT_API_SECRET}" ]]; then
-            echo "::error::Configure AMO_JWT_ISSUER and AMO_JWT_SECRET as secrets in GitHub environment mozilla-unlisted."
+            echo "::error::Configure AMO_JWT_ISSUER and AMO_JWT_SECRET as secrets in GitHub environment mozilla-listed."
             exit 1
           fi
           npx --yes web-ext@10.8.0 sign \
             --source-dir dist/amo \
-            --channel unlisted \
+            --channel listed \
+            --amo-metadata dist/amo-listing-metadata.json \
             --upload-source-code "dist/ELF-SHELL-Ayarime-v${EXPECTED_VERSION}-source.zip" \
             --approval-timeout 0 \
             --no-input
           {
             echo "### Mozilla update submitted"
-            echo "ELF//SHELL v${EXPECTED_VERSION} was submitted to the **unlisted** channel."
-            echo "This does NOT mean Mozilla signed or approved it yet."
+            echo "ELF//SHELL v${EXPECTED_VERSION} was submitted for **public listing** review."
+            echo "Mozilla review, signing and public discoverability are NOT confirmed by API acceptance."
             echo "Check [Developer Hub](https://addons.mozilla.org/developers/) for status."
-            echo "Check AMO before retrying: an accepted version cannot be uploaded twice."
+            echo "Check the EXISTING add-on in AMO before retrying. Never create a duplicate extension ID."
           } >> "${GITHUB_STEP_SUMMARY}"
