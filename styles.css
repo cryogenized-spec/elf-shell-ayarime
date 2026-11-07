@@ -424,3 +424,9 @@ body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="busy"],[ar
 .net-footer .chatgpt-workspace img{width:18px;height:18px;display:block;flex:none;}
 .net-footer .chatgpt-workspace:hover,.net-footer .chatgpt-workspace:focus-visible{border-color:#a0e2dd;background:#303047;color:#fff;}
 @media(max-width:800px){.net-footer .chatgpt-workspace span{display:none;}.net-footer .chatgpt-workspace{padding:5px 7px;}}
+
+/* On short desktop windows, keep diagnostics reachable instead of hiding them. */
+@media(min-width:1051px) and (max-height:680px){
+  .left-panels{top:74px;max-height:calc(100vh - 148px);overflow-y:auto;overflow-x:hidden;padding-right:4px;scrollbar-width:thin;}
+  .indicators{display:block;}
+}
