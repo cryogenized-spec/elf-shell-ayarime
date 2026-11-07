@@ -19,7 +19,8 @@ class FeedTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             meta = build(out=out)
-            self.assertEqual(meta["count"], 1)
+            source = json.loads(SOURCE.read_text(encoding="utf-8"))
+            self.assertEqual(meta["count"], len(source["items"]))
             tree = ET.parse(out / "feed.xml")
             root = tree.getroot()
             self.assertEqual(root.tag, "rss")
@@ -31,9 +32,13 @@ class FeedTests(unittest.TestCase):
             self.assertEqual(atom.get("rel"), "self")
             self.assertEqual(atom.get("href"), meta["url"])
             items = channel.findall("item")
-            self.assertEqual(len(items), 1)
+            self.assertEqual(len(items), len(source["items"]))
             self.assertEqual(items[0].find("guid").attrib["isPermaLink"], "false")
-            self.assertTrue(items[0].find("link").text.endswith("#transmission-log-initialized"))
+            self.assertEqual(
+                {item.find("guid").text for item in items},
+                {"urn:elfshell:transmission:" + post["id"] for post in source["items"]},
+            )
+            self.assertTrue(any(item.find("link").text.endswith("#transmission-log-initialized") for item in items))
             html = (out / "index.html").read_text(encoding="utf-8")
             self.assertIn('rel="alternate"', html)
             self.assertIn('id="transmission-log-initialized"', html)
@@ -71,7 +76,9 @@ class FeedTests(unittest.TestCase):
             page = (Path(tmp) / "output" / "index.html").read_text()
             self.assertNotIn("<img src=x", page)
             self.assertIn("&lt;img", page)
-            item = ET.parse(Path(tmp) / "output" / "feed.xml").getroot().find("channel/item")
+            channel = ET.parse(Path(tmp) / "output" / "feed.xml").getroot().find("channel")
+            item = next(item for item in channel.findall("item") if
+                        item.find("guid").text == "urn:elfshell:transmission:" + doc["items"][0]["id"])
             self.assertEqual(item.find("title").text, doc["items"][0]["title"])
 
 
