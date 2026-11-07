@@ -1,0 +1,75 @@
+name: ELF//SHELL — Public RSS transmissions
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "scripts/build_public_feed.py"
+      - "tests/test_public_feed.py"
+      - ".github/workflows/rss-pages.yml"
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "scripts/build_public_feed.py"
+      - "tests/test_public_feed.py"
+      - ".github/workflows/rss-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: elfshell-pages
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate RSS and render static site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test feed structure, security and deterministic rendering
+        run: python3 -m unittest discover -s tests -p 'test_public_feed.py' -v
+      - name: Generate static RSS and transmission index
+        run: python3 scripts/build_public_feed.py --output dist/feed-site
+      - name: Verify RSS parses and linked HTML exists
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          out = Path('dist/feed-site')
+          ET.parse(out / 'feed.xml')
+          for name in ('index.html', 'style.css', '.nojekyll'):
+              assert (out / name).exists(), name
+          PY
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+      - name: Upload only rendered public site (no repository files)
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/feed-site
+
+  deploy:
+    name: Publish public feed to GitHub Pages
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Publish validated site
+        id: publish
+        uses: actions/deploy-pages@v4

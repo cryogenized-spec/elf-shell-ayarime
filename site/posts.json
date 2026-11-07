@@ -1,0 +1,15 @@
+{
+  "title": "ELF//SHELL // Transmission Log",
+  "description": "Official development transmissions, release notes and illustrated archive dispatches from ELF//SHELL — Ayarime.",
+  "base_url": "https://cryogenized-spec.github.io/elf-shell-ayarime/",
+  "language": "en-ZA",
+  "items": [
+    {
+      "id": "transmission-log-initialized",
+      "title": "Transmission 001 — A signal from Ayarime",
+      "published": "2026-11-07T15:00:00Z",
+      "category": "Project Journal",
+      "summary": "A permanent RSS channel for ELF//SHELL development notes, release announcements and the Illustrated Memory Archive. The channel is distinct from Firefox extension updates and does not report browser activity."
+    }
+  ]
+}
