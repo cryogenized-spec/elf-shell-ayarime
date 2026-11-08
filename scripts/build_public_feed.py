@@ -20,6 +20,9 @@ from xml.etree import ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "site" / "posts.json"
 CSS = ROOT / "site" / "style.css"
+DISPATCHES = ROOT / "site" / "dispatches"
+MEDIA = ROOT / "site" / "media"
+PAGE_NAME = re.compile(r"^dispatches/[a-z0-9][a-z0-9.-]{0,100}\.html$")
 DEFAULT_OUT = ROOT / "dist" / "feed-site"
 ATOM = "http://www.w3.org/2005/Atom"
 ET.register_namespace("atom", ATOM)
@@ -47,6 +50,12 @@ def validated(data: dict) -> tuple[dict, list[dict]]:
         if not isinstance(ident, str) or not ID.fullmatch(ident) or ident in seen:
             raise ValueError("Invalid or duplicate post ID")
         seen.add(ident)
+        page = item.get("page")
+        if page is not None:
+            if not isinstance(page, str) or not PAGE_NAME.fullmatch(page) or ".." in page:
+                raise ValueError(f"Post {ident}: unsafe article page path")
+            if not (ROOT / "site" / page).is_file():
+                raise ValueError(f"Post {ident}: article page is missing")
         for field, maximum in (("title", 160), ("summary", 2000), ("category", 80)):
             value = item.get(field)
             if not isinstance(value, str) or not 1 <= len(value.strip()) <= maximum:
@@ -79,7 +88,7 @@ def build(source: Path = SOURCE, out: Path = DEFAULT_OUT) -> dict:
     })
     for post in posts:
         item = ET.SubElement(channel, "item")
-        url = base + "#"+post["id"]
+        url = base + post["page"] if "page" in post else base + "#" + post["id"]
         for tag, value in (
             ("title", post["title"]), ("link", url),
             ("description", post["summary"]),
@@ -109,6 +118,8 @@ def build(source: Path = SOURCE, out: Path = DEFAULT_OUT) -> dict:
             f'<span class="index-number">{ordinal}</span>'
             f'<span class="index-title">{title}</span></a></li>'
         )
+        permalink = escape(post.get("page", "#" + post["id"]), quote=True)
+        link_label = "READ THE ILLUSTRATED DOSSIER" if post.get("page") else "LINK TO DISPATCH"
         dispatches.append(f"""
         <article class="dispatch{' dispatch-featured' if position == 0 else ''}" id="{ident}">
           <div class="dispatch-head">
@@ -121,7 +132,7 @@ def build(source: Path = SOURCE, out: Path = DEFAULT_OUT) -> dict:
           </div>
           <p class="dispatch-copy">{summary}</p>
           <div class="dispatch-foot">
-            <a class="permalink" href="#{ident}" aria-label="Permanent link to {title}">LINK TO DISPATCH <span aria-hidden="true">↗</span></a>
+            <a class="permalink" href="{permalink}" aria-label="Read {title}">{link_label} <span aria-hidden="true">↗</span></a>
             <span class="dispatch-clock">{time_label}</span>
           </div>
         </article>""")
@@ -229,6 +240,9 @@ def build(source: Path = SOURCE, out: Path = DEFAULT_OUT) -> dict:
     (out / "feed.xml").write_bytes(rss_bytes)
     (out / "index.html").write_text(html, encoding="utf-8")
     shutil.copyfile(CSS, out / "style.css")
+    # Independently authored editorial detail pages and their approved artwork.
+    shutil.copytree(DISPATCHES, out / "dispatches", dirs_exist_ok=True)
+    shutil.copytree(MEDIA, out / "media", dirs_exist_ok=True)
     (out / ".nojekyll").write_text("", encoding="utf-8")
     return {"count": len(posts), "url": base + "feed.xml", "bytes": len(rss_bytes)}
 
