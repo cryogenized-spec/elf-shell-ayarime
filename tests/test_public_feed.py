@@ -117,5 +117,47 @@ class FeedTests(unittest.TestCase):
             self.assertEqual(item.find("title").text, doc["items"][0]["title"])
 
 
+    def test_illustrated_serviteur_release_page_and_rss_permalink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            meta = build(out=out)
+            source = json.loads(SOURCE.read_text(encoding="utf-8"))
+            dispatch = next(post for post in source["items"] if post["id"] == "clickup-serviteur-public-beta")
+            page = out / dispatch["page"]
+            self.assertEqual(meta["count"], 3)
+            self.assertTrue(page.is_file())
+            content = page.read_text(encoding="utf-8")
+            self.assertIn("MCP<sup>×</sup>", content)
+            self.assertIn("v0.3.0-beta.1", content)
+            self.assertIn("THE SERVITEUR ENGINE", content)
+            self.assertIn('rel="alternate"', content)
+            self.assertNotIn("v0.4.0", content, "do not invent further ClickUp releases")
+            self.assertIn("clickup-serviteur-slivers-01-04.webp", content)
+            self.assertIn("clickup-serviteur-slivers-05-08.webp", content)
+            self.assertTrue((out / "dispatches" / "serviteur.css").is_file())
+            for image in ("clickup-serviteur-slivers-01-04.webp",
+                          "clickup-serviteur-slivers-05-08.webp"):
+                raw = (out / "media" / image).read_bytes()
+                self.assertGreater(len(raw), 100_000)
+                self.assertEqual(raw[:4], b"RIFF")
+                self.assertEqual(raw[8:12], b"WEBP")
+            channel = ET.parse(out / "feed.xml").getroot().find("channel")
+            item = next(node for node in channel.findall("item") if
+                        node.find("guid").text == "urn:elfshell:transmission:clickup-serviteur-public-beta")
+            self.assertEqual(item.find("link").text, meta["url"].removesuffix("feed.xml") + dispatch["page"])
+            index_html = (out / "index.html").read_text(encoding="utf-8")
+            self.assertIn('href="dispatches/clickup-serviteur-v0.3.0-beta.1.html"', index_html)
+            self.assertIn("READ THE ILLUSTRATED DOSSIER", index_html)
+
+    def test_rejects_untrusted_dispatch_page_paths(self):
+        document = json.loads(SOURCE.read_text(encoding="utf-8"))
+        for unsafe in ("../private.html", "https://example.org/test.html", "dispatches/../../secrets.html", "/dispatches/x.html", "dispatches/file.js"):
+            test = copy.deepcopy(document)
+            test["items"][-1]["page"] = unsafe
+            with self.subTest(page=unsafe):
+                with self.assertRaisesRegex(ValueError, "unsafe article page path"):
+                    validated(test)
+
+
 if __name__ == "__main__":
     unittest.main()

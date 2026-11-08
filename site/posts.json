@@ -17,6 +17,14 @@
       "published": "2026-11-07T15:57:37Z",
       "category": "Release Journal",
       "summary": "ELF//SHELL — Ayarime v0.5.5 was submitted to Mozilla Add-ons for public (listed) review via the automated GitHub Actions release pipeline. The submission produced a Mozilla version record, but submission does not mean the extension has been reviewed, signed, or publicly published."
+    },
+    {
+      "id": "clickup-serviteur-public-beta",
+      "title": "Transmission 003 — ClickUp Serviteur MCP: first public beta",
+      "published": "2026-11-08T07:02:00Z",
+      "category": "From the Workshop",
+      "summary": "An illustrated eight-sliver field dossier accompanies ClickUp Serviteur MCP v0.3.0-beta.1, first published as a public GitHub source prerelease on 7 November 2026. Serviteur is an independently developed, self-hosted OAuth-protected MCP server for authorised ClickUp Workspaces. The release is source-only beta, not a hosted service or a finished full-API implementation.",
+      "page": "dispatches/clickup-serviteur-v0.3.0-beta.1.html"
     }
   ]
 }
