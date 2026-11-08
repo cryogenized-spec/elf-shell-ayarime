@@ -145,7 +145,7 @@ class FeedTests(unittest.TestCase):
             emblem_bytes = emblem.read_bytes()
             self.assertEqual(len(emblem_bytes), 8496)
             self.assertLess(len(emblem_bytes), 10 * 1024)
-            self.assertEqual(emblem_bytes[:8], b"\\x89PNG\\r\\n\\x1a\\n")
+            self.assertEqual(emblem_bytes[:8], bytes.fromhex("89504e470d0a1a0a"))
             self.assertEqual(emblem_bytes[16:24], bytes.fromhex("000000a0000000a0"))
             self.assertIn('class="release-stamp release-stamp-logo"', content)
             self.assertIn('src="assets/serviteur_logo_mcp_corrected.png"', content)
