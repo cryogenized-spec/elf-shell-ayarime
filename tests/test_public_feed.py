@@ -140,6 +140,18 @@ class FeedTests(unittest.TestCase):
                 mark_xml = ET.parse(path).getroot()
                 self.assertTrue(mark_xml.tag.endswith("svg"), mark)
                 self.assertFalse(any(node.tag.endswith("script") for node in mark_xml.iter()))
+            emblem = out / "dispatches" / "assets" / "serviteur_logo_mcp_corrected.png"
+            self.assertTrue(emblem.is_file(), "The approved Serviteur emblem must be deployed")
+            emblem_bytes = emblem.read_bytes()
+            self.assertEqual(len(emblem_bytes), 8496)
+            self.assertLess(len(emblem_bytes), 10 * 1024)
+            self.assertEqual(emblem_bytes[:8], bytes.fromhex("89504e470d0a1a0a"))
+            self.assertEqual(emblem_bytes[16:24], bytes.fromhex("000000a0000000a0"))
+            self.assertIn('class="release-stamp release-stamp-logo"', content)
+            self.assertIn('src="assets/serviteur_logo_mcp_corrected.png"', content)
+            self.assertIn('download="serviteur_logo_mcp_corrected.png"', content)
+            self.assertNotIn("ᓚᘏᗢ", content, "The placeholder must be removed")
+
             self.assertNotIn("<script", content, "No analytics or remote scripts")
 
             self.assertIn("v0.3.0-beta.1", content)
