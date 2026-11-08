@@ -127,9 +127,23 @@ class FeedTests(unittest.TestCase):
             self.assertEqual(meta["count"], 3)
             self.assertTrue(page.is_file())
             content = page.read_text(encoding="utf-8")
-            self.assertIn("MCP<sup>×</sup>", content)
-            self.assertIn("v0.3.0-beta.1", content)
             self.assertIn("THE SERVITEUR ENGINE", content)
+            self.assertIn('alt="ClickUp"', content)
+            self.assertIn('alt="Model Context Protocol (MCP)"', content)
+            self.assertIn("No sponsorship or endorsement is implied", content)
+            self.assertIn("Mango Technologies", content)
+            for mark in ("clickup-logo-gradient-on-dark.svg", "mcp-logo-dark.svg"):
+                self.assertIn("brands/" + mark, content)
+                path = out / "dispatches" / "brands" / mark
+                self.assertTrue(path.is_file(), mark)
+                self.assertGreater(path.stat().st_size, 1000)
+                mark_xml = ET.parse(path).getroot()
+                self.assertTrue(mark_xml.tag.endswith("svg"), mark)
+                self.assertFalse(any(node.tag.endswith("script") for node in mark_xml.iter()))
+            self.assertNotIn("<script", content, "No analytics or remote scripts")
+
+            self.assertIn("v0.3.0-beta.1", content)
+
             self.assertIn('rel="alternate"', content)
             self.assertNotIn("v0.4.0", content, "do not invent further ClickUp releases")
             self.assertIn("clickup-serviteur-slivers-01-04.webp", content)
