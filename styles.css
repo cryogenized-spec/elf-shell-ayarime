@@ -443,3 +443,7 @@ body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="busy"],[ar
 .workspace-bridge-status{max-width:min(720px,90vw);margin:8px auto 0;padding:9px 15px;border:1px solid var(--cyan);border-radius:3px;background:rgba(14,21,34,.94);color:var(--lime);font:11px/1.55 ui-monospace,"Liberation Mono",monospace;text-align:center;letter-spacing:.04em;overflow-wrap:anywhere}
 .workspace-bridge-status[hidden]{display:none}
 .workspace-bridge-status.error{color:#ffd4df;border-color:#de8c9e}
+
+/* First-party companion handoff is intentionally distinct from workspace restore. */
+.station-menu #ask-ayarime-toggle{color:#fff0f7;border-color:#c591bd;background:linear-gradient(125deg,rgba(85,48,84,.85),rgba(25,33,52,.95))}
+.station-menu #ask-ayarime-toggle:hover,.station-menu #ask-ayarime-toggle:focus-visible{color:#fff;border-color:var(--lime);background:#543c60}
