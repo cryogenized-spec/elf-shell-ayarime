@@ -11,3 +11,60 @@
 .release-stamp-logo{overflow:hidden;text-decoration:none;background:#171421;border-color:#9a718f;box-shadow:0 0 0 4px #231d2e,inset 0 0 20px #43314b88;transition:border-color .2s ease}
 .release-stamp-logo:hover{border-color:#e8becf}
 .release-stamp-logo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+/* Source-verified Serviteur tool cabinet: two-column editorial registry. */
+.release-reference{padding:13px 16px;border:1px solid #775c78;background:#1c1c2b;color:#cdd9da!important;font:12px/1.65 ui-monospace,monospace!important}
+.release-reference span{color:#e0a5bf}
+.registry{border-top:1px solid #94778f;background:linear-gradient(145deg,#211d30 0%,#1a1b2b 49%,#181522 100%);padding-bottom:42px}
+.registry-intro{padding:clamp(35px,5vw,67px) clamp(20px,4vw,65px) 29px;background:radial-gradient(ellipse at 90% 10%,#4e344661,transparent 53%);border-bottom:1px solid #64566e}
+.registry-kicker{font-size:10px;letter-spacing:.15em;color:#d6b0b4}
+.registry-intro h2{font:400 clamp(39px,5.2vw,68px)/1.02 Georgia,"Times New Roman",serif;letter-spacing:-.055em;margin:20px 0 24px}
+.registry-intro h2 em{color:#e7acc4;font-weight:400}
+.registry-lead{font:16px/1.65 Georgia,serif;color:#ddced6;max-width:850px}
+.registry-lead strong{color:#f2e5e7}
+.registry-totals{display:flex;flex-wrap:wrap;gap:12px 22px;margin:29px 0 23px;color:#beced9;font-size:10px;letter-spacing:.06em}
+.registry-totals span{display:flex;align-items:baseline;gap:9px}
+.registry-totals strong{font:400 28px/1 Georgia,serif;color:#f2d1d4}
+.registry-legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin:17px 0 19px;color:#c2b4c8;font-size:11px}
+.registry-legend>span{display:inline-flex;align-items:center;gap:7px}
+.registry-badge{display:inline-block;border:1px solid currentColor;border-radius:2px;padding:2px 7px;font:700 10px/1.55 ui-monospace,"Liberation Mono",monospace;letter-spacing:.035em;white-space:nowrap}
+.registry-badge-v2{color:#abdbdc;background:#193136}
+.registry-badge-v3{color:#e3b5e0;background:#3b2541}
+.registry-badge-custom{color:#e9cc9f;background:#3c3025}
+.registry-badge-hybrid{color:#c2c6f9;background:#292e4a}
+.registry-caveat{max-width:920px;border-left:2px solid #a285a7;padding:3px 0 3px 14px;color:#b8b6c8;font-size:11px;line-height:1.8;overflow-wrap:anywhere}
+.registry-caveat strong{color:#e6cad9}
+.registry-caveat code,.registry-footer code{color:#cce5e8;font:inherit}
+.registry-index{display:flex;flex-wrap:wrap;gap:7px 10px;margin-top:23px}
+.registry-index a{display:inline-block;padding:5px 9px;border:1px solid #655c70;border-radius:2px;text-decoration:none;font-size:10px;color:#d5c4d3;background:#282438}
+.registry-index a:hover,.registry-index a:focus-visible{border-color:#addce2;background:#30364b;color:#fff}
+.registry-columns{display:grid;grid-template-columns:minmax(260px,35%) minmax(0,1fr);gap:28px;padding:15px clamp(20px,4vw,65px);background:#121522;border-bottom:1px solid #675772;color:#adcad1;font-size:10px;letter-spacing:.12em}
+.registry-group{scroll-margin-top:10px}
+.registry-group-head{display:flex;align-items:baseline;gap:12px 22px;flex-wrap:wrap;padding:28px clamp(20px,4vw,65px) 15px;background:#252035;border-block:1px solid #755d76}
+.registry-group-head p{margin:0;color:#c19daf;font-size:9px;letter-spacing:.11em}
+.registry-group-head h3{font:400 clamp(20px,3vw,31px)/1.16 Georgia,serif;margin:0;color:#ecdbe8}
+.registry-group-head>span{margin-left:auto;color:#a1d5d6;font-size:10px;letter-spacing:.07em}
+.registry-list{margin:0}
+.registry-row{display:grid;grid-template-columns:minmax(260px,35%) minmax(0,1fr);gap:28px;padding:19px clamp(20px,4vw,65px);border-bottom:1px solid #534658;scroll-margin-top:18px}
+.registry-row:nth-child(even){background:#ffffff04}
+.registry-row:target{outline:1px solid #ad9bc0;outline-offset:-1px;background:#30283b}
+.registry-tool-name{margin:0;padding:2px 0;min-width:0;font:600 12px/1.7 ui-monospace,"Liberation Mono",monospace}
+.registry-tool-name code{color:#e6c2d7;font:inherit;overflow-wrap:anywhere;word-break:normal}
+.registry-tool-detail{margin:0;min-width:0}
+.registry-flags{display:flex;flex-wrap:wrap;align-items:center;gap:7px 11px;min-height:25px}
+.registry-path{color:#c3b4c9;font-size:10px}
+.registry-effect{margin-left:auto;color:#aba6b8;font-size:9px;letter-spacing:.1em}
+.registry-tool-detail>p{font:14px/1.65 Georgia,serif;color:#dfd6dd;margin:9px 0 8px;overflow-wrap:break-word}
+.registry-parameters{border-top:1px solid #51465d;margin-top:11px;padding-top:7px}
+.registry-parameters summary{width:max-content;max-width:100%;cursor:pointer;color:#b4cfd6;font-size:10px;letter-spacing:.07em;list-style:revert}
+.registry-parameters[open] summary{color:#e1c7dc}
+.registry-parameters p{font:11px/1.8 ui-monospace,monospace;color:#b4adbf;margin:8px 0 2px;overflow-wrap:anywhere}
+.registry-parameters strong{color:#d7d1de}
+.registry-parameters code{display:inline-block;color:#d3e2e5;font:inherit;padding:0 1px;overflow-wrap:anywhere}
+.registry-comma{color:#a79aa8}
+.registry-footer{padding:31px clamp(20px,4vw,65px) 8px;color:#bdb4c6;font-size:11px;line-height:1.9}
+.registry-footer p{max-width:950px}
+.registry-footer strong{color:#e4cbdb}
+@media(max-width:850px){.registry-columns,.registry-row{grid-template-columns:minmax(200px,34%) minmax(0,1fr);gap:17px}.registry-tool-name{font-size:11px}.registry-tool-detail>p{font-size:13px}}
+@media(max-width:620px){.registry-columns{display:none}.registry-row{grid-template-columns:minmax(0,1fr);gap:5px;padding:17px 21px}.registry-tool-name{padding-bottom:4px;border-bottom:1px solid #65516b}.registry-tool-name code{font-size:12px}.registry-tool-detail>p{font-size:14px}.registry-group-head{padding:21px}.registry-group-head>span{margin-left:0}.registry-index{gap:6px}.registry-index a{font-size:9px}.registry-intro{padding:30px 21px}.registry-totals{gap:14px 19px}.registry-footer{padding:25px 21px}.registry-effect{margin-left:0}}
+@media print{.registry,.registry-group-head,.registry-columns,.registry-intro{background:#fff;color:#111}.registry-row{break-inside:avoid}.registry-tool-name code,.registry-tool-detail>p,.registry-intro h2{color:#111}.registry-parameters{display:none}.registry-index{display:none}.registry-badge{color:#111!important;background:transparent!important}}
