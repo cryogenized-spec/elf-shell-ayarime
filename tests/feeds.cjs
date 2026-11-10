@@ -3,6 +3,18 @@ const assert=require('node:assert/strict');
 const {officialFeed,normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
 assert.equal(officialFeed.url,'https://cryogenized-spec.github.io/elf-shell-ayarime/feed.xml');
 assert.equal(officialFeed.group,'PROJECT');
+// The official transmission channel is featured by default, but never silently
+// subscribed or fetched. Firefox host access is requested only on the user's click.
+const fs=require('node:fs'),path=require('node:path');
+const ui=fs.readFileSync(path.join(__dirname,'..','newtab.html'),'utf8');
+const source=fs.readFileSync(path.join(__dirname,'..','feeds.js'),'utf8');
+assert(ui.includes('id="feed-official-subscribe"'),'official feed must have a direct subscribe button');
+assert(ui.includes('Firefox asks for site access'),'official feed copy must describe explicit consent');
+assert(source.includes('$("feed-official-subscribe").addEventListener("click",subscribeOfficialFeed)'),'official feed button must be wired');
+assert(/function subscribeOfficialFeed\(\)[\s\S]*?permission=requestHost\(feed.url\);/.test(source),'permission request must occur in the official click handler');
+assert(source.includes('void completeSubscription(feed,permission,false)'),'featured-source click must preserve custom RSS drafts');
+assert(source.includes('const initial = () => ({enabled:true, interval:30, feeds:[]})'),'fresh installs must not auto-subscribe without consent');
+
 assert.equal(normaliseFeedUrl(officialFeed.url),officialFeed.url,'official RSS remains canonical');
 assert.equal(originPattern(officialFeed.url),'https://cryogenized-spec.github.io/*','official feed still requires explicit site permission');
 assert.equal(normaliseFeedUrl('thebrowser.substack.com'), 'https://thebrowser.substack.com/feed');
