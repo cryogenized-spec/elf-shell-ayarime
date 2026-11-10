@@ -23,7 +23,7 @@
       "title": "Transmission 003 — ClickUp Serviteur MCP: first public beta",
       "published": "2026-11-08T07:02:00Z",
       "category": "From the Workshop",
-      "summary": "An illustrated eight-sliver field dossier accompanies ClickUp Serviteur MCP v0.3.0-beta.1, first published as a public GitHub source prerelease on 7 November 2026. Serviteur is an independent, self-hosted OAuth-protected MCP server for authorised ClickUp Workspaces. The linked article now includes a separately dated field guide to 80 current named MCP tools, with individual descriptions, input fields and v2/v3/custom/hybrid classification. The original release remains a source-only beta, not a hosted service or a claim of complete ClickUp API coverage.",
+      "summary": "An illustrated eight-sliver dossier accompanies ClickUp Serviteur MCP v0.3.0-beta.1, first released as a public GitHub source prerelease on 7 November 2026. The article now includes a separately dated field guide to 80 current named MCP tools and an evidence-linked comparison with ClickUp MCP alternatives researched on Glama. It explains Serviteur's independent, self-hosted per-user OAuth approach, server-enforced resource scopes, distinct named operations and practical workflows, while acknowledging competitors' broader API coverage and specialist strengths. This remains an independent source beta, not a hosted service or an endorsement by ClickUp.",
       "page": "dispatches/clickup-serviteur-v0.3.0-beta.1.html"
     }
   ]

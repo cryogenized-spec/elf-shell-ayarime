@@ -16,7 +16,7 @@
 <header class="masthead">
  <a class="brand" href="../" aria-label="Return to ELF//SHELL Transmission Archive">ELF<span>//</span>SHELL</a>
  <div class="mast-kicker">AYARIME'S FIELD CORRESPONDENCE <span>✳</span> WORKSHOP FILE 003</div>
- <nav aria-label="Page navigation"><a href="../">ARCHIVE</a><a href="#release">RELEASE</a><a href="#tools">TOOLS</a><a href="../feed.xml">RSS ↗</a></nav>
+ <nav aria-label="Page navigation"><a href="../">ARCHIVE</a><a href="#release">RELEASE</a><a href="#why-serviteur">WHY</a><a href="#tools">TOOLS</a><a href="../feed.xml">RSS ↗</a></nav>
 </header>
 <main>
  <section class="opening" aria-labelledby="title">
@@ -72,10 +72,97 @@
    <p class="release-limit">This is a <strong>source beta</strong>, not a hosted subscription or a claim of complete ClickUp API coverage. Self-hosters configure their own Cloudflare Worker, OAuth credentials and Workspace permissions; no private tokens or workplace data are included.</p>
    <div class="release-actions"><a class="release-primary" href="https://github.com/cryogenized-spec/ClickUp-Serviteur-MCP/releases/tag/v0.3.0-beta.1" rel="noopener noreferrer">VIEW PUBLISHED SOURCE RELEASE <span aria-hidden="true">↗</span></a><a href="https://github.com/cryogenized-spec/ClickUp-Serviteur-MCP/blob/main/docs/PUBLIC_RELEASE.md" rel="noopener noreferrer">SELF-HOSTING GUIDE ↗</a><a href="assets/serviteur_logo_mcp_corrected.png" download="serviteur_logo_mcp_corrected.png">DOWNLOAD SERVITEUR EMBLEM (8.3 KB) ↓</a></div>
    <p class="release-reference">SOURCE REFERENCE UPDATE <span aria-hidden="true">✳</span> The <a href="#tools">tool-by-tool registry</a> below documents the later source implementation separately from this historical beta announcement.</p>
+   <p class="release-comparison-link">DESIGN AND COMPARISON <span aria-hidden="true">✳</span> <a href="#why-serviteur">Why choose Serviteur? Compare the engineering approach with other ClickUp MCP servers.</a></p>
    <p class="release-footnote">Tag source: <code>7aadec22b326a5d9767d47762b506642a8c41ddc</code> · MIT licensed. ClickUp Serviteur is not affiliated with or endorsed by ClickUp.</p>
    <p class="trademark-note">ClickUp is a trademark and service mark of Mango Technologies, Inc. DBA ClickUp, registered in the U.S. and in other countries. ClickUp and MCP logos are shown to identify the technologies involved; this independent release is not a ClickUp or MCP organisation partnership.</p>
   </div>
  </section>
+<div class="section-bar"><span>/// FIELD NOTES — AN ENGINE WITH LIMITS</span><span>COMPARATIVE RESEARCH / 10 NOVEMBER 2026</span></div>
+<section class="positioning" id="why-serviteur" aria-labelledby="position-title">
+  <header class="positioning-intro">
+    <p class="registry-kicker">WHY SERVITEUR / A DELIBERATE ENGINEERING CHOICE</p>
+    <h2 id="position-title">Power under <em>permission.</em></h2>
+    <p class="positioning-lead">Serviteur is not trying to expose the largest possible number of ClickUp endpoints. It is designed so an AI assistant can perform <strong>specific, useful operations inside separately verified authorization boundaries</strong>. That is its strongest distinction: explicit tools, individual identity, and deliberate control over what a requested action may touch.</p>
+    <p class="positioning-note">This comparison describes the <a href="https://github.com/cryogenized-spec/ClickUp-Serviteur-MCP/commit/f1dd7aa3759d584f6acf6f0eb4b96dbfc61a2a48" rel="noopener noreferrer">10 November 2026 source snapshot</a>, not the original 7 November beta tag. Comparisons are based on published Glama listings and project documentation, not an independent security audit or performance benchmark.</p>
+  </header>
+  <div class="positioning-principles" aria-label="Serviteur design differentiators">
+    <article class="positioning-principle">
+      <span class="positioning-index">01 / IDENTITY</span>
+      <h3>Per-user OAuth, not a shared master key.</h3>
+      <p>Every connected member uses their own ClickUp OAuth identity. The remote Cloudflare Worker holds the ClickUp credential server-side; model tools do not accept an API token argument. GitHub-backed MCP authentication and ClickUp authorization remain distinct checks.</p>
+    </article>
+    <article class="positioning-principle">
+      <span class="positioning-index">02 / AUTHORITY</span>
+      <h3>The List boundary is enforced.</h3>
+      <p>Task access is checked against the permitted List or owner-approved Workspace, rather than assuming every resource visible to an OAuth token is in scope. Sensitive writes require a verified target and appropriate write permission.</p>
+    </article>
+    <article class="positioning-principle">
+      <span class="positioning-index">03 / TOOL DESIGN</span>
+      <h3>One operation, one named tool.</h3>
+      <p>The source snapshot contains 66 REST-backed operations and 14 dedicated MCP helpers. There is no unrestricted <code>clickup_raw</code>, arbitrary URL executor or dynamic operation-dispatch tool. This trades maximum endpoint reach for a narrower model-visible surface.</p>
+    </article>
+    <article class="positioning-principle">
+      <span class="positioning-index">04 / REAL WORK</span>
+      <h3>Not merely create, read, update, delete.</h3>
+      <p>Serviteur supports structured comments and individually verified @mentions, comment readback checks, scoped templates and checklists, task relationships, selected v3 Chat and Docs operations, controlled file hand-off, and text-layer PDF reading.</p>
+    </article>
+    <article class="positioning-principle">
+      <span class="positioning-index">05 / ATTENTION</span>
+      <h3>Work that needs a person, surfaced clearly.</h3>
+      <p><code>clickup_get_my_attention_items</code> combines assigned tasks, due dates, assigned unresolved comments and discoverable individual mentions. It declares what was inspected; it does <em>not</em> pretend to reproduce ClickUp's private Inbox or its unread state.</p>
+    </article>
+    <article class="positioning-principle">
+      <span class="positioning-index">06 / RELEASE PRACTICE</span>
+      <h3>A self-hosted, test-gated deployment.</h3>
+      <p>Its company Worker is published through a dedicated manual GitHub Actions workflow with tests, TypeScript checks, dependency auditing and a security smoke test. There is no requirement for users to install and maintain a local stdio server on every client device.</p>
+    </article>
+  </div>
+  <div class="positioning-comparison" aria-labelledby="comparison-title">
+    <div class="positioning-comparison-intro">
+      <p class="registry-kicker">FROM THE GLAMA DIRECTORY</p>
+      <h3 id="comparison-title">Different tools, <em>different priorities.</em></h3>
+      <p>The question is not simply which project has the most tools. These projects optimize for different kinds of use, and several intentionally offer functionality outside Serviteur's current scope.</p>
+    </div>
+    <div class="positioning-table-scroll" role="region" aria-label="ClickUp MCP alternatives comparison" tabindex="0">
+      <table class="positioning-table">
+        <thead><tr><th scope="col">PROJECT</th><th scope="col">PUBLISHED APPROACH</th><th scope="col">WHAT SERVITEUR OFFERS DIFFERENTLY</th></tr></thead>
+        <tbody>
+          <tr>
+            <th scope="row"><a href="https://glama.ai/mcp/servers/mikah13/mcp-clickup" rel="noopener noreferrer">mikah13 / mcp-clickup ↗</a></th>
+            <td>A focused four-tool interface for authenticating and retrieving tasks; its documented tool schemas include personal API-token arguments.</td>
+            <td>A much wider task-and-workflow surface with per-user OAuth, server-held credentials, scoped write operations, comments, Docs and cross-resource workflows.</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="https://glama.ai/mcp/servers/alexfdez1010/clickup-mcp" rel="noopener noreferrer">alexfdez1010 / ClickUp API MCP ↗</a></th>
+            <td>172 API v2/v3 operations discoverable through four MCP search, schema, read and write tools. Runs locally with a personal token; offers a read-only mode.</td>
+            <td>Each permitted action has its own explicit MCP tool and server-side scope policy, rather than a generic operation ID passed to a read/write executor. The other project offers broader API coverage.</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="https://glama.ai/mcp/servers/helbertparanhos/clickup-mcp-pro" rel="noopener noreferrer">helbertparanhos / clickup-mcp-pro ↗</a></th>
+            <td>161 typed tools plus <code>clickup_raw</code>, with optional read-only and raw-disable settings. Offers additional Goals, Sprints, Guests and webhook controls.</td>
+            <td>Serviteur prioritizes a smaller, fixed operation surface and explicit per-user Workspace/List authorization in a remotely hosted OAuth service. MCP Pro leads on published API breadth.</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="https://glama.ai/mcp/servers/saigontechnology/reclickup-mcp/tools/clickup_doc_write" rel="noopener noreferrer">reclickup-mcp ↗</a></th>
+            <td>Specializes in rich ClickUp Doc authoring, including table widths and coloured headers, through headless Edge browser automation.</td>
+            <td>Serviteur uses authorized REST v2/v3 workflows and avoids a separate browser login for its supported functions; reclickup currently offers richer Doc table formatting.</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="https://developer.clickup.com/docs/mcp-tools" rel="noopener noreferrer">ClickUp official MCP ↗</a></th>
+            <td>The vendor-maintained integration offers a broad set of supported tools and cross-feature workflows, subject to the user's ClickUp permissions.</td>
+            <td>Serviteur is an independent, self-hosted alternative for operators who specifically want their own OAuth deployment, tool definitions and explicit server-controlled scope policies.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="positioning-method"><strong>Reading the comparison:</strong> These are differences in public design and documented capabilities, <em>not</em> a verified ranking of safety, speed, reliability or security quality. A personal-token design is not inherently insecure; other projects may implement their own safeguards. Tool counts are not directly comparable to the number of underlying API endpoints, and features depend on ClickUp permissions, plans and product availability.</p>
+  </div>
+  <aside class="positioning-limits" aria-label="What Serviteur does not claim">
+    <h3>Where the others lead.</h3>
+    <p>Serviteur does <strong>not</strong> claim complete ClickUp API coverage, native Inbox access, a production webhook event receiver or browser-grade Doc table styling. The larger API servers provide substantially more endpoint coverage; reclickup has a specialized Doc-formatting capability; ClickUp's own MCP offers the vendor-maintained route. Choose the tool that fits the job.</p>
+    <p>For work that values <strong>verified identity, explicit permissions, named operations and a controlled remote deployment</strong>, Serviteur makes a purposeful tradeoff. The full <a href="#tools">80-tool source catalogue</a> below shows exactly what that tradeoff includes.</p>
+  </aside>
+</section>
 <div class="section-bar"><span>/// APPENDIX — THE TOOL CABINET</span><span>SCHEMA INVENTORY / REVISED 10 NOVEMBER 2026</span></div>
 <section class="registry" id="tools" aria-labelledby="registry-title">
   <header class="registry-intro">
