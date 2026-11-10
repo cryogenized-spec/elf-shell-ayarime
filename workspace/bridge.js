@@ -27,6 +27,24 @@
       throw new Error(response?.error || "Workspace AI did not respond");
     return response;
   }
+  async function openAssistant() {
+    report("Opening Ayarime's AI console in the Workspace Hub…");
+    try {
+      const hello=await message("HELLO");
+      if (hello.kind!==KIND || hello.version!==VERSION || !Array.isArray(hello.capabilities))
+        throw new Error("Workspace AI companion protocol is incompatible");
+      if (!hello.capabilities.includes("OPEN_ASSISTANT"))
+        throw new Error("Update the optional Workspace AI companion to enable Ask Ayarime");
+      const result=(await message("OPEN_ASSISTANT")).result;
+      if(!result || result.focused!==true || !Number.isInteger(result.hubTabId) || result.view!=="assistant")
+        throw new Error("Workspace AI returned an invalid assistant handoff");
+      report("Ayarime AI console opened in the pinned Workspace Hub. Use its toolbar button to open the Firefox sidebar.");
+      return result;
+    }catch(error){
+      report("Assistant unavailable: "+(error?.message||"Unexpected error"),true);
+      return null;
+    }
+  }
   async function openWorkspace() {
     report("Asking Ayarime to prepare your workspace…");
     try {
@@ -45,5 +63,5 @@
       return null;
     }
   }
-  window.AyarimeWorkspaceBridge = Object.freeze({ openWorkspace });
+  window.AyarimeWorkspaceBridge = Object.freeze({ openWorkspace, openAssistant });
 })();
