@@ -24,6 +24,17 @@ for(const state of states){
   const demo=state==="ibeam"?"text":state==="pointer"?"default":state;
   assert(html.includes('data-cursor-state="'+demo+'"'),state+" preview missing");
 }
+// Previews must work even when the user has not opted into a custom cursor.
+const previewCursorFiles={default:"pointer",text:"ibeam",busy:"busy",crosshair:"crosshair",resize:"resize",link:"link"};
+for(const [sample,asset] of Object.entries(previewCursorFiles)){
+  const rule='.cursor-state-preview [data-cursor-state="'+sample+'"]';
+  const start=css.indexOf(rule+"{");
+  assert(start>=0,"Unconditional hover preview missing for "+sample);
+  const end=css.indexOf("}",start);
+  assert(end>start && css.slice(start,end).includes('url("assets/cursors/states/'+asset+'-48.png")'),"Wrong cursor preview for "+sample);
+}
+assert(html.includes("even with System Default selected"),"Preview instructions must describe the default state");
+assert(html.includes("previews do not change your saved choice"),"Preview must not be mistaken for a saved setting");
 assert(html.includes('name="cursor-choice" value="system" checked'),"system must remain default");
 assert(html.includes('value="ayarime-core"'),"new family choice missing");
 assert(html.includes('src="assets/cursors/states/pointer-64.png"'),"preview asset missing");
