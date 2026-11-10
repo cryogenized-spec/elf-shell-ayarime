@@ -246,7 +246,7 @@ class FeedTests(unittest.TestCase):
             ):
                 self.assertIn('href="' + url + '"', article)
             self.assertIn("Where the others lead.", article)
-            self.assertIn("not</em> claim complete ClickUp API coverage", article)
+            self.assertIn("<strong>not</strong> claim complete ClickUp API coverage", article)
             self.assertIn("not</em> a verified ranking", article)
             self.assertNotIn("<script", article, "Do not add scripts or external tracking")
             self.assertNotIn("@import", css)
