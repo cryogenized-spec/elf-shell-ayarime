@@ -44,3 +44,10 @@ Firefox requires a direct user gesture to call `sidebarAction.open()`. A cross-e
 ## Verification
 
 Run `npm test` and AMO package/lint on the core integration branch, and the companion's `npm test` plus dual-extension native Firefox test. Manually confirm: no companion / compatible companion / incompatible protocol; repeated launch creates no duplicate hub; toolbar independently opens sidebar; neither AI nor Google network activity starts on a new tab without user action.
+
+## Next slice — Ask Ayarime (developer preview)
+
+The Station now has two separate options: **AYARIME · WORKSPACE AI** (restore/reuse Google tabs), and **ASK AYARIME · AI CONSOLE** (focus the companion's existing BYOK prompt). Ctrl+K matches `> ask` and the explicit text `Ask Ayarime`; neither sends user query text to the companion. The core sends an allowlisted, versioned `HELLO` followed by `OPEN_ASSISTANT` only when the upgraded companion advertises that capability. Older versions receive clear update guidance. The companion's Hub handles its own constant `#assistant` focus route. No sidebar-opening claims and no automatic model/provider requests.
+
+### Coordinated companion
+Companion implementation: `cryogenized-spec/elf-shell-workspace-ai`, branch `feature/assistant-console-handoff-014`. This Station PR is intentionally based on `feature/workspace-ai-integration-056`; it does not replace the original v0.5.5 or authorize publication. Verify the staged branches together in actual Firefox before merging any of them.
