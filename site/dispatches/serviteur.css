@@ -68,3 +68,50 @@
 @media(max-width:850px){.registry-columns,.registry-row{grid-template-columns:minmax(200px,34%) minmax(0,1fr);gap:17px}.registry-tool-name{font-size:11px}.registry-tool-detail>p{font-size:13px}}
 @media(max-width:620px){.registry-columns{display:none}.registry-row{grid-template-columns:minmax(0,1fr);gap:5px;padding:17px 21px}.registry-tool-name{padding-bottom:4px;border-bottom:1px solid #65516b}.registry-tool-name code{font-size:12px}.registry-tool-detail>p{font-size:14px}.registry-group-head{padding:21px}.registry-group-head>span{margin-left:0}.registry-index{gap:6px}.registry-index a{font-size:9px}.registry-intro{padding:30px 21px}.registry-totals{gap:14px 19px}.registry-footer{padding:25px 21px}.registry-effect{margin-left:0}}
 @media print{.registry,.registry-group-head,.registry-columns,.registry-intro{background:#fff;color:#111}.registry-row{break-inside:avoid}.registry-tool-name code,.registry-tool-detail>p,.registry-intro h2{color:#111}.registry-parameters{display:none}.registry-index{display:none}.registry-badge{color:#111!important;background:transparent!important}}
+
+/* Dated Glama market comparison: documented tradeoffs, no performance rankings. */
+.release-comparison-link{padding:13px 16px;border-left:2px solid #d3b0ca;background:#181b29;color:#dde1e6!important;font:12px/1.7 ui-monospace,monospace!important}
+.release-comparison-link span{color:#d8a7c9}
+.positioning{background:linear-gradient(165deg,#211e30 0%,#191929 53%,#221a2b 100%);border-bottom:1px solid #846b87}
+.positioning-intro{padding:clamp(36px,5vw,70px) clamp(20px,4vw,65px) 27px;background:radial-gradient(ellipse at 85% 15%,#613e575e,transparent 53%)}
+.positioning-intro h2{font:400 clamp(44px,5.5vw,75px)/1.05 Georgia,serif;letter-spacing:-.058em;margin:18px 0 25px}
+.positioning-intro h2 em,.positioning-comparison-intro h3 em{color:#e4acbf;font-weight:400}
+.positioning-lead{font:18px/1.68 Georgia,serif;color:#e5d4dc;max-width:930px}
+.positioning-lead strong{color:#f7e4e6}
+.positioning-note{max-width:925px;color:#bfb2c4;font-size:11px;line-height:1.78;border-left:2px solid #846d83;padding:4px 0 4px 15px}
+.positioning-principles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-block:1px solid #755e79}
+.positioning-principle{min-width:0;padding:29px clamp(18px,3vw,36px);border-right:1px solid #604c69;border-bottom:1px solid #604c69;background:radial-gradient(circle at 100% 0%,#48334933,transparent 70%)}
+.positioning-principle:nth-child(3n){border-right:0}
+.positioning-principle:nth-last-child(-n+3){border-bottom:0}
+.positioning-index{font-size:10px;letter-spacing:.12em;color:#a8dce0}
+.positioning-principle h3{font:400 24px/1.18 Georgia,serif;color:#f0dce7;letter-spacing:-.03em;margin:18px 0 12px}
+.positioning-principle p{font:13px/1.77 ui-monospace,"Liberation Mono",monospace;color:#d1c2d1;margin:0}
+.positioning-principle code{color:#c9e4e5;overflow-wrap:anywhere}
+.positioning-comparison{padding:42px clamp(20px,4vw,65px) 27px}
+.positioning-comparison-intro h3{font:400 clamp(29px,4vw,49px)/1.14 Georgia,serif;letter-spacing:-.045em;margin:13px 0 16px}
+.positioning-comparison-intro p:last-child{font:16px/1.6 Georgia,serif;color:#d3c4cf;max-width:830px}
+.positioning-table-scroll{overflow-x:auto;max-width:100%;border:1px solid #795e7c;scrollbar-color:#806883 #211c2d}
+.positioning-table-scroll:focus-visible{outline:2px solid #abd9d8;outline-offset:3px}
+.positioning-table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:710px;background:#171a28}
+.positioning-table th,.positioning-table td{padding:17px 18px;border-bottom:1px solid #5d5068;vertical-align:top;overflow-wrap:anywhere}
+.positioning-table thead{background:#342740;color:#d9c9de}
+.positioning-table thead th{text-align:left;font:700 10px/1.5 ui-monospace,monospace;letter-spacing:.08em}
+.positioning-table th:first-child{width:25%}
+.positioning-table th:nth-child(2){width:35%}
+.positioning-table th:nth-child(3){width:40%}
+.positioning-table tbody th{font:700 12px/1.7 ui-monospace,monospace;text-align:left;color:#eadce8}
+.positioning-table tbody th a{overflow-wrap:anywhere}
+.positioning-table td{font:13px/1.7 Georgia,serif;color:#d9cbd4}
+.positioning-table td code{font:12px ui-monospace,monospace;color:#b7e4df}
+.positioning-table tr:last-child th,.positioning-table tr:last-child td{border-bottom:0}
+.positioning-table tbody tr:nth-child(even){background:#ffffff06}
+.positioning-method{max-width:950px;margin:20px 0 0;font:11px/1.8 ui-monospace,monospace;color:#beb8c8}
+.positioning-method strong{color:#e9dce3}
+.positioning-limits{margin:0 clamp(20px,4vw,65px) 44px;padding:27px 28px;border:1px solid #856b86;background:linear-gradient(90deg,#38293f,#292538)}
+.positioning-limits h3{font:400 29px/1.2 Georgia,serif;color:#f2e1e5;letter-spacing:-.035em;margin-bottom:12px}
+.positioning-limits p{max-width:1000px;font:14px/1.72 Georgia,serif;color:#dfd2dc;margin-bottom:12px}
+.positioning-limits p:last-child{margin-bottom:0}
+.positioning-limits strong{color:#f3e8ea}
+@media(max-width:980px){.positioning-principles{grid-template-columns:repeat(2,minmax(0,1fr))}.positioning-principle:nth-child(3n){border-right:1px solid #604c69}.positioning-principle:nth-child(2n){border-right:0}.positioning-principle:nth-last-child(-n+3){border-bottom:1px solid #604c69}.positioning-principle:nth-last-child(-n+2){border-bottom:0}}
+@media(max-width:650px){.positioning-intro{padding:37px 22px 24px}.positioning-lead{font-size:16px}.positioning-principles{grid-template-columns:1fr}.positioning-principle,.positioning-principle:nth-child(3n),.positioning-principle:nth-child(2n){border-right:0;border-bottom:1px solid #604c69;padding:22px}.positioning-principle:nth-last-child(-n+2){border-bottom:1px solid #604c69}.positioning-principle:last-child{border-bottom:0}.positioning-principle h3{font-size:23px}.positioning-comparison{padding:34px 20px 22px}.positioning-comparison-intro p:last-child{font-size:14px}.positioning-table{min-width:680px}.positioning-table th,.positioning-table td{padding:14px}.positioning-limits{padding:22px;margin:0 18px 33px}.positioning-limits h3{font-size:26px}}
+@media print{.positioning,.positioning-intro,.positioning-principles,.positioning-limits,.positioning-table{background:#fff;color:#111}.positioning-principle{break-inside:avoid}.positioning-table-scroll{overflow:visible}.positioning-table{min-width:0}.positioning-principle h3,.positioning-table td,.positioning-table th,.positioning-limits h3,.positioning-limits p,.positioning-intro h2{color:#111}}
