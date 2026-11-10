@@ -325,7 +325,7 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,2.85vw,54px)
 #clear-duplicate-recovery{display:block;width:100%;margin:3px 0 12px;opacity:.84;}
 
 /* AYARIME POINTER SET — opt-in and scoped to the ELF//SHELL new-tab page.
-   Native Firefox/GTK controls and text-selection cursors are left untouched. */
+   Firefox browser chrome and other websites remain unaffected. */
 .cursor-settings{
   border:1px solid #7c7184;
   padding:13px;
@@ -404,6 +404,14 @@ body[data-cursor]:not([data-cursor="system"]) :is([data-cursor-state="busy"],[ar
 .cursor-preview-note{font-size:11px;line-height:1.5;color:#cfc0d3;margin:12px 0 7px}
 .cursor-state-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .cursor-state-preview span{display:grid;place-items:center;min-height:34px;border:1px solid #716276;background:#221c30b8;color:#f1e3f2;border-radius:4px;font:11px ui-monospace,monospace}
+/* Always preview all six Ayarime Core states on these samples. Unlike the
+   opt-in body rules, this does not depend on the saved cursor preference. */
+.cursor-state-preview [data-cursor-state="default"]{cursor:url("assets/cursors/states/pointer-48.png") 6 2, default;}
+.cursor-state-preview [data-cursor-state="text"]{cursor:url("assets/cursors/states/ibeam-48.png") 24 24, text;}
+.cursor-state-preview [data-cursor-state="busy"]{cursor:url("assets/cursors/states/busy-48.png") 24 24, progress;}
+.cursor-state-preview [data-cursor-state="crosshair"]{cursor:url("assets/cursors/states/crosshair-48.png") 24 24, crosshair;}
+.cursor-state-preview [data-cursor-state="resize"]{cursor:url("assets/cursors/states/resize-48.png") 24 24, nwse-resize;}
+.cursor-state-preview [data-cursor-state="link"]{cursor:url("assets/cursors/states/link-48.png") 12 2, pointer;}
 @media(max-width:430px){.cursor-state-preview{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:430px){.cursor-gallery{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
