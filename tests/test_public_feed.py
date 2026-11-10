@@ -221,6 +221,55 @@ class FeedTests(unittest.TestCase):
             self.assertIn("80 current named MCP tools", item.find("description").text)
             self.assertEqual(item.find("pubDate").text, "Sun, 08 Nov 2026 07:02:00 GMT")
 
+    def test_serviteur_glama_comparison_is_sourced_and_non_disruptive(self):
+        """The article distinguishes current engineering choices from its historical beta."""
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            build(out=out)
+            article = (
+                out / "dispatches/clickup-serviteur-v0.3.0-beta.1.html"
+            ).read_text(encoding="utf-8")
+            css = (out / "dispatches/serviteur.css").read_text(encoding="utf-8")
+            self.assertIn('id="why-serviteur"', article)
+            self.assertIn('href="#why-serviteur"', article)
+            self.assertIn('id="comparison-title"', article)
+            self.assertEqual(article.count('class="positioning-principle"'), 6)
+            self.assertIn('id="registry-title"', article)
+            self.assertEqual(article.count('class="registry-tool-name"'), 80)
+            self.assertIn("f1dd7aa3759d584f6acf6f0eb4b96dbfc61a2a48", article)
+            for url in (
+                "https://glama.ai/mcp/servers/mikah13/mcp-clickup",
+                "https://glama.ai/mcp/servers/alexfdez1010/clickup-mcp",
+                "https://glama.ai/mcp/servers/helbertparanhos/clickup-mcp-pro",
+                "https://glama.ai/mcp/servers/saigontechnology/reclickup-mcp/tools/clickup_doc_write",
+                "https://developer.clickup.com/docs/mcp-tools",
+            ):
+                self.assertIn('href="' + url + '"', article)
+            self.assertIn("Where the others lead.", article)
+            self.assertIn("not</em> claim complete ClickUp API coverage", article)
+            self.assertIn("not</em> a verified ranking", article)
+            self.assertNotIn("<script", article, "Do not add scripts or external tracking")
+            self.assertNotIn("@import", css)
+            self.assertNotIn("url(http", css)
+            self.assertIn("prefers-reduced-motion", css)
+            self.assertIn(".positioning-principles{display:grid", css)
+            self.assertIn("@media(max-width:650px)", css)
+            feed = ET.parse(out / "feed.xml").getroot().find("channel")
+            item = next(
+                node for node in feed.findall("item")
+                if node.find("guid").text == "urn:elfshell:transmission:clickup-serviteur-public-beta"
+            )
+            self.assertEqual(
+                item.find("pubDate").text, "Sun, 08 Nov 2026 07:02:00 GMT"
+            )
+            self.assertIn("Glama", item.find("description").text)
+            self.assertIn("evidence-linked comparison", item.find("description").text)
+            self.assertTrue(
+                item.find("link").text.endswith(
+                    "/dispatches/clickup-serviteur-v0.3.0-beta.1.html"
+                )
+            )
+
     def test_rejects_untrusted_dispatch_page_paths(self):
         document = json.loads(SOURCE.read_text(encoding="utf-8"))
         for unsafe in ("../private.html", "https://example.org/test.html", "dispatches/../../secrets.html", "/dispatches/x.html", "dispatches/file.js"):
