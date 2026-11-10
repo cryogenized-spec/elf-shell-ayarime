@@ -3,6 +3,7 @@
 from __future__ import annotations
 import copy
 import json
+import re
 from html.parser import HTMLParser
 from pathlib import Path
 import tempfile
@@ -174,6 +175,51 @@ class FeedTests(unittest.TestCase):
             index_html = (out / "index.html").read_text(encoding="utf-8")
             self.assertIn('href="dispatches/clickup-serviteur-v0.3.0-beta.1.html"', index_html)
             self.assertIn("READ THE ILLUSTRATED DOSSIER", index_html)
+
+    def test_serviteur_source_tool_schema_appendix(self):
+        """The illustrated release stays historic while the separate 80-tool guide is explicit."""
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            build(out=out)
+            article = (out / "dispatches/clickup-serviteur-v0.3.0-beta.1.html").read_text(
+                encoding="utf-8"
+            )
+            css = (out / "dispatches/serviteur.css").read_text(encoding="utf-8")
+            rows = re.findall(r'<div class="registry-row" id="tool-([^\"]+)"', article)
+            self.assertEqual(len(rows), 80, "66 REST-backed + 14 gateway/scoped tools")
+            self.assertEqual(len(rows), len(set(rows)), "Each tool must appear once")
+            self.assertEqual(article.count('class="registry-parameters"'), 80)
+            self.assertEqual(article.count('class="registry-tool-name"'), 80)
+            self.assertEqual(article.count('class="registry-tool-detail"'), 80)
+            for tool in (
+                "clickup_get_my_attention_items",
+                "clickup_get_chat_channel_messages",
+                "clickup_get_document_pages",
+                "clickup_create_task_checklist",
+                "clickup_get_task_templates",
+                "clickup_set_workspace_access",
+                "service_info",
+            ):
+                self.assertIn(tool, rows)
+            for version in ("v2", "v3", "custom", "hybrid"):
+                self.assertIn('registry-badge-' + version, article)
+            self.assertIn('id="registry-title"', article)
+            self.assertIn('href="#tools"', article)
+            self.assertIn('rel="alternate"', article)
+            self.assertIn('f1dd7aa3759d584f6acf6f0eb4b96dbfc61a2a48', article)
+            self.assertIn("not</em> the frozen tool inventory", article)
+            self.assertNotIn("<script", article)
+            self.assertNotIn("@import", css)
+            self.assertNotIn("url(http", css)
+            self.assertIn(".registry-row{display:grid", css)
+            self.assertIn("@media(max-width:620px)", css)
+            feed = ET.parse(out / "feed.xml").getroot().find("channel")
+            item = next(
+                x for x in feed.findall("item")
+                if x.find("guid").text == "urn:elfshell:transmission:clickup-serviteur-public-beta"
+            )
+            self.assertIn("80 current named MCP tools", item.find("description").text)
+            self.assertEqual(item.find("pubDate").text, "Sun, 08 Nov 2026 07:02:00 GMT")
 
     def test_rejects_untrusted_dispatch_page_paths(self):
         document = json.loads(SOURCE.read_text(encoding="utf-8"))
