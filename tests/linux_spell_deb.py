@@ -42,5 +42,6 @@ with tempfile.TemporaryDirectory(prefix="ayarime-spell-check-") as tmp:
     assert "mouse:b1r" in source
     assert "set_active" in source  # Opt-in button only
     assert "key:" not in source
-    assert "network" in (py / "app.py").read_text().lower()
+    for forbidden_import in ("import requests", "import socket", "import urllib", "import pynput"):
+        assert forbidden_import not in source
 print("PASS: small offline native spell package with explicit opt-in, no services")
