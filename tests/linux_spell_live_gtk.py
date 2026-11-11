@@ -75,6 +75,7 @@ def integration():
                      str(ROOT / "linux-spell" / "app.py"),
                      "--start-enabled", "--language", "en_GB"],
                     cwd=ROOT, stdout=helperlog, stderr=subprocess.STDOUT,
+                    env={**os.environ, "AYARIME_SPELL_TEST_TRACE": "1"},
                 )
                 wait_for_window("Ayarime · Linux Spell")
                 # Position the text field at a known screen coordinate.
