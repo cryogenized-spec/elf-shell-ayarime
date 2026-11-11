@@ -51,8 +51,8 @@ recommends a local British English dictionary on Mint 22.
 - AT-SPI uses separate insert/delete operations; undo grouping varies
   by editor. Do not use this preview to edit sensitive or irreplaceable
   content before testing your target application.
-- A foreground helper must observe mouse-button release and focus events
-  while enabled. It reads only the word-sized accessible text range at a
+- A foreground helper subscribes to AT-SPI focus events and X11 RECORD
+  left-button-release events while enabled. It reads only the word-sized accessible text range at a
   candidate click, ignores role-named password/terminal controls, stores
   no text logs and never requests keyboard events. Applications may expose
   sensitive text incorrectly to accessibility; stop assistance whenever
