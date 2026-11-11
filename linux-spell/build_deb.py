@@ -37,13 +37,13 @@ Section: utils
 Priority: optional
 Architecture: all
 Maintainer: ELF//SHELL Ayarime contributors
-Depends: python3 (>= 3.12), python3-gi, gir1.2-gtk-3.0, gir1.2-atspi-2.0, python3-enchant, at-spi2-core
+Depends: python3 (>= 3.12), python3-gi, gir1.2-gtk-3.0, gir1.2-atspi-2.0, python3-enchant, python3-xlib, at-spi2-core
 Recommends: hunspell-en-gb
 Homepage: https://github.com/cryogenized-spec/elf-shell-ayarime
 Description: Opt-in local Linux spell correction on left click
  A small GTK/AT-SPI helper using locally installed Enchant dictionaries.
  The user must explicitly activate it after launching the UI. It listens
- for focus and mouse button releases only, never keyboard contents.
+ for focus and X11 button releases only, never keyboard contents.
  It does not change Firefox native context menus or run at login.
 """
 
@@ -51,7 +51,7 @@ Description: Opt-in local Linux spell correction on left click
 def build() -> Path:
     if not shutil.which("dpkg-deb"):
         raise RuntimeError("Missing dpkg-deb")
-    for name in ("app.py", "core.py", "README.md"):
+    for name in ("app.py", "core.py", "x11_click.py", "README.md"):
         if not (SOURCE / name).is_file() or (SOURCE / name).is_symlink():
             raise RuntimeError("Invalid spell source " + name)
     OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -60,7 +60,7 @@ def build() -> Path:
         stage = Path(tmp) / "package"
         lib = stage / "usr" / "lib" / "ayarime-spell"
         lib.mkdir(parents=True)
-        for name in ("app.py", "core.py"):
+        for name in ("app.py", "core.py", "x11_click.py"):
             shutil.copyfile(SOURCE / name, lib / name)
         bindir = stage / "usr" / "bin"
         bindir.mkdir(parents=True)
