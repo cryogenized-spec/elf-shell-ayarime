@@ -19,6 +19,7 @@ assert "Package: ayarime-spell" in info
 assert "Architecture: all" in info
 assert "python3-enchant" in info
 assert "gir1.2-atspi-2.0" in info
+assert "python3-xlib" in info
 assert "hunspell-en-gb" in info
 
 with tempfile.TemporaryDirectory(prefix="ayarime-spell-check-") as tmp:
@@ -26,7 +27,7 @@ with tempfile.TemporaryDirectory(prefix="ayarime-spell-check-") as tmp:
     subprocess.run(["dpkg-deb", "--extract", str(package), str(root)],
                    check=True)
     py = root / "usr/lib/ayarime-spell"
-    assert sorted(p.name for p in py.iterdir()) == ["app.py", "core.py"]
+    assert sorted(p.name for p in py.iterdir()) == ["app.py", "core.py", "x11_click.py"]
     assert (root / "usr/bin/ayarime-spell").is_file()
     assert "Exec=ayarime-spell" in (
         root / "usr/share/applications/ayarime-spell.desktop"
@@ -39,7 +40,10 @@ with tempfile.TemporaryDirectory(prefix="ayarime-spell-check-") as tmp:
                    check=True)
     assert [p.name for p in control.iterdir()] == ["control"]
     source = (py / "app.py").read_text()
-    assert "mouse:b1r" in source
+    assert "X11LeftClickSource" in source
+    assert "\"device_events\": (X.ButtonRelease, X.ButtonRelease)" in (
+        py / "x11_click.py"
+    ).read_text()
     assert "set_active" in source  # Opt-in button only
     assert "key:" not in source
     for forbidden_import in ("import requests", "import socket", "import urllib", "import pynput"):
