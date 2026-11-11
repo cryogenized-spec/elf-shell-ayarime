@@ -10,11 +10,29 @@ Classic Spearhead, Crystal-Tech Shard, Elven Feather, Hollow Frame, Rune-Edged,
 and Minimal Precision. Each alternate pointer is paired with Ayarime's text,
 link, busy, crosshair and diagonal-resize imagery.
 
-These are genuine native **Xcursor** cursor files, not Firefox CSS injections.
+These are genuine native **Xcursor** cursor files, not Firefox CSS injections. The package is **cursor-only**: Firefox's
+native spellchecker is controlled by Firefox itself. Its spelling suggestions
+are exposed through the browser's native context menu, not through a Linux
+cursor setting. We deliberately do not ship a second dictionary, screen
+scraper, click injector, or keyboard hook under the name "spellcheck".
 They work with many X11 applications, including Cinnamon and Firefox chrome,
 subject to the toolkit's normal theme support. **This is not a spellchecker.**
 Firefox's built-in spelling continues to work unchanged; no system-wide
 spellchecker or keylogging/injection service is bundled.
+
+## Install the native Debian package
+
+The optional `ayarime-cursors_0.1.0-1_all.deb` package provides all seven
+themes for Linux Mint 22, Cinnamon/X11 and other Linux desktops supporting
+Xcursor. Open the .deb in your usual package installer, review its contents
+and approve installation. This **does not** change the active mouse pointer:
+open **Themes → Mouse Pointer** and select the Ayarime variation you want.
+
+To remove the package, use your package manager. No background service, root
+maintenance script, custom spelling engine, network connection, telemetry,
+or Firefox extension modification is installed. This option differs from
+the no-sudo archive below: a .deb puts shared resources under
+`/usr/share/icons` using normal package-manager permission.
 
 ## Install (no sudo)
 
