@@ -167,18 +167,28 @@ class SpellApp:
         self.status.set_text("Stopped · no mouse events monitored")
         self.toggle.set_label("Enable left-click assistance")
 
+    def _trace(self, reason):
+        # Test-only metadata, never editor words or replacement candidates.
+        if os.environ.get("AYARIME_SPELL_TEST_TRACE") == "1":
+            print("AYARIME_SPELL_DIAGNOSTIC:", reason, flush=True)
+
     def _on_event(self, event, *_unused):
         event_type = str(event.type or "")
+        self._trace("event="+event_type)
         if "state-changed:focused" in event_type:
             if event.detail1 and _field_is_safe(event.source):
                 self.focused = event.source
+                self._trace("focus: accepted editable")
             elif event.detail1:
                 self.focused = None
+                self._trace("focus: ignored role or state")
             return
         if "mouse" not in event_type or not event_type.endswith("1r"):
             return
         if self.menu is not None or not self.toggle.get_active():
+            self._trace("click ignored: menu shown or switched off")
             return
+        self._trace("click event delivered")
         # AT-SPI's mouse-event detail1 and detail2 are screen coordinates.
         x, y = int(event.detail1), int(event.detail2)
         GLib.idle_add(self._on_click, x, y)
@@ -192,17 +202,22 @@ class SpellApp:
         self.last_click = now
         accessible = self.focused
         if not _field_is_safe(accessible):
+            self._trace("click: no safe focus target")
             return False
         try:
             states = accessible.get_state_set()
             if not states.contains(Atspi.StateType.FOCUSED):
+                self._trace("click: target not focused")
                 return False
             component = accessible.get_component_iface()
             if component is None or not component.contains(x, y, Atspi.CoordType.SCREEN):
+                self._trace("click: outside component")
                 return False
+            self._trace("click: inside editable component")
             text = accessible.get_text_iface()
             offset = text.get_offset_at_point(x, y, Atspi.CoordType.SCREEN)
             if offset is None or offset < 0:
+                self._trace("click: no text offset")
                 return False
             value, start, end = _parse_range(
                 text.get_string_at_offset(offset, Atspi.TextGranularity.WORD)
@@ -211,14 +226,19 @@ class SpellApp:
                 return False
             hit = clicked_word(value, start, offset)
             if hit is None or self.dictionary.check(hit.word):
+                self._trace("click: punctuation or known word")
                 return False
+            self._trace("click: misspelling confirmed")
             candidates = normalize_suggestions(
                 hit.word, self.dictionary.suggest(hit.word)
             )
             if not candidates:
+                self._trace("click: no safe local alternatives")
                 return False
-        except (GLib.Error, ValueError, TypeError, RuntimeError, AttributeError):
+        except (GLib.Error, ValueError, TypeError, RuntimeError, AttributeError) as exc:
+            self._trace("click: API error="+type(exc).__name__)
             return False
+        self._trace("click: opening local corrections menu")
         self._show_suggestions(accessible, hit, candidates)
         return False
 
@@ -244,6 +264,7 @@ class SpellApp:
 
     def _apply(self, _item, accessible, hit, suggestion):
         if not _field_is_safe(accessible):
+            self._trace("apply: target no longer safe")
             return
         try:
             ok = apply_replacement(
@@ -253,6 +274,7 @@ class SpellApp:
             )
         except (GLib.Error, RuntimeError, AttributeError):
             ok = False
+        self._trace("apply: "+("success" if ok else "rejected"))
         if not ok:
             self.status.set_text(
                 "Editor rejected the correction; existing text preserved"
