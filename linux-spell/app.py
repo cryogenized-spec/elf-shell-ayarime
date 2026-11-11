@@ -266,6 +266,8 @@ class SpellApp:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", default="en_GB")
+    parser.add_argument("--start-enabled", action="store_true",
+                        help="Explicitly activate local assistance at launch")
     args = parser.parse_args()
     if gi_error is not None:
         print("Missing GTK/AT-SPI/Enchant packages: "+str(gi_error), file=sys.stderr)
@@ -278,6 +280,8 @@ def main():
     except enchant.errors.DictNotFoundError:
         print(f"No installed local dictionary for {args.language}.", file=sys.stderr)
         return 2
+    if args.start_enabled:
+        app.toggle.set_active(True)  # Explicit command-line opt-in.
     Gtk.main()
     return 0
 
