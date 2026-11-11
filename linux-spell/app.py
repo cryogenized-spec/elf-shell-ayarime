@@ -19,7 +19,7 @@ try:
     import gi
     gi.require_version("Gtk", "3.0")
     gi.require_version("Atspi", "2.0")
-    from gi.repository import Gtk, Gdk, GLib, Atspi
+    from gi.repository import Gtk, GLib, Atspi
     import enchant
 except ImportError as exc:
     gi_error = exc
@@ -27,10 +27,10 @@ except ImportError as exc:
 from core import (
     apply_replacement, clicked_word, normalize_suggestions,
 )
+from x11_click import X11LeftClickSource
 
 APP_TITLE = "Ayarime · Linux Spell"
 EVENT_FOCUS = "object:state-changed:focused"
-EVENT_CLICK = "mouse:b1r"
 # We intentionally do not query terminal/password widgets or dialogs.
 PRIVATE_ROLE_WORDS = ("password", "terminal", "secret")
 
@@ -79,6 +79,7 @@ class SpellApp:
         self.window.set_border_width(16)
         self.window.connect("destroy", self._shutdown)
         self.listener = None
+        self.click_source = None
         self.focused = None
         self.menu = None
         self.last_click = 0.0
@@ -126,12 +127,12 @@ class SpellApp:
             return
         try:
             Atspi.init()
-            # Only two event types: focus acquisition, and button-1 release.
+            # AT-SPI reports focus; X11 RECORD supplies mouse release on
+            # desktops that do not publish AT-SPI mouse notifications.
             self.listener = Atspi.EventListener.new(self._on_event, None, None)
             if not self.listener.register(EVENT_FOCUS):
                 raise RuntimeError("Accessibility focus listener unavailable")
-            if not self.listener.register(EVENT_CLICK):
-                raise RuntimeError("Accessibility mouse listener unavailable")
+            self.click_source = X11LeftClickSource(self._on_x11_click)
             self.status.set_text(
                 f"Enabled · click misspelled words ({self.language})"
             )
@@ -153,12 +154,14 @@ class SpellApp:
             dialog.destroy()
 
     def stop(self):
+        if self.click_source is not None:
+            self.click_source.stop()
+            self.click_source = None
         if self.listener is not None:
-            for event_type in (EVENT_CLICK, EVENT_FOCUS):
-                try:
-                    self.listener.deregister(event_type)
-                except Exception:
-                    pass
+            try:
+                self.listener.deregister(EVENT_FOCUS)
+            except Exception:
+                pass
         self.listener = None
         self.focused = None
         if self.menu is not None:
@@ -183,14 +186,10 @@ class SpellApp:
                 self.focused = None
                 self._trace("focus: ignored role or state")
             return
-        if "mouse" not in event_type or not event_type.endswith("1r"):
-            return
+    def _on_x11_click(self, x, y):
         if self.menu is not None or not self.toggle.get_active():
-            self._trace("click ignored: menu shown or switched off")
             return
-        self._trace("click event delivered")
-        # AT-SPI's mouse-event detail1 and detail2 are screen coordinates.
-        x, y = int(event.detail1), int(event.detail2)
+        self._trace("x11 release received")
         GLib.idle_add(self._on_click, x, y)
 
     def _on_click(self, x: int, y: int):
