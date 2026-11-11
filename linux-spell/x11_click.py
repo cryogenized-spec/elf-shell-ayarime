@@ -8,6 +8,7 @@ are obtained from the current X11 pointer, never written to disk.
 from __future__ import annotations
 
 from threading import Lock, Thread
+import os
 
 from Xlib import X, display
 from Xlib.ext import record
@@ -46,14 +47,20 @@ class X11LeftClickSource:
         )
         self.thread.start()
 
+    def _trace(self, stage):
+        if os.environ.get("AYARIME_SPELL_TEST_TRACE") == "1":
+            print("AYARIME_X11_DIAGNOSTIC:", stage, flush=True)
+
     def _stream_events(self):
+        self._trace("record stream enabled")
         try:
             self.stream.record_enable_context(self.context, self._on_record)
-        except Exception:
-            # The GUI can still stop or quit normally on X server shutdown.
-            pass
+        except Exception as exc:
+            self._trace("record stream exception="+type(exc).__name__)
 
     def _on_record(self, reply):
+        self._trace("record callback category="+str(reply.category)+
+                    " length="+str(len(reply.data)))
         if (
             self._closed or reply.category != record.FromServer
             or reply.client_swapped or not reply.data
@@ -67,6 +74,8 @@ class X11LeftClickSource:
                 )
             except (ValueError, TypeError, AttributeError):
                 break
+            self._trace("device event type="+str(event.type)+
+                        " button="+str(event.detail))
             if event.type != X.ButtonRelease or event.detail != 1:
                 continue
             try:
