@@ -8,6 +8,7 @@ on:
       - "tests/linux_spell_core.py"
       - "tests/linux_spell_deb.py"
       - "tests/linux_spell_runtime_smoke.py"
+      - "tests/linux_spell_live_gtk.py"
       - ".github/workflows/native-linux-spell.yml"
       - "LICENSE"
   push:
@@ -17,6 +18,7 @@ on:
       - "tests/linux_spell_core.py"
       - "tests/linux_spell_deb.py"
       - "tests/linux_spell_runtime_smoke.py"
+      - "tests/linux_spell_live_gtk.py"
       - ".github/workflows/native-linux-spell.yml"
   workflow_dispatch:
 
@@ -42,9 +44,11 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             python3-gi gir1.2-gtk-3.0 gir1.2-atspi-2.0 \
             python3-enchant hunspell-en-gb at-spi2-core \
-            dbus-x11 xvfb
+            dbus-x11 xvfb xdotool
       - name: Verify real local Enchant dictionary and AT-SPI listener on X11
         run: dbus-run-session -- xvfb-run -a /usr/bin/python3 tests/linux_spell_runtime_smoke.py
+      - name: Live X11 click-to-correct in synthetic GTK text input
+        run: dbus-run-session -- xvfb-run -a /usr/bin/python3 tests/linux_spell_live_gtk.py
       - name: Package and inspect zero-service Debian .deb
         run: python3 tests/linux_spell_deb.py
       - name: Upload small, unsigned Linux Mint preview package
