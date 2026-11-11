@@ -88,15 +88,18 @@ def apply_replacement(text_iface, editable_iface, hit: WordHit, suggestion: str,
     if hit.start < 0 or hit.end - hit.start != len(hit.word):
         stage("invalid offsets")
         return False
+    stage("before original read")
     try:
         if _read(text_iface, hit.start, hit.end) != hit.word:
             stage("stale text")
             return False
+        stage("before insert")
         inserted = editable_iface.insert_text(
             hit.start, suggestion, len(suggestion.encode("utf-8"))
         )
         stage("insert result type=" + type(inserted).__name__)
         length = len(suggestion)
+        stage("before inserted readback")
         # Some AT-SPI bindings return int/None rather than a Python bool.
         # Actual readback is the only reliable evidence of an applied edit.
         if _read(text_iface, hit.start, hit.start + length) != suggestion:
@@ -104,10 +107,12 @@ def apply_replacement(text_iface, editable_iface, hit: WordHit, suggestion: str,
             return False
         old_start = hit.start + length
         old_end = old_start + len(hit.word)
+        stage("before shifted-original readback")
         if _read(text_iface, old_start, old_end) != hit.word:
             stage("original shifted text mismatch")
             editable_iface.delete_text(hit.start, hit.start + length)
             return False
+        stage("before delete")
         deleted = editable_iface.delete_text(old_start, old_end)
         stage("delete result type=" + type(deleted).__name__)
         # The source word must have gone; a no-op delete MUST NOT be reported
