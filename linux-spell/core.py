@@ -66,8 +66,20 @@ def normalize_suggestions(word: str, suggestions: list[str], limit: int = 7) -> 
 
 
 def _read(text_iface, start: int, end: int) -> str:
-    """Read only the bounded word-sized range, never a complete editor buffer."""
-    return text_iface.get_text(start, end)
+    """Read a bounded range, resolving an AT-SPI GI method-name collision.
+
+    Atspi.Accessible.get_text() (deprecated) collides with the Text interface
+    method on some GI wrappers, where text_iface.get_text(start, end) raises
+    TypeError. Invoke Atspi.Text.get_text explicitly as a narrow fallback.
+    """
+    try:
+        result = text_iface.get_text(start, end)
+        if isinstance(result, str):
+            return result
+    except TypeError:
+        pass
+    from gi.repository import Atspi  # Only needed for real GTK AT-SPI clients.
+    return Atspi.Text.get_text(text_iface, start, end)
 
 
 def apply_replacement(text_iface, editable_iface, hit: WordHit, suggestion: str,
