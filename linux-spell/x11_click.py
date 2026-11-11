@@ -41,6 +41,9 @@ class X11LeftClickSource:
                 "client_died": False,
             }]
         )
+        # Flush CreateContext on the control connection before a second
+        # connection attempts EnableContext; otherwise X11 may raise BadContext.
+        self.control.sync()
         self.thread = Thread(
             target=self._stream_events, name="Ayarime-X11LeftClick",
             daemon=True,
@@ -56,7 +59,8 @@ class X11LeftClickSource:
         try:
             self.stream.record_enable_context(self.context, self._on_record)
         except Exception as exc:
-            self._trace("record stream exception="+type(exc).__name__)
+            self._trace("record stream exception="+type(exc).__name__+
+                        ":"+str(exc))
 
     def _on_record(self, reply):
         self._trace("record callback category="+str(reply.category)+
