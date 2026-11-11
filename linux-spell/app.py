@@ -19,7 +19,7 @@ try:
     import gi
     gi.require_version("Gtk", "3.0")
     gi.require_version("Atspi", "2.0")
-    from gi.repository import Gtk, GLib, Atspi
+    from gi.repository import Gtk, Gdk, GLib, Atspi
     import enchant
 except ImportError as exc:
     gi_error = exc
@@ -92,7 +92,7 @@ class SpellApp:
         title.set_markup("<b>Ayarime · Left-click spell suggestions</b>")
         title.set_xalign(0)
         outer.pack_start(title, False, False, 0)
-        desc = Gtk.Label(
+        desc = Gtk.Label(label=
             "Opt in below. Click a misspelled word in a compatible editable "
             "Linux application to see corrections from your installed "
             f"{self.language} dictionary. Text stays on your computer."
@@ -112,7 +112,7 @@ class SpellApp:
         self.demo = Gtk.Entry()
         self.demo.set_text("Ths is a smple txt with a mispelt wrd.")
         outer.pack_start(self.demo, False, False, 0)
-        note = Gtk.Label(
+        note = Gtk.Label(label=
             "No autostart, keylogger, clipboard edits or internet use. "
             "Firefox native right-click suggestions are unchanged."
         )
@@ -238,10 +238,10 @@ class SpellApp:
             self._trace("click: API error="+type(exc).__name__)
             return False
         self._trace("click: opening local corrections menu")
-        self._show_suggestions(accessible, hit, candidates)
+        self._show_suggestions(accessible, hit, candidates, x, y)
         return False
 
-    def _show_suggestions(self, accessible, hit, candidates):
+    def _show_suggestions(self, accessible, hit, candidates, x, y):
         menu = Gtk.Menu()
         title = Gtk.MenuItem(label=f"Correct: {hit.word}")
         title.set_sensitive(False)
@@ -254,7 +254,25 @@ class SpellApp:
         menu.connect("hide", self._close_menu, menu)
         self.menu = menu
         menu.show_all()
-        menu.popup_at_pointer(None)
+        # A click in another application creates no Gdk button event in this
+        # process; popup_at_pointer(None) would fail to find a trigger window.
+        # Anchor explicitly to X11 root screen coordinates instead.
+        root = Gdk.get_default_root_window()
+        if root is None:
+            self._trace("menu: no X11 root window")
+            self.menu = None
+            menu.destroy()
+            return
+        rect = Gdk.Rectangle()
+        rect.x = max(0, int(x))
+        rect.y = max(0, int(y))
+        rect.width = 1
+        rect.height = 1
+        menu.popup_at_rect(
+            root, rect,
+            Gdk.Gravity.SOUTH_WEST, Gdk.Gravity.NORTH_WEST,
+            None,
+        )
 
     def _close_menu(self, _menu, menu):
         if self.menu is menu:
