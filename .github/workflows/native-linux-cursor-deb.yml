@@ -1,0 +1,52 @@
+name: Build native Ayarime cursor Debian package
+
+on:
+  pull_request:
+    branches: [release/v0.5.6-development]
+    paths:
+      - "linux-cursors/**"
+      - "assets/cursors/**"
+      - "tests/linux_cursor_deb.py"
+      - ".github/workflows/native-linux-cursor-deb.yml"
+      - "ARTWORK_LICENSE.md"
+  push:
+    branches: [release/v0.5.6-development, feature/ayarime-native-cursor-deb]
+    paths:
+      - "linux-cursors/**"
+      - "assets/cursors/**"
+      - "tests/linux_cursor_deb.py"
+      - ".github/workflows/native-linux-cursor-deb.yml"
+      - "ARTWORK_LICENSE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Install Xcursor compiler on runner only
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends x11-apps
+      - name: Build original cursor themes and per-user archive
+        run: |
+          python3 linux-cursors/build.py
+          python3 tests/linux_cursor_package.py
+      - name: Build native Debian package and verify installed file tree
+        run: python3 tests/linux_cursor_deb.py
+      - name: Publish unsigned test artifacts, not a public release
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ayarime-native-cursors-linux-mint
+          path: |
+            dist/linux-cursors/ayarime-cursors_0.1.0-1_all.deb
+            dist/linux-cursors/Ayarime-Cursors-Linux-Mint.tar.gz
+          if-no-files-found: error
+          retention-days: 30
