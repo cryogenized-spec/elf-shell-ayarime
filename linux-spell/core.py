@@ -70,40 +70,58 @@ def _read(text_iface, start: int, end: int) -> str:
     return text_iface.get_text(start, end)
 
 
-def apply_replacement(text_iface, editable_iface, hit: WordHit, suggestion: str) -> bool:
-    """Conservative two-step AT-SPI edit with pre/post checks and rollback.
+def apply_replacement(text_iface, editable_iface, hit: WordHit, suggestion: str,
+                      diagnostic=None) -> bool:
+    """Verify each AT-SPI edit without trusting a toolkit-specific return type.
 
-    Insert the correction *before* trying to delete the original. This prevents
-    accidental loss of the original if an application rejects accessibility
-    writes (some Firefox builds can claim success but ignore the mutation).
-    Applications may expose these as separate undo steps; this is not an atomic
-    native editor operation. Do not claim undo equivalence to Firefox.
+    The optional diagnostic reports *only stage names*, never document text.
+    Insertion precedes deletion to preserve the misspelling if a remote editor
+    declines an edit. It is not an atomic native editor undo operation.
     """
+    def stage(value: str) -> None:
+        if diagnostic is not None:
+            diagnostic("edit: " + value)
+
     if not valid_suggestion(suggestion) or suggestion.casefold() == hit.word.casefold():
+        stage("invalid candidate")
         return False
     if hit.start < 0 or hit.end - hit.start != len(hit.word):
+        stage("invalid offsets")
         return False
     try:
         if _read(text_iface, hit.start, hit.end) != hit.word:
-            return False  # Text changed while the suggestion menu was visible.
-        if editable_iface.insert_text(
-            hit.start, suggestion, len(suggestion.encode("utf-8"))
-        ) is not True:
+            stage("stale text")
             return False
+        inserted = editable_iface.insert_text(
+            hit.start, suggestion, len(suggestion.encode("utf-8"))
+        )
+        stage("insert result type=" + type(inserted).__name__)
         length = len(suggestion)
-        # Fail closed when accessibility method reports success but is a no-op.
+        # Some AT-SPI bindings return int/None rather than a Python bool.
+        # Actual readback is the only reliable evidence of an applied edit.
         if _read(text_iface, hit.start, hit.start + length) != suggestion:
+            stage("insert readback mismatch")
             return False
         old_start = hit.start + length
         old_end = old_start + len(hit.word)
         if _read(text_iface, old_start, old_end) != hit.word:
-            # Unexpected live document mutation: leave original untouched and
-            # attempt to undo just our verified insertion.
+            stage("original shifted text mismatch")
             editable_iface.delete_text(hit.start, hit.start + length)
             return False
-        if editable_iface.delete_text(old_start, old_end) is not True:
+        deleted = editable_iface.delete_text(old_start, old_end)
+        stage("delete result type=" + type(deleted).__name__)
+        # The source word must have gone; a no-op delete MUST NOT be reported
+        # as successful. Roll back our insertion only when the original is
+        # still at the shifted offset, otherwise avoid overwriting changes.
+        if _read(text_iface, hit.start, hit.start + length) != suggestion:
+            stage("final replacement mismatch")
+            return False
+        if _read(text_iface, hit.start + length, old_end) == hit.word:
+            stage("delete readback mismatch")
             editable_iface.delete_text(hit.start, hit.start + length)
             return False
-        return _read(text_iface, hit.start, hit.start + length) == suggestion
-    except (RuntimeError, ValueError, TypeError, OSError):
+        stage("success")
+        return True
+    except (RuntimeError, ValueError, TypeError, OSError) as exc:
+        stage("exception=" + type(exc).__name__)
         return False
