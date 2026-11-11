@@ -288,6 +288,7 @@ class SpellApp:
                 accessible.get_text_iface(),
                 accessible.get_editable_text_iface(),
                 hit, suggestion,
+                diagnostic=self._trace,
             )
         except (GLib.Error, RuntimeError, AttributeError):
             ok = False
