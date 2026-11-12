@@ -52,7 +52,7 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertTrue(companion.startswith('(function(){\n"use strict";'))
         self.assertIn("const WORKSPACE_MESSAGE_TYPES = new Set",companion)
         self.assertIn('if (sender?.id !== browser.runtime.id',companion)
-        self.assertIn('"elfshell:unified:bridge:v1"',companion)
+        self.assertIn('"UNIFIED_HELLO"',companion)
         self.assertIn('browser.runtime.getURL("newtab.html")',companion)
         self.assertNotIn("browser.runtime.sendMessage(\"workspace-ai@elf-shell.local\"",
                          (STAGE/"workspace/bridge.js").read_text())
