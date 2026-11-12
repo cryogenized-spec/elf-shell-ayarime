@@ -180,8 +180,20 @@ browser.runtime.onMessage.addListener((message, sender) => {
   return handle({type:"OPEN_WORKSPACE"});
 });
 """
+    # Register the reviewed internal adapter before optional companion event
+    # handlers so an unrelated/unsupported add-on API cannot block handoff.
+    marker = "// Versioned, tightly scoped communication with the independently installed ELF//SHELL core."
+    check(source.count(marker) == 1, "Legacy external bridge location changed")
+    source = source.replace(marker, adapter + "\n" + marker, 1)
+    external = (
+        'browser.runtime.onMessageExternal.addListener((message, sender) =>\n'
+        '  handleCoreMessage(message, sender).catch(() => ({ok:false,error:"Bridge request failed"}))\n'
+        ');'
+    )
+    check(source.count(external) == 1, "Companion external listener changed")
+    source = source.replace(external, "// Disabled: one-extension build has no external connection.")
     # This IIFE prevents conflicting global 'const' names in the two backgrounds.
-    return '(function(){\n"use strict";\n' + source + '\n' + adapter + '\n})();\n'
+    return '(function(){\n"use strict";\n' + source + '\n})();\n'
 
 
 def adapt_ui(source: str) -> str:
