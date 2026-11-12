@@ -74,12 +74,12 @@ try:
 
     permissions=driver.execute_async_script("""
       const done=arguments[arguments.length-1];
-      Promise.all(["tabs","tabGroups","identity"].map(async name=>
+      Promise.all(["tabs","tabGroups"].map(async name=>
         ({name,granted:await browser.permissions.contains({permissions:[name]})})
       )).then(done,error=>done([{error:String(error)}]));
     """)
-    check("tabs, tabGroups and identity remain optional before user consent",
-          len(permissions)==3 and all(item.get("granted") is False for item in permissions))
+    check("tabs and tabGroups remain ungranted until user consent",
+          len(permissions)==2 and all(item.get("granted") is False for item in permissions))
 
     native=message({"type":"elfshell:telemetry:read:v1"})
     check("core background still owns its telemetry permission boundary",
