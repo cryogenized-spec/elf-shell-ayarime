@@ -31,8 +31,10 @@ class UnifiedPreviewContract(unittest.TestCase):
         required=set(self.bundle["permissions"])
         optional=set(self.bundle["optional_permissions"])
         self.assertEqual(required,{"theme","search","storage"})
-        self.assertTrue({"tabs","tabGroups","identity","alarms"}.issubset(optional))
+        self.assertTrue({"tabs","tabGroups"}.issubset(optional))
         self.assertFalse({"tabs","tabGroups","identity","alarms"} & required)
+        self.assertNotIn("identity",optional)
+        self.assertNotIn("alarms",optional)
         self.assertEqual(self.bundle["browser_specific_settings"]["gecko"]
                          ["data_collection_permissions"]["required"],["none"])
         self.assertIn("personalCommunications",
@@ -63,6 +65,10 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn("browser.permissions.request({permissions})",bridge)
         self.assertIn('type:"OPEN_WORKSPACE"',(STAGE/"ui.js").read_text())
         self.assertIn('permissions:["tabs","tabGroups"]',(STAGE/"ui.js").read_text())
+        self.assertIn("Google OAuth and update checks are disabled",
+                      (STAGE/"workspace-ai-background.js").read_text())
+        self.assertIn("UNSIGNED UNIFIED PREVIEW",
+                      (STAGE/"hub.html").read_text())
         self.assertNotIn("https://google",bridge)
         self.assertNotIn("api.openai.com",bridge)
 
