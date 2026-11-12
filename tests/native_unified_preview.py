@@ -166,7 +166,9 @@ try:
       return browser.permissions.request===deny;
     """)
     check("QA can simulate a declined permission without touching browser grants",stubbed)
-    driver.find_element(By.CSS_SELECTOR,"#station-menu summary").click()
+    station=driver.find_element(By.ID,"station-menu")
+    if not station.get_property("open"):
+        station.find_element(By.CSS_SELECTOR,"summary").click()
     driver.find_element(By.ID,"ask-ayarime-toggle").click()
     WebDriverWait(driver,10).until(lambda d:
         "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())
