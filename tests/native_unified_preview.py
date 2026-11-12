@@ -68,8 +68,15 @@ try:
 
     reply=message({"type":"elfshell:unified:bridge:v1",
                    "kind":"elfshell.workspace.bridge","version":1,"command":"HELLO"})
+    state_probe=message({"type":"GET_STATE"})
+    # Only print the response types and booleans, never saved URLs or accounts.
+    print("UNIFIED_ROUTER_DIAGNOSTIC:",json.dumps({
+      "hello":type(reply).__name__,"hello_ok":isinstance(reply,dict) and reply.get("ok"),
+      "state":type(state_probe).__name__,
+      "state_ok":isinstance(state_probe,dict) and state_probe.get("ok")
+    }),flush=True)
     check("new-tab is authenticated to internal versioned AI bridge",
-          reply.get("ok") and reply.get("version")==1 and
+          isinstance(reply,dict) and reply.get("ok") and reply.get("version")==1 and
           "OPEN_ASSISTANT" in reply.get("capabilities",[]))
 
     malformed=message({"type":"elfshell:unified:bridge:v1","kind":"elfshell.workspace.bridge",
