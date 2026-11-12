@@ -237,6 +237,8 @@ def build(companion_dir: Path) -> None:
         data = (companion_dir / rel).read_bytes()
         if rel == "ui.js":
             data = adapt_ui(data.decode("utf-8")).encode("utf-8")
+        if rel == "newtab.html":
+            raise ValueError("Core new-tab source must not be copied from Workspace AI")
         if rel in ("hub.html", "sidebar.html"):
             html = data.decode("utf-8")
             container = '<main class="shell">' if rel == "hub.html" else '<main class="side-shell">'
@@ -248,6 +250,32 @@ def build(companion_dir: Path) -> None:
                       '</div>')
             data = html.replace(container, container + "\n" + banner, 1).encode("utf-8")
         inventory[rel] = data
+    # Preview-only copy: remove references to a separate companion installation
+    # while preserving the original core dashboard source byte-for-byte.
+    station_html = inventory["newtab.html"].decode("utf-8")
+    station_js = inventory["newtab.js"].decode("utf-8")
+    copy = {
+        "Restore Google workspace using optional companion":
+            "Open your integrated Ayarime Workspace Hub",
+        "Focus the optional Workspace AI conversation":
+            "Open the integrated Ayarime AI console",
+    }
+    for before, after in copy.items():
+        check(station_html.count(before) == 1,
+              "Core Station UI label changed: " + before)
+        station_html = station_html.replace(before, after)
+    labels = {
+        "OPTIONAL WORKSPACE AI COMPANION": "INTEGRATED AYARIME WORKSPACE",
+        "FOCUS OPTIONAL COMPANION PROMPT": "FOCUS AYARIME AI CONSOLE",
+        "FIREFOX COMPANION / SUPER TAB": "AYARIME / WORKSPACE HUB",
+        "FOCUS COMPANION / PINNED HUB": "AYARIME / PINNED HUB",
+    }
+    for before, after in labels.items():
+        check(station_js.count(before) == 1,
+              "Core Station command copy changed: " + before)
+        station_js = station_js.replace(before, after)
+    inventory["newtab.html"] = station_html.encode("utf-8")
+    inventory["newtab.js"] = station_js.encode("utf-8")
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
                                    + "\n").encode("utf-8")
     inventory["workspace/bridge.js"] = (
