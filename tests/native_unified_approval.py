@@ -33,8 +33,8 @@ def check(name,fn):
     results["checks"].append({"name":name,"status":"PASS"})
     print("PASS:",name,flush=True)
 
-def ext_call(script):
-    return driver.execute_async_script(script)
+def ext_call(script,*args):
+    return driver.execute_async_script(script,*args)
 
 def granted(name):
     return ext_call("""
