@@ -1,0 +1,58 @@
+name: Unified Ayarime preview — one Firefox extension
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unified-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout core Ayarime PR
+        uses: actions/checkout@v4
+      - name: Checkout pinned Workspace AI source
+        uses: actions/checkout@v4
+        with:
+          repository: cryogenized-spec/elf-shell-workspace-ai
+          ref: 3c678bda35a64fe185135eb1b937e2d5eb26d810
+          path: workspace-ai
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate both independent source suites
+        run: |
+          npm test
+          (cd workspace-ai && npm test)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble a separate unsigned developer-only XPI
+        run: python3 scripts/build_unified_preview.py --companion workspace-ai
+      - name: Validate permissions, identity, packaging and router isolation
+        run: python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
+      - name: Mozilla extension lint
+        run: npx --yes web-ext@10.8.0 lint --source-dir dist/unified-preview --warnings-as-errors
+      - name: Install real Firefox
+        id: firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+      - name: Install Selenium
+        run: python -m pip install 'selenium>=4.52,<5'
+      - name: Test the unified XPI in real headless Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_unified_preview.py
+      - name: Upload developer package and Firefox evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ELF-SHELL-Ayarime-unified-UNSIGNED-preview
+          path: |
+            dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
+            dist/unified-firefox/
+          if-no-files-found: warn
