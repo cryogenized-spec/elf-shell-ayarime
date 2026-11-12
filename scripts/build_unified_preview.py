@@ -138,8 +138,24 @@ def adapt_background(source: str) -> str:
         '          capabilities:["OPEN_ASSISTANT","OPEN_WORKSPACE"],\n'
         '          dataAccess:"browser-tabs-only"};\n'
         '      case "UNIFIED_OPEN_ASSISTANT":\n'
+        '        if(!await browser.permissions.contains({permissions:["tabs"]}))\n'
+        '          throw Error("Firefox tab access must be granted before opening the AI Hub");\n'
         '        return {ok:true,result:await serialise(focusAssistant)};\n'
         + anchor
+    ))
+    # Any extension page can send same-extension messages; keep the actual
+    # capability boundary in the background, not only in a page click handler.
+    workspace_case = (
+        '      case "OPEN_WORKSPACE":\n'
+        '        return {ok:true,result:await serialise(launchWorkspace)};'
+    )
+    check(source.count(workspace_case) == 1,
+          "Companion workspace handler changed: review permission guard")
+    source = source.replace(workspace_case, (
+        '      case "OPEN_WORKSPACE":\n'
+        '        if(!await browser.permissions.contains({permissions:["tabs","tabGroups"]}))\n'
+        '          throw Error("Firefox tab and tab-group access must be approved first");\n'
+        '        return {ok:true,result:await serialise(launchWorkspace)};'
     ))
     section = source.split("async function handle(message) {", 1)
     check(len(section) == 2, "Could not find companion handler")
