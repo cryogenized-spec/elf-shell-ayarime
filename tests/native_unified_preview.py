@@ -66,8 +66,8 @@ try:
     check("Ask Ayarime entry is present in the unified Station",
           len(driver.find_elements(By.ID,"ask-ayarime-toggle"))==1)
 
-    reply=message({"type":"elfshell:unified:bridge:v1",
-                   "kind":"elfshell.workspace.bridge","version":1,"command":"HELLO"})
+    reply=message({"type":"UNIFIED_HELLO",
+                   "kind":"elfshell.workspace.bridge","version":1})
     state_probe=message({"type":"GET_STATE"})
     # Only print the response types and booleans, never saved URLs or accounts.
     print("UNIFIED_ROUTER_DIAGNOSTIC:",json.dumps({
@@ -79,8 +79,8 @@ try:
           isinstance(reply,dict) and reply.get("ok") and reply.get("version")==1 and
           "OPEN_ASSISTANT" in reply.get("capabilities",[]))
 
-    malformed=message({"type":"elfshell:unified:bridge:v1","kind":"elfshell.workspace.bridge",
-                       "version":1,"command":"AI_SEND_PROMPT"})
+    malformed=message({"type":"UNIFIED_OPEN_ASSISTANT","kind":"elfshell.workspace.bridge",
+                       "version":99})
     check("internal bridge rejects inference commands",
           malformed.get("ok") is False)
 
@@ -108,8 +108,8 @@ try:
     check("Workspace AI Hub works without installing a second add-on",
           len(driver.find_elements(By.ID,"ai-console"))==1 and
           len(driver.find_elements(By.CLASS_NAME,"ayarime-rose-loader"))==1)
-    denied=message({"type":"elfshell:unified:bridge:v1",
-                   "kind":"elfshell.workspace.bridge","version":1,"command":"HELLO"})
+    denied=message({"type":"UNIFIED_HELLO",
+                   "kind":"elfshell.workspace.bridge","version":1})
     check("Hub cannot impersonate the dashboard's privileged internal bridge",
           denied.get("ok") is False)
 
