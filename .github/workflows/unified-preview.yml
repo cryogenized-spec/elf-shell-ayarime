@@ -32,6 +32,13 @@ jobs:
           python-version: '3.12'
       - name: Assemble a separate unsigned developer-only XPI
         run: python3 scripts/build_unified_preview.py --companion workspace-ai
+      - name: Validate generated single-extension scripts compile
+        run: |
+          node --check dist/unified-preview/background.js
+          node --check dist/unified-preview/workspace-ai-background.js
+          node --check dist/unified-preview/workspace/bridge.js
+          node --check dist/unified-preview/ui.js
+          node --check dist/unified-preview/ui-trace.js
       - name: Validate permissions, identity, packaging and router isolation
         run: python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
       - name: Mozilla extension lint
