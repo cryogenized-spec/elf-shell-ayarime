@@ -32,6 +32,10 @@ jobs:
           python-version: '3.12'
       - name: Assemble a separate unsigned developer-only XPI
         run: python3 scripts/build_unified_preview.py --companion workspace-ai
+      - name: Package the pre-fusion core-only extension separately
+        run: |
+          python3 scripts/package.py
+          cp dist/ELF-SHELL-Ayarime-v0.5.6-AMO.zip dist/ELF-SHELL-Ayarime-core-before-upgrade-UNSIGNED.xpi
       - name: Verify inert Google Master Worker typed contract
         run: |
           node --test tests/google_worker_contract.test.cjs
@@ -62,6 +66,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_unified_approval.py
+      - name: Accept core-to-unified same-ID upgrade and original v5 backup in Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_unified_upgrade.py
       - name: Upload developer package and Firefox evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,4 +79,5 @@ jobs:
             dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
             dist/unified-firefox/
             dist/native-approval/
+            dist/upgrade-acceptance/
           if-no-files-found: warn
