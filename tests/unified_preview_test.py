@@ -63,6 +63,8 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('openAssistant:()=>launch("OPEN_ASSISTANT",["tabs"])',bridge)
         self.assertIn('openWorkspace:()=>launch("OPEN_WORKSPACE",["tabs","tabGroups"])',bridge)
         self.assertIn("browser.permissions.request({permissions})",bridge)
+        self.assertIn("This does not grant Google account access.",bridge)
+        self.assertIn("Google account access remains separate.",bridge)
         self.assertIn('type:"OPEN_WORKSPACE"',(STAGE/"ui.js").read_text())
         self.assertIn('permissions:["tabs","tabGroups"]',(STAGE/"ui.js").read_text())
         self.assertIn("Google OAuth and update checks are disabled",
