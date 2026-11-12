@@ -108,7 +108,7 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertNotIn('elfshell.unified.aiEnabled.v1',(ROOT/"newtab.js").read_text())
         self.assertNotIn('ai-module-toggle',(ROOT/"newtab.html").read_text())
         self.assertNotIn('unified/module.js',(ROOT/"manifest.json").read_text())
-        self.assertIn("elfshell-workspace-v3:field:",(ROOT/"newtab.js").read_text())
+        self.assertIn('const dataKey="elfshell-workspace-v3";',(ROOT/"newtab.js").read_text())
 
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())
