@@ -137,6 +137,8 @@ def adapt_background(source: str) -> str:
     guarded = (
         'const WORKSPACE_MESSAGE_TYPES = new Set(' + json.dumps(types) + ');\n'
         'browser.runtime.onMessage.addListener((message,sender) => {\n'
+        '  if (message?.type==="elfshell:unified:bridge:v1") '
+        'return handleUnifiedBridge(message,sender);\n'
         '  if (sender?.id !== browser.runtime.id || '
         ' !WORKSPACE_MESSAGE_TYPES.has(message?.type)) return undefined;\n'
         '  if (message.type.startsWith("GOOGLE_") || '
@@ -161,8 +163,9 @@ def adapt_background(source: str) -> str:
         '    .catch(()=>{});'
     ))
     adapter = r"""
-// Same-extension bridge. Only the core's own newtab.html may call this route.
-browser.runtime.onMessage.addListener((message, sender) => {
+// Same-extension bridge, dispatched by the already-working companion listener.
+// Only the core's own newtab.html may invoke these allowlisted commands.
+function handleUnifiedBridge(message, sender) {
   if (message?.type !== "elfshell:unified:bridge:v1") return undefined;
   const caller = browser.runtime.getURL("newtab.html");
   if (sender?.id !== browser.runtime.id || sender?.url !== caller)
@@ -178,7 +181,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
     return serialise(focusAssistant)
       .then(result=>({ok:true,result}),()=>({ok:false,error:"Could not focus AI Hub"}));
   return handle({type:"OPEN_WORKSPACE"});
-});
+}
 """
     # Register the reviewed internal adapter before optional companion event
     # handlers so an unrelated/unsupported add-on API cannot block handoff.
