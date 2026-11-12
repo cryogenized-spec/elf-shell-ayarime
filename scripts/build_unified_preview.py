@@ -286,19 +286,19 @@ def build(companion_dir: Path) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
-        '<script defer src="unified/module.js"></script>\\n' + script_tag)
+        '<script defer src="unified/module.js"></script>\n' + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
     toggle_html = (
         '<button id="ai-module-toggle" class="settings-toggle" type="button" '
-        'aria-pressed="false" disabled>✧ ENABLE AYARIME AI</button>\\n'
+        'aria-pressed="false" disabled>✧ ENABLE AYARIME AI</button>\n'
     )
     station_html = station_html.replace(tool_button, toggle_html + '          ' + tool_button)
     label = '<p id="workspace-bridge-status"'
     check(station_html.count(label) == 1, "Core bridge status element changed")
     station_html = station_html.replace(label,
         '<p id="ai-module-status" class="workspace-bridge-status" '
-        'role="status" aria-live="polite"></p>\\n      ' + label)
+        'role="status" aria-live="polite"></p>\n      ' + label)
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
     copy = {
