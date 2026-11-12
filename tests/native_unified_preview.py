@@ -46,12 +46,17 @@ try:
     installed=driver.install_web_extension(str(XPI),permanent=False).id
     check("one unified add-on keeps original ELF//SHELL identity",
           installed=="elf-shell-ayarime@local.theme")
+    existing_handles=set(driver.window_handles)
     with driver.context(driver.CONTEXT_CHROME):
         uuids=driver.execute_script("""
           const services=typeof Services!=="undefined"?Services:window.Services;
           return JSON.parse(services.prefs.getStringPref("extensions.webextensions.uuids","{}"));
         """)
         driver.execute_script("window.BrowserCommands.openTab();")
+    WebDriverWait(driver,15).until(
+        lambda d:len(set(d.window_handles)-existing_handles)==1)
+    dashboard=next(iter(set(driver.window_handles)-existing_handles))
+    driver.switch_to.window(dashboard)
     check("no separate Workspace AI companion installed",
           "workspace-ai@elf-shell.local" not in uuids)
     WebDriverWait(driver,25).until(lambda d:
