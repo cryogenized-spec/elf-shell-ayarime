@@ -54,6 +54,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_unified_preview.py
+      - name: Exercise real Firefox optional permissions (deny, allow, reuse)
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_unified_approval.py
       - name: Upload developer package and Firefox evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -62,4 +66,5 @@ jobs:
           path: |
             dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
             dist/unified-firefox/
+            dist/native-approval/
           if-no-files-found: warn
