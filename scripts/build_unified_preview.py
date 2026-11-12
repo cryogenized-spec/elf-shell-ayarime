@@ -80,7 +80,7 @@ def combine_manifest(core: dict, companion: dict) -> dict:
     check(extra == {"tabs", "tabGroups", "identity", "alarms"},
           "Companion runtime permissions changed: review before bundling")
     manifest = json.loads(json.dumps(core))
-    manifest["name"] = "ELF//SHELL — Ayarime [UNSIGNED UNIFIED PREVIEW]"
+    manifest["name"] = "ELF//SHELL — Ayarime Unified Preview"
     manifest["description"] = "Development-only integrated Ayarime sidebar, workspace and AI."
     manifest["background"]["scripts"] = [
         *core["background"]["scripts"],
@@ -94,7 +94,10 @@ def combine_manifest(core: dict, companion: dict) -> dict:
     manifest["action"] = companion["action"]
     # The published core's required permissions remain exactly unchanged.
     manifest["permissions"] = list(core["permissions"])
-    manifest["optional_permissions"] = sorted(set(core.get("optional_permissions", [])) | extra)
+    # Mozilla does not support identity/alarms in optional_permissions.
+    # Keep them out of the preview instead of escalating core required grants.
+    manifest["optional_permissions"] = sorted(
+        set(core.get("optional_permissions", [])) | {"tabs", "tabGroups"})
     manifest["optional_host_permissions"] = sorted(
         set(core.get("optional_host_permissions", []))
         | set(companion.get("optional_host_permissions", [])))
@@ -136,7 +139,12 @@ def adapt_background(source: str) -> str:
         'browser.runtime.onMessage.addListener((message,sender) => {\n'
         '  if (sender?.id !== browser.runtime.id || '
         ' !WORKSPACE_MESSAGE_TYPES.has(message?.type)) return undefined;\n'
-        '  return handle(message);\n'
+        '  if (message.type.startsWith("GOOGLE_") || '
+        'message.type==="MORNING_COFFEE_PREPARE" || '
+        'message.type.startsWith("UPDATE_"))\\n'
+        '    return {ok:false,error:"Google OAuth and update checks are disabled '
+        'in this unsigned unified preview."};\\n'
+        '  return handle(message);\\n'
         '});'
     )
     source = source.replace(original, guarded)
@@ -208,6 +216,16 @@ def build(companion_dir: Path) -> None:
         data = (companion_dir / rel).read_bytes()
         if rel == "ui.js":
             data = adapt_ui(data.decode("utf-8")).encode("utf-8")
+        if rel in ("hub.html", "sidebar.html"):
+            html = data.decode("utf-8")
+            container = '<main class="shell">' if rel == "hub.html" else '<main class="side-shell">'
+            check(html.count(container) == 1, "Companion page structure changed: " + rel)
+            banner = ('<div class="frame" role="note" '
+                      'style="padding:12px;margin-bottom:12px;border-color:#aa83ad">'
+                      'UNSIGNED UNIFIED PREVIEW — Google OAuth/account operations '
+                      'and automatic update checks are disabled until separately reviewed.'
+                      '</div>')
+            data = html.replace(container, container + "\\n" + banner, 1).encode("utf-8")
         inventory[rel] = data
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
                                    + "\n").encode("utf-8")
