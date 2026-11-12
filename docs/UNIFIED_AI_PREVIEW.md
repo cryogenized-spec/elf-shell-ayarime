@@ -45,3 +45,15 @@ Do **not** install this as a permanent extension in a profile already running th
 6. Review Mozilla AMO disclosures and source licensing, produce a signed candidate, and only then consider merging or releasing.
 
 **Important:** A successful build is not equivalent to finished Google scope integration, secure account onboarding or signed distribution. Keep the branches unmerged until review and explicit approval.
+
+## Firefox native permission acceptance — staging PR #49
+
+The follow-up QA suite `tests/native_unified_approval.py` uses a **clean, temporary Firefox profile** to click the actual `Ask Ayarime` Station button and the browser's own runtime-permission doorhanger, without visiting Google or calling an AI provider.
+
+The test first **denies** tab access, confirming the permission stays off and no Hub, workspace, or Google tabs are created. It then **approves** the request using Firefox's native UI, confirms Firefox records `tabs` but not `tabGroups`, and verifies that the command opens one pinned Workspace AI Hub. Repeating the command must reuse the Hub with no new tabs.
+
+This is distinct from the simulated denial and spoofed-approval tests in `tests/native_unified_preview.py`: those deliberately override the page API in an isolated test to verify that the background enforces the real permission independently of what a page claims. The real native test never overrides `browser.permissions.request`.
+
+No Google OAuth scopes, account contents, API keys, MCP worker operations, or provider inference are accessed in either suite. Browser permission dialogs are tested using the Firefox chrome context because modern Firefox permission controls are custom `moz-button` elements that Selenium cannot always scroll-click in the web content context.
+
+**Release gate still open:** this does not test the live Google Master Worker, signed AMO upgrades, account-data disclosure previews or manual user acceptance in the installed desktop profile. Do not install the unsigned preview over the public version.
