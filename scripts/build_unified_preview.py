@@ -301,6 +301,10 @@ def build(companion_dir: Path) -> None:
         'role="status" aria-live="polite"></p>\n      ' + label)
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    # Inert by design: bundled for contract review and tests, NOT injected into
+    # the page or background until OAuth scopes and host allowlists are accepted.
+    inventory["unified/google-worker-contract.js"] = (
+        ROOT / "unified-preview" / "google-worker-contract.js").read_bytes()
     copy = {
         "Restore Google workspace using optional companion":
             "Open your integrated Ayarime Workspace Hub",
