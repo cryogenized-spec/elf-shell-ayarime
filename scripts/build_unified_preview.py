@@ -212,7 +212,7 @@ def build(companion_dir: Path) -> None:
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
                                    + "\n").encode("utf-8")
     inventory["workspace/bridge.js"] = (
-        ROOT / "integration" / "unified-bridge.js").read_bytes()
+        ROOT / "unified-preview" / "bridge.js").read_bytes()
     inventory["workspace-ai-background.js"] = adapt_background(
         (companion_dir / "background.js").read_text(encoding="utf-8")
     ).encode("utf-8")
