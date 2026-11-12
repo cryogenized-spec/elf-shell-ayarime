@@ -89,22 +89,36 @@ try:
 
     seeded=async_js("""
       const done=arguments[arguments.length-1];
-      const base=structuredClone(state);
-      base.links[0].label="My old Firefox";
-      base.links[0].url="https://www.mozilla.org/en-US/firefox/";
-      base.note="PRE-MERGE NOTE: synthetic legacy archive kept intact";
-      base.focus="PRE-MERGE FOCUS: keep the original work plan";
-      base.motion=true;
-      base.contrast=true;
-      base.cursor="system";
-      base.typography.scale=110;
-      base.bangs=[{key:"test",url:"https://www.mozilla.org/search/?q={query}"}];
-      base.sessions=[
-        {name:"Original Research",created:"2026-10-01T10:00:00Z",
-          urls:["https://www.mozilla.org/en-US/firefox/","https://example.org/research"]},
-        {name:"Other Tab Set",created:"2026-10-02T10:00:00Z",
-          urls:["https://example.net/reference","https://example.com/start"]}
-      ];
+      // Explicit representative fields from the reviewed core v3 schema:
+      // WebDriver's isolated script execution cannot read top-level let state.
+      const base={
+        links:[
+          {label:"My old Firefox",icon:"firefox",glyph:"◉",
+           url:"https://www.mozilla.org/en-US/firefox/",group:"GENERAL"},
+          {label:"Mail",icon:"mail",glyph:"✉",
+           url:"https://mail.google.com/",group:"WORK"},
+          {label:"Calendar",icon:"calendar",glyph:"▦",
+           url:"https://calendar.google.com/",group:"WORK"},
+          {label:"Drive",icon:"drive",glyph:"◇",
+           url:"https://drive.google.com/",group:"WORK"},
+          {label:"Video",icon:"video",glyph:"▷",
+           url:"https://www.youtube.com/",group:"MEDIA"},
+          {label:"Library",icon:"library",glyph:"▤",
+           url:"https://openlibrary.org/",group:"MEDIA"}
+        ],
+        note:"PRE-MERGE NOTE: synthetic legacy archive kept intact",
+        focus:"PRE-MERGE FOCUS: keep the original work plan",
+        motion:true,contrast:true,cursor:"system",
+        typography:{preset:"original",scale:110,display:"preset",
+          ui:"preset",mono:"preset",japanese:"preset"},
+        bangs:[{key:"test",url:"https://www.mozilla.org/search/?q={query}"}],
+        sessions:[
+          {name:"Original Research",created:"2026-10-01T10:00:00Z",
+            urls:["https://www.mozilla.org/en-US/firefox/","https://example.org/research"]},
+          {name:"Other Tab Set",created:"2026-10-02T10:00:00Z",
+            urls:["https://example.net/reference","https://example.com/start"]}
+        ]
+      };
       const changes={};
       for(const field of arguments[0])
         changes["elfshell-workspace-v3:field:"+field]=structuredClone(base[field]);
