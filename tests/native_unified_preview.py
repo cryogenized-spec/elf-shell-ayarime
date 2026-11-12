@@ -93,6 +93,63 @@ try:
     check("tabs and tabGroups remain ungranted until user consent",
           len(permissions)==2 and all(item.get("granted") is False for item in permissions))
 
+    # Even a same-extension page cannot open workspaces by sending the
+    # internal command directly before the optional grants have been given.
+    blocked_ai=message({"type":"UNIFIED_OPEN_ASSISTANT",
+                        "kind":"elfshell.workspace.bridge","version":1})
+    blocked_workspace=message({"type":"OPEN_WORKSPACE"})
+    check("background rejects assistant launch before real tab permission",
+          isinstance(blocked_ai,dict) and blocked_ai.get("ok") is False and
+          "tab access" in blocked_ai.get("error","").lower())
+    check("background rejects workspace restore before tab-group approval",
+          isinstance(blocked_workspace,dict) and
+          blocked_workspace.get("ok") is False and
+          "tab-group access" in blocked_workspace.get("error","").lower())
+
+    # Test the real Station click handler without invoking Firefox's live
+    # permission doorhanger: a deterministic temporary page-local stub
+    # imitates a denied permission request. This is NOT user grant acceptance.
+    stubbed=driver.execute_script("""
+      window.__qaOriginalPermissionRequest=browser.permissions.request;
+      const deny=()=>Promise.resolve(false);
+      browser.permissions.request=deny;
+      return browser.permissions.request===deny;
+    """)
+    check("QA can simulate a declined permission without touching browser grants",stubbed)
+    driver.find_element(By.CSS_SELECTOR,"#station-menu summary").click()
+    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    WebDriverWait(driver,10).until(lambda d:
+        "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())
+    check("Station shows a useful error after declined access",
+          "existing tabs are unchanged" in
+          driver.find_element(By.ID,"workspace-bridge-status").text.lower())
+    driver.execute_script("browser.permissions.request=window.__qaOriginalPermissionRequest;")
+
+    # The dashboard must not be able to bypass the background permission check
+    # by falsely reporting that a prompt was approved.
+    simulated=driver.execute_script("""
+      const allow=()=>Promise.resolve(true);
+      browser.permissions.request=allow;
+      return browser.permissions.request===allow;
+    """)
+    check("QA can simulate an optimistic page-local grant",simulated)
+    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    WebDriverWait(driver,10).until(lambda d:
+        "tab access must be granted" in
+        d.find_element(By.ID,"workspace-bridge-status").text.lower())
+    check("background blocks launch even if the page claims permission was granted",
+          "workspace unavailable" in
+          driver.find_element(By.ID,"workspace-bridge-status").text.lower())
+    driver.execute_script("browser.permissions.request=window.__qaOriginalPermissionRequest;")
+    check("simulated grants have not changed Firefox's actual tab permissions",
+          all(item.get("granted") is False for item in
+          driver.execute_async_script("""
+             const done=arguments[arguments.length-1];
+             Promise.all(["tabs","tabGroups"].map(async name=>({
+               name,granted:await browser.permissions.contains({permissions:[name]})
+             }))).then(done);
+          """)))
+
     native=message({"type":"elfshell:telemetry:read:v1"})
     check("core background still owns its telemetry permission boundary",
           native.get("ok") is False and "telemetry" in native.get("error","").lower())
