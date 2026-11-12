@@ -118,7 +118,7 @@ def combine_manifest(core: dict, companion: dict) -> dict:
 
 
 def adapt_background(source: str) -> str:
-    """Keep companion top-level declarations separate from core's background script."""
+    """Isolate companion source and route a limited set of internal messages."""
     original = (
         'browser.runtime.onMessage.addListener((message,sender) => {\n'
         '  if (sender.id !== browser.runtime.id) return {ok:false,error:"Unauthorized sender"};\n'
@@ -127,20 +127,40 @@ def adapt_background(source: str) -> str:
     )
     check(source.count(original) == 1,
           "Companion background listener changed: manual review required")
+
+    # Use the SAME switch and listener that already handle GET_STATE. This avoids
+    # competing Firefox runtime.onMessage listeners for the unified bridge.
+    anchor = '      case "GET_STATE":'
+    check(source.count(anchor) == 1, "Companion internal switch changed")
+    source = source.replace(anchor, (
+        '      case "UNIFIED_HELLO":\n'
+        '        return {ok:true,kind:"elfshell.workspace.bridge",version:1,\n'
+        '          capabilities:["OPEN_ASSISTANT","OPEN_WORKSPACE"],\n'
+        '          dataAccess:"browser-tabs-only"};\n'
+        '      case "UNIFIED_OPEN_ASSISTANT":\n'
+        '        return {ok:true,result:await serialise(focusAssistant)};\n'
+        + anchor
+    ))
     section = source.split("async function handle(message) {", 1)
     check(len(section) == 2, "Could not find companion handler")
     body = section[1].split(original, 1)[0]
     types = sorted(set(re.findall(r'case "([A-Z][A-Z0-9_]+)":', body)))
-    check(len(types) >= 20 and "GOOGLE_AUTH_PREPARE" in types
-          and "OPEN_WORKSPACE" in types and "AI_SEND_PROMPT" in types,
-          "Companion message router changed: review required")
+    check(len(types) >= 20 and "UNIFIED_HELLO" in types
+          and "UNIFIED_OPEN_ASSISTANT" in types
+          and "GOOGLE_AUTH_PREPARE" in types and "OPEN_WORKSPACE" in types,
+          "Companion internal message router changed: review required")
     guarded = (
         'const WORKSPACE_MESSAGE_TYPES = new Set(' + json.dumps(types) + ');\n'
         'browser.runtime.onMessage.addListener((message,sender) => {\n'
-        '  if (message?.type==="elfshell:unified:bridge:v1") '
-        'return handleUnifiedBridge(message,sender);\n'
         '  if (sender?.id !== browser.runtime.id || '
         ' !WORKSPACE_MESSAGE_TYPES.has(message?.type)) return undefined;\n'
+        '  if (message.type.startsWith("UNIFIED_")) {\n'
+        '    if (sender?.url !== browser.runtime.getURL("newtab.html") || '
+        'message.kind!=="elfshell.workspace.bridge" || message.version!==1 ||\n'
+        '        Object.keys(message).some(key=>'
+        '!["type","kind","version"].includes(key)))\n'
+        '      return {ok:false,error:"Unsupported unified dashboard command"};\n'
+        '  }\n'
         '  if (message.type.startsWith("GOOGLE_") || '
         'message.type==="MORNING_COFFEE_PREPARE" || '
         'message.type.startsWith("UPDATE_"))\n'
@@ -150,8 +170,6 @@ def adapt_background(source: str) -> str:
         '});'
     )
     source = source.replace(original, guarded)
-    # Firefox action clicks remain user-initiated. Require the optional
-    # tab/group grants before restoring any tabs.
     action = (
         '  serialise(launchWorkspace).catch(error => '
         'console.error("Workspace initialization failed:",error));'
@@ -162,32 +180,6 @@ def adapt_background(source: str) -> str:
         '    .then(granted=>granted ? serialise(launchWorkspace) : undefined)\n'
         '    .catch(()=>{});'
     ))
-    adapter = r"""
-// Same-extension bridge, dispatched by the already-working companion listener.
-// Only the core's own newtab.html may invoke these allowlisted commands.
-function handleUnifiedBridge(message, sender) {
-  if (message?.type !== "elfshell:unified:bridge:v1") return undefined;
-  const caller = browser.runtime.getURL("newtab.html");
-  if (sender?.id !== browser.runtime.id || sender?.url !== caller)
-    return {ok:false,error:"Unauthorized dashboard sender"};
-  if (message.kind !== "elfshell.workspace.bridge" || message.version !== 1 ||
-      !["HELLO","OPEN_ASSISTANT","OPEN_WORKSPACE"].includes(message.command) ||
-      Object.keys(message).some(key=>!["type","kind","version","command"].includes(key)))
-    return {ok:false,error:"Unsupported unified bridge request"};
-  if (message.command === "HELLO")
-    return {ok:true,kind:"elfshell.workspace.bridge",version:1,
-      capabilities:["OPEN_ASSISTANT","OPEN_WORKSPACE"],dataAccess:"browser-tabs-only"};
-  if (message.command === "OPEN_ASSISTANT")
-    return serialise(focusAssistant)
-      .then(result=>({ok:true,result}),()=>({ok:false,error:"Could not focus AI Hub"}));
-  return handle({type:"OPEN_WORKSPACE"});
-}
-"""
-    # Register the reviewed internal adapter before optional companion event
-    # handlers so an unrelated/unsupported add-on API cannot block handoff.
-    marker = "// Versioned, tightly scoped communication with the independently installed ELF//SHELL core."
-    check(source.count(marker) == 1, "Legacy external bridge location changed")
-    source = source.replace(marker, adapter + "\n" + marker, 1)
     external = (
         'browser.runtime.onMessageExternal.addListener((message, sender) =>\n'
         '  handleCoreMessage(message, sender).catch(() => ({ok:false,error:"Bridge request failed"}))\n'
@@ -195,9 +187,7 @@ function handleUnifiedBridge(message, sender) {
     )
     check(source.count(external) == 1, "Companion external listener changed")
     source = source.replace(external, "// Disabled: one-extension build has no external connection.")
-    # This IIFE prevents conflicting global 'const' names in the two backgrounds.
     return '(function(){\n"use strict";\n' + source + '\n})();\n'
-
 
 def adapt_ui(source: str) -> str:
     needle = '    const response=await request({type:"OPEN_WORKSPACE"});'
