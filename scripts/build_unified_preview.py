@@ -141,10 +141,10 @@ def adapt_background(source: str) -> str:
         ' !WORKSPACE_MESSAGE_TYPES.has(message?.type)) return undefined;\n'
         '  if (message.type.startsWith("GOOGLE_") || '
         'message.type==="MORNING_COFFEE_PREPARE" || '
-        'message.type.startsWith("UPDATE_"))\\n'
+        'message.type.startsWith("UPDATE_"))\n'
         '    return {ok:false,error:"Google OAuth and update checks are disabled '
-        'in this unsigned unified preview."};\\n'
-        '  return handle(message);\\n'
+        'in this unsigned unified preview."};\n'
+        '  return handle(message);\n'
         '});'
     )
     source = source.replace(original, guarded)
@@ -225,7 +225,7 @@ def build(companion_dir: Path) -> None:
                       'UNSIGNED UNIFIED PREVIEW — Google OAuth/account operations '
                       'and automatic update checks are disabled until separately reviewed.'
                       '</div>')
-            data = html.replace(container, container + "\\n" + banner, 1).encode("utf-8")
+            data = html.replace(container, container + "\n" + banner, 1).encode("utf-8")
         inventory[rel] = data
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
                                    + "\n").encode("utf-8")
