@@ -32,6 +32,10 @@ jobs:
           python-version: '3.12'
       - name: Assemble a separate unsigned developer-only XPI
         run: python3 scripts/build_unified_preview.py --companion workspace-ai
+      - name: Verify inert Google Master Worker typed contract
+        run: |
+          node --test tests/google_worker_contract.test.cjs
+          node --check dist/unified-preview/unified/google-worker-contract.js
       - name: Validate generated single-extension scripts compile
         run: |
           node --check dist/unified-preview/background.js
