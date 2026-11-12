@@ -3,7 +3,11 @@
 (() => {
   const KIND = "elfshell.workspace.bridge";
   const VERSION = 1;
-  const MESSAGE_TYPE = "elfshell:unified:bridge:v1";
+  const INTERNAL_TYPES = Object.freeze({
+    HELLO:"UNIFIED_HELLO",
+    OPEN_ASSISTANT:"UNIFIED_OPEN_ASSISTANT",
+    OPEN_WORKSPACE:"OPEN_WORKSPACE"
+  });
   const status = () => document.getElementById("workspace-bridge-status");
   function report(message, error=false) {
     const target = status();
@@ -13,8 +17,10 @@
     target.classList.toggle("error", error);
   }
   async function message(command) {
+    if(!Object.hasOwn(INTERNAL_TYPES,command))
+      throw Error("Unsupported unified workspace action");
     const response = await browser.runtime.sendMessage({
-      type:MESSAGE_TYPE,kind:KIND,version:VERSION,command
+      type:INTERNAL_TYPES[command],kind:KIND,version:VERSION
     });
     if (!response || response.ok !== true)
       throw Error(response?.error || "Ayarime's local workspace engine is unavailable.");
