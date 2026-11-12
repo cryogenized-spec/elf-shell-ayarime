@@ -133,6 +133,11 @@ try:
       return browser.permissions.request===allow;
     """)
     check("QA can simulate an optimistic page-local grant",simulated)
+    menu=driver.find_element(By.ID,"station-menu")
+    if not menu.get_property("open"):
+        menu.find_element(By.CSS_SELECTOR,"summary").click()
+    WebDriverWait(driver,5).until(lambda d:
+        d.find_element(By.ID,"ask-ayarime-toggle").is_displayed())
     driver.find_element(By.ID,"ask-ayarime-toggle").click()
     WebDriverWait(driver,10).until(lambda d:
         "tab access must be granted" in
