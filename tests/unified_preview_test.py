@@ -69,8 +69,24 @@ class UnifiedPreviewContract(unittest.TestCase):
                       (STAGE/"workspace-ai-background.js").read_text())
         self.assertIn("UNSIGNED UNIFIED PREVIEW",
                       (STAGE/"hub.html").read_text())
+        companion=(STAGE/"workspace-ai-background.js").read_text()
+        self.assertIn('permissions:["tabs"]',companion)
+        self.assertIn('permissions:["tabs","tabGroups"]',companion)
+        self.assertIn("tab access must be granted",companion)
+        self.assertIn("tab-group access must be approved first",companion)
         self.assertNotIn("https://google",bridge)
         self.assertNotIn("api.openai.com",bridge)
+
+    def test_unified_station_labels_do_not_claim_a_second_companion(self):
+        html=(STAGE/"newtab.html").read_text()
+        js=(STAGE/"newtab.js").read_text()
+        self.assertIn("integrated Ayarime AI console",html)
+        self.assertIn("integrated Ayarime Workspace Hub",html)
+        self.assertIn("INTEGRATED AYARIME WORKSPACE",js)
+        self.assertIn("FOCUS AYARIME AI CONSOLE",js)
+        self.assertNotIn("OPTIONAL WORKSPACE AI COMPANION",js)
+        self.assertNotIn("optional companion",html)
+        self.assertIn("OPTIONAL WORKSPACE AI COMPANION",(ROOT/"newtab.js").read_text())
 
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())
