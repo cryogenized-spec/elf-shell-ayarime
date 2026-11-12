@@ -39,8 +39,8 @@
   }
   async function launch(command,permissions) {
     report(command==="OPEN_ASSISTANT"
-      ? "Preparing Ayarime's local AI console…"
-      : "Preparing your Firefox workspace…");
+      ? "Firefox may request tab access to focus your Ayarime AI Hub. This does not grant Google account access."
+      : "Firefox may request tab and tab-group access to restore saved workspace tabs. Google account access remains separate.");
     try {
       await allowed(permissions);
       const hello=await message("HELLO");
