@@ -131,6 +131,30 @@ try:
         lambda d:len(d.find_elements(By.ID,"ask-ayarime-toggle"))==1)
     check("initially no tabs permission",
           lambda:require(granted("tabs") is False,"Unexpected tab access already granted"))
+    WebDriverWait(driver,8).until(
+        lambda d:d.find_element(By.ID,"ai-module-toggle").is_enabled())
+    before_optin=window_tabs()
+    require(isinstance(before_optin,list),"Could not inspect tabs before AI opt-in")
+    launch_from_station()
+    WebDriverWait(driver,8).until(lambda d:
+        "enable ayarime ai" in
+        d.find_element(By.ID,"workspace-bridge-status").text.lower())
+    check("AI disabled by default without opening a Firefox prompt",
+          lambda:require(
+            granted("tabs") is False and
+            {tab["id"] for tab in window_tabs()}==
+              {tab["id"] for tab in before_optin},
+            "Disabled AI unexpectedly created a Hub or requested browser access"))
+    menu=driver.find_element(By.ID,"station-menu")
+    if not menu.get_property("open"):
+        menu.find_element(By.CSS_SELECTOR,"summary").click()
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
+    check("AI module needs a separate explicit Station opt-in",
+          lambda:require(granted("tabs") is False,
+                         "AI opt-in silently granted tabs"))
+
     before=window_tabs()
     require(isinstance(before,list),"Unable to inspect initial browser tabs")
     hub_url=driver.execute_script('return browser.runtime.getURL("hub.html")')
