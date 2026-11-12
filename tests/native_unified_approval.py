@@ -92,9 +92,17 @@ def respond_to_permission(approve):
     with driver.context(driver.CONTEXT_CHROME):
         selector=(".popup-notification-primary-button" if approve else
                   ".popup-notification-secondary-button")
-        control=driver.find_element(By.CSS_SELECTOR,
-          "#addon-webext-permissions-notification "+selector)
-        control.click()
+        result=driver.execute_script("""
+          const control=document.querySelector(
+            "#addon-webext-permissions-notification "+arguments[0]);
+          if(!control)return "missing";
+          // Firefox's moz-button is a web component; Marionette's native
+          // scroll-and-click cannot reach the hidden internal button.
+          const inner=control.shadowRoot?.querySelector("button");
+          (inner||control).click();
+          return "clicked";
+        """,selector)
+        require(result=="clicked","Permission prompt choice unavailable: "+str(result))
 
 try:
     require(XPI.is_file(),"Unsigned preview XPI not found")
