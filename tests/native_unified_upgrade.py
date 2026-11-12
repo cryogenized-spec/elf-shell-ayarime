@@ -228,6 +228,30 @@ try:
     check("upgrade and backup import do not silently enable AI",
           ai.get("elfshell.unified.aiEnabled.v1") is not True)
 
+    # Validate a reversible *development* downgrade as a separate safety
+    # property: pre-fusion core must continue reading its own unchanged keys.
+    rolled=driver.install_web_extension(str(OLD),permanent=False).id
+    check("development rollback retains the same add-on identity",rolled==ADDON_ID)
+    old_again=open_station()
+    check("rollback restores original Station without AI UI",
+          not driver.find_elements(By.ID,"ai-module-toggle"))
+    WebDriverWait(driver,12).until(lambda d:
+        d.find_element(By.ID,"note-input").get_attribute("value")==baseline[PREFIX+"note"])
+    check("rollback continues rendering original note and focus",
+          driver.find_element(By.ID,"focus-input").get_attribute("value")==baseline[PREFIX+"focus"])
+    assert_preserved(snapshot(),after_import,"development rollback preserved data")
+
+    # The preview may safely be reintroduced after that rollback. Import and
+    # rollback never grant provider or Google authorization.
+    upgraded_again=driver.install_web_extension(str(NEW),permanent=False).id
+    check("second development upgrade preserves add-on identity",upgraded_again==ADDON_ID)
+    final_handle=open_station()
+    WebDriverWait(driver,12).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").is_enabled())
+    check("second upgrade still defaults AI to disabled",
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
+    assert_preserved(snapshot(),after_import,"re-upgrade preserved data")
+
     results={"status":"PASS","checks":checks,
              "note":"Clean synthetic Firefox temporary-addon replacement; not a signed AMO upgrade"}
     driver.save_screenshot(str(OUT/"unified-after-upgrade.png"))
