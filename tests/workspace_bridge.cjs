@@ -21,13 +21,17 @@ function harness(send) {
 test("command controls are present and package includes the new bridge",()=>{
   const html=read("newtab.html"),js=read("newtab.js"),packagePy=read("scripts/package.py");
   assert(html.includes('id="workspace-companion-toggle"'));
-  assert(html.includes("9 TOOLS · CTRL+K"));
+  assert(html.includes("10 TOOLS · CTRL+K"));
+  assert(html.includes('id="ask-ayarime-toggle"'));
+  assert(js.includes('$("ask-ayarime-toggle").addEventListener("click",launchAyarimeAssistant)'));
+  assert(js.includes('action("Ask Ayarime · AI Console"'));
   assert(js.includes('$("workspace-companion-toggle").addEventListener("click",launchAyarimeWorkspace)'));
   assert(html.includes('id="workspace-bridge-status"'));
   assert(html.includes('<script defer src="workspace/bridge.js"></script>'));
   assert(js.includes('isAyarimeWorkspaceCommand(q)'));
   assert(js.includes('action("Ayarime, please bring up my workspace"'));
   assert(packagePy.includes("'workspace/bridge.js'"));
+  assert(js.includes("isAskAyarimeCommand(q)"));
   assert(!read("manifest.json").includes("workspace-ai@elf-shell.local"),"core should not declare the companion as an owned extension");
 });
 
@@ -58,4 +62,23 @@ test("incompatible protocol never invokes a write-capable operation",async()=>{
   assert.equal(await h.window.AyarimeWorkspaceBridge.openWorkspace(),null);
   assert.equal(h.sent.length,1);
   assert.match(h.status.textContent,/protocol is incompatible/);
+});
+
+test("Ask Ayarime performs HELLO then OPEN_ASSISTANT; no model or Google data flows through core",async()=>{
+  const h=harness(async(id,payload)=>{
+    if(payload.command==="HELLO")return {ok:true,kind:"elfshell.workspace.bridge",version:1,capabilities:["OPEN_ASSISTANT","OPEN_WORKSPACE"]};
+    return {ok:true,result:{focused:true,hubTabId:17,view:"assistant"}};
+  });
+  const result=await h.window.AyarimeWorkspaceBridge.openAssistant();
+  assert.equal(result.hubTabId,17);
+  assert.deepEqual(h.sent.map(x=>x.payload.command),["HELLO","OPEN_ASSISTANT"]);
+  assert(h.sent.every(x=>x.id==="workspace-ai@elf-shell.local"));
+  assert(h.sent.every(x=>Object.keys(x.payload).sort().join(",")==="command,kind,version"),"No prompt or account text may be passed");
+  assert.match(h.status.textContent,/AI console opened/);
+});
+test("old companion without OPEN_ASSISTANT fails helpfully and sends no other operation",async()=>{
+  const h=harness(async()=>({ok:true,kind:"elfshell.workspace.bridge",version:1,capabilities:["OPEN_WORKSPACE"]}));
+  assert.equal(await h.window.AyarimeWorkspaceBridge.openAssistant(),null);
+  assert.deepEqual(h.sent.map(x=>x.payload.command),["HELLO"]);
+  assert.match(h.status.textContent,/Update the optional Workspace AI companion/);
 });
