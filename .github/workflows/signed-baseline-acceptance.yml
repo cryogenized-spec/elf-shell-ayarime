@@ -1,0 +1,67 @@
+name: Published AMO v0.5.5 to unified development preview
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout merged preview development source
+        uses: actions/checkout@v4
+      - name: Checkout pinned Workspace AI source
+        uses: actions/checkout@v4
+        with:
+          repository: cryogenized-spec/elf-shell-workspace-ai
+          ref: 3a586bcce19a6e66bf924521d54fefc732faffb3
+          path: workspace-ai
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build unsigned unified test XPI only
+        run: python3 scripts/build_unified_preview.py --companion workspace-ai
+      - name: Retrieve publicly signed AMO version 0.5.5
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 10 --max-time 90 \
+            --output dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi \
+            'https://addons.mozilla.org/firefox/downloads/latest/7e0cfe2376c04bda9f5c/latest.xpi'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from zipfile import ZipFile
+          p=Path('dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi')
+          assert 100_000 < p.stat().st_size < 30*1024*1024, 'Unexpected signed XPI size'
+          with ZipFile(p) as archive:
+              assert archive.testzip() is None, 'Corrupt published AMO archive'
+              manifest=json.loads(archive.read('manifest.json'))
+              assert manifest['version']=='0.5.5', 'AMO version changed: pin a historical signed artifact instead of downloading latest'
+              assert manifest['browser_specific_settings']['gecko']['id']=='elf-shell-ayarime@local.theme', 'Published signed ID differs from core extension'
+          print('Verified AMO v0.5.5 release manifest and extension identity; no upload performed')
+          PY
+      - name: Install real Firefox
+        id: firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+      - name: Install Selenium
+        run: python -m pip install 'selenium>=4.52,<5'
+      - name: Verify published signed baseline -> unsigned unified preview -> core rollback in disposable Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+          ELFSHELL_UPGRADE_BASELINE_XPI: dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi
+          ELFSHELL_UPGRADE_BASELINE_VERSION: '0.5.5'
+        run: python3 tests/native_unified_upgrade.py
+      - name: Upload synthetic migration report, never the downloaded signed XPI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-amo-baseline-upgrade-qa
+          path: dist/upgrade-acceptance/
+          if-no-files-found: warn
