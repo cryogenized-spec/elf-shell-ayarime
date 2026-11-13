@@ -57,6 +57,8 @@ jobs:
           node --check dist/unified-rc/unified/module.js
           node --check dist/unified-rc/ui.js
           python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
+      - name: Stage 5/6 opt-in and read-only contract — zero live Google calls
+        run: python3 -m unittest discover -s tests -p 'stage5_6_preview_test.py' -v
       - name: Mozilla lint — warnings are failures
         run: npx --yes web-ext@10.8.0 lint --source-dir dist/unified-rc --warnings-as-errors
       - name: Confirm byte-for-byte reproducible unsigned runtime and source ZIPs
