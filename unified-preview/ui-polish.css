@@ -77,3 +77,15 @@ body[data-view="sidebar"] :is(.trace-options,.ai-context-panel) > * {
   max-width: 100%;
 }
 body[data-view="sidebar"] select {min-width: 0;}
+
+/* A label's inline <span>/<strong> can otherwise preserve a 443px min-content
+   width in the 390px Firefox sidebar, extending beyond the viewport. */
+body[data-view="sidebar"] .ai-context-optin > span {
+  min-width: 0;
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+}
+body[data-view="sidebar"] .ai-context-optin strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
