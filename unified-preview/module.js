@@ -41,13 +41,22 @@
     const node=button();
     if(node)node.disabled=true;
     try{
+      // Never leave a BYOK credential active behind a disabled AI switch.
+      // Clear it first; on failure keep the switch unchanged and report it.
+      if(!next){
+        const result=await browser.runtime.sendMessage({type:"AI_CLEAR_SESSION_KEY"});
+        if(!result?.ok || result?.ai?.hasSessionKey)
+          throw Error("Could not clear the Firefox-session API key");
+      }
       // Key is not part of ELF//SHELL's exported v5 settings, field-save
       // migration, or its existing storage object: no legacy values are touched.
       await browser.storage.local.set({[KEY]:next});
       enabled=next;
       saveError=null;
     }catch{
-      saveError="Firefox could not save the AI module preference. No changes applied.";
+      saveError=next
+        ?"Firefox could not save the AI module preference. No changes applied."
+        :"Firefox could not save the AI-off preference or safely forget its session key. No changes applied.";
     }finally{render();}
   }
   document.addEventListener("DOMContentLoaded",()=>{

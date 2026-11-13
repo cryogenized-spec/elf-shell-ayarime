@@ -1,26 +1,23 @@
-# ELF//SHELL — Ayarime v0.5.6 (development; release-candidate preparation)
+# ELF//SHELL — Ayarime v0.5.6 — unified unsigned release candidate
 
-**Status:** The v0.5.6 branch is development-only. The integrated AI build is an **unsigned, separate engineering preview**, not the current AMO package. Do not upload or describe it as a publicly released v0.5.6 add-on. The signed, published v0.5.5 baseline is unchanged.
+**Status: prepared for owner review, NOT published or signed.** The existing signed AMO v0.5.5 is unchanged. GitHub Actions prepares reproducible *unsigned* Firefox runtime, XPI and reviewer-source archives; no AMO upload, signature, Google Master MCP activation or external account automation is performed.
 
-## Integrated Firefox improvements
+## Firefox improvements and integrated interface
 
-- **Six-state cursor gallery previews:** Pointer, I-beam, busy, crosshair, resize, and link samples show their own hover examples even when the dashboard is set to *System Default*. Hovering does not save a choice. Custom cursors remain confined to the extension dashboard.
-- **First-party Transmissions RSS:** The `+ SUBSCRIBE TO TRANSMISSIONS` button asks Firefox for the specific HTTPS host permission directly in a user gesture. Accepting subscribes and fetches the official feed; denying does neither. No first-run subscription, blanket host grant, or silent network fetch is added. Existing drafts and subscriptions are preserved.
-- These were forward-ported to the integrated branch in **PR #56 and #57**, replacing earlier, unmerged PRs #37 and #38.
+- The six-state pointer / I-beam / busy / crosshair / resize / link cursor gallery previews each cursor even with System Default selected. Previewing never saves a selection or modifies system cursors (forward-ported in PR #56).
+- **+ SUBSCRIBE TO TRANSMISSIONS** asks Firefox for per-host RSS access in an explicit click and subscribes only after approval; refusal never authorizes a fetch. Drafts are preserved, with no first-run network opt-in (forward-ported in PR #57).
+- Unified Workspace Hub and native Firefox sidebar open inside the existing add-on ID. Station AI remains default **OFF**; tab access, provider data collection and API credentials are separate explicit permissions.
+- Sidebar provider settings are collapsed for a chat-first layout. Browser keyboard focus, 1366px / 390px / 320px responsive geometry, local session transcript/clear, reduced-motion Rose Seal and core upgrade migration passed native Firefox tests in PR #59.
+- An API key lives only in Firefox session storage; turning AI off clears that session credential before saving OFF, and a background guard aborts active streams. Provider/model preferences do not constitute permission to call a provider.
+- Conversation transcript is session-only and not encrypted. Prior exchanges are included in model context only when explicitly requested for one prompt. Provider inference may incur charges; chosen prompts, persona and opt-in context go directly to the selected third-party provider.
+- **No Google Master MCP, Google account OAuth, Morning Coffee or automatic update checks** in this candidate. Those routes are blocked and UI is hidden until a separate reviewed release.
 
-## Ayarime unified interface — unsigned preview only
+## Release-candidate artifact and security gate
 
-- One extension ID and new-tab dashboard, with an integrated Workspace Hub and native Firefox sidebar.
-- Ayarime AI remains **off by default**. Enabling it does not grant tab access, provider permission, a model API key, or Google account access.
-- A locally bundled **Rose Seal** appears during active AI work; reduced-motion settings stop its animation.
-- The Hub and sidebar provide explicit model/API-key controls, local Firefox-session conversation history, and per-request opt-in for including recent exchanges. Settings in the compact sidebar are tucked behind a disclosure; they are not a second account or separate storage system.
-- Google Master MCP integration stays inert while OAuth/allowlists are reviewed. The preview's Google OAuth and automatic update requests are disabled.
-- Assembly uses an exact pinned companion commit, with a separate unsigned XPI and reproducible source manifest. The core-only AMO packaging path is not silently replaced.
+Build the unsigned candidate with `python3 scripts/package_unified_rc.py --companion workspace-ai` using pinned Workspace AI commit `3a586bcce19a6e66bf924521d54fefc732faffb3` and the reviewed core commit. The verify-only GitHub workflow validates both test suites, Mozilla lint, reproducible source and runtime archives, native Firefox opt-in/revocation/UI tests, signed-v0.5.5 baseline to **unsigned-v0.5.6** migration/rollback, and privacy disclosures.
 
-## Validation and remaining gates
+Mozilla's optional BYOK data collection categories are `authenticationInfo`, `personalCommunications`, `websiteContent` and `personallyIdentifyingInfo`. Required data collection remains `none`; required extension permissions remain `theme`, `search`, `storage`, and the Gecko ID stays `elf-shell-ayarime@local.theme`.
 
-Core Firefox validation and native temporary-extension smoke checks passed on development commit `64dd66deade7` (13 November 2026). The integrated Hub/sidebar accessibility, viewport, Rose Seal, conversation-state and reduced-motion acceptance suite is being reviewed in PR #59; record its final GitHub Actions result before describing it as passed.
+See `PRIVACY.md`, `docs/RC_ACCEPTANCE_0.5.6.md` and `amo/listing-metadata-v0.5.6-draft.json`. Before an approved public listed update, the owner must inspect the Firefox candidate and authorize controlled **live BYOK** tests using their own local API key. CI does not hold a real provider key, so it cannot certify live inference, provider billing or production stability. A real **signed v0.5.5 → signed v0.5.6** upgrade test can only follow Mozilla signing, which has **not** been requested.
 
-Before publishing v0.5.6, review the final manifest and privacy disclosures, complete controlled BYOK acceptance without sharing secrets, verify real Firefox session/permission behaviours, validate signed v0.5.5-to-release-candidate upgrade and rollback, inspect screenshots in a disposable user profile, and obtain explicit owner approval for AMO upload and signing.
-
-The Firefox ID must remain `elf-shell-ayarime@local.theme`; no Google connectivity is required for the initial optional-AI release.
+The previous AMO workflow refuses 0.5.6+ to prevent accidental submission of the old core-only package. A separately reviewed listed submission path will require explicit owner approval.

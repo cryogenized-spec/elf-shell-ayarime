@@ -188,6 +188,11 @@ try:
     WebDriverWait(driver,18).until(
         lambda d:"ai console ready" in
         d.find_element(By.ID,"workspace-bridge-status").text.lower())
+    # The native tabs API can momentarily observe the new Hub before pinning
+    # and URL state finish propagating. Poll actual browser state, never mock.
+    WebDriverWait(driver,12,poll_frequency=.15).until(
+        lambda _:sum(1 for tab in window_tabs()
+            if tab["url"].split("#")[0]==hub_url and tab["pinned"])==1)
     check("Ask Ayarime reaches the integrated Hub after approval",
           lambda:require(
             sum(1 for tab in window_tabs()

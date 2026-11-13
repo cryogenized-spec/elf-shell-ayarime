@@ -1,0 +1,11 @@
+/* Release-candidate feature gate: Google account/OAuth, Morning Coffee and
+   manual GitHub update checks are deliberately unavailable in v0.5.6.
+   No account permissions or background account fetches are enabled. */
+body[data-view="hub"] .google-section,
+body[data-view="hub"] .coffee-panel,
+body[data-view="hub"] .updater-panel,
+body[data-view="sidebar"] .coffee-panel,
+body[data-view="sidebar"] .updater-panel,
+body[data-view="sidebar"] .rc-unavailable {
+  display: none !important;
+}
