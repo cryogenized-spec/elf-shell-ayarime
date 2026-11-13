@@ -92,6 +92,30 @@ def no_horizontal_overflow(page, width, height):
         else:
             verify(page + " calibrated actual mobile viewport " + str(width) + "px", False)
     if metrics["content"] > metrics["client"] + 2:
+        # Closing a details element and resizing the headless Firefox sidebar
+        # can leave a stale root scroll width for one layout frame. Recheck
+        # real geometry before reporting overflow; do not widen the threshold.
+        try:
+            WebDriverWait(driver, 3, poll_frequency=.1).until(
+                lambda d: d.execute_script(
+                    "return document.documentElement.scrollWidth <= "
+                    "document.documentElement.clientWidth + 2"))
+            metrics = run_js("""return {
+              inner:innerWidth,
+              content:document.documentElement.scrollWidth,
+              client:document.documentElement.clientWidth
+            }""")
+        except Exception:
+            pass
+    if metrics["content"] > metrics["client"] + 2:
+        debug = run_js("""return [...document.querySelectorAll('*')]
+          .filter(el=>el.clientWidth>0 && el.scrollWidth>el.clientWidth+2)
+          .map(el=>({tag:el.tagName.toLowerCase(),id:el.id,
+            cls:String(el.className||'').slice(0,70),
+            client:el.clientWidth,scroll:el.scrollWidth,
+            sample:(el.textContent||'').trim().slice(0,65)}))
+          .sort((a,b)=>(b.scroll-b.client)-(a.scroll-a.client)).slice(0,15);""")
+        print("INNER_SCROLL_OFFENDERS:", json.dumps(debug), flush=True)
         offenders = run_js("""return [...document.querySelectorAll('*')]
           .filter(el => {
             const r=el.getBoundingClientRect();
