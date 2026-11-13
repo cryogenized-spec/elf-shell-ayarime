@@ -118,52 +118,73 @@ class FeedTests(unittest.TestCase):
             self.assertEqual(item.find("title").text, doc["items"][0]["title"])
 
 
-    def test_clipmint_windows_alpha_rss_and_editorial_article(self):
-        """A separate Windows alpha dispatch is not an invented public beta release."""
+    def test_clipmint_twin_archive_joint_launch_story_and_rss(self):
+        """The planned paired launch must have its own stable draft RSS identity."""
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             meta = build(out=out)
             source = json.loads(SOURCE.read_text(encoding="utf-8"))
             post = next(
                 row for row in source["items"]
-                if row["id"] == "clipmint-windows-x64-development-alpha"
+                if row["id"] == "clipmint-twin-archive-joint-launch"
             )
             self.assertEqual(meta["count"], 4)
             self.assertEqual(post["category"], "From the Workshop")
-            self.assertEqual(post["page"], "dispatches/clipmint-windows-x64-alpha.html")
+            self.assertEqual(post["page"], "dispatches/clipmint-twin-archive.html")
+            self.assertIn("planned coordinated release", post["summary"])
+            self.assertIn("Linux Mint", post["summary"])
+            self.assertIn("Windows x64", post["summary"])
+            self.assertIn("do not synchronise data", post["summary"])
+            self.assertIn("release packages remain prerequisites", post["summary"])
 
             page = out / post["page"]
             self.assertTrue(page.is_file())
             article = page.read_text(encoding="utf-8")
-            css = out / "dispatches/clipmint.css"
+            css = out / "dispatches/clipmint-twin-archive.css"
             self.assertTrue(css.is_file())
-            self.assertIn('href="clipmint.css"', article)
-            self.assertIn("development alpha", article.lower())
+            self.assertIn('href="clipmint-twin-archive.css"', article)
+            self.assertIn("Ayarime", article)
+            self.assertIn("The <em>Twin</em>", article)
+            self.assertEqual(article.count('class="plate scene-'), 8)
+            for name in ("scene-rain", "scene-slip", "scene-archive",
+                         "scene-fork", "scene-linux", "scene-windows",
+                         "scene-inspection", "scene-dawn"):
+                self.assertIn('class="plate ' + name + '"', article)
+            self.assertIn('class="edition edition-mint"', article)
+            self.assertIn('class="edition edition-windows"', article)
+            self.assertIn("cryogenized-spec/clipmint-linux", article)
+            self.assertIn("cryogenized-spec/clipmint-windows", article)
+            self.assertIn("32 automated tests", article)
             self.assertIn("self-signed Authenticode", article)
-            self.assertIn("GitHub-signed build provenance", article)
-            self.assertIn("stored locally in plaintext", article)
-            self.assertIn("32 passing", article)
+            self.assertIn("GitHub-signed", article)
+            self.assertIn("plaintext", article)
             self.assertIn("43473029848", article)
-            self.assertIn("Windows SmartScreen", article)
+            self.assertIn("SmartScreen", article)
+            self.assertIn("artwork", article.lower())
             self.assertIn("physical windows", article.lower())
+            self.assertIn("do not share a database", article)
+            self.assertIn("public release has <strong>not</strong>", article)
             self.assertNotIn("<script", article)
-            self.assertNotIn("@import", css.read_text(encoding="utf-8"))
-            self.assertNotIn("url(http", css.read_text(encoding="utf-8"))
+            self.assertNotIn("https://fonts.", article)
+            sheet = css.read_text(encoding="utf-8")
+            self.assertIn("@media(max-width:520px)", sheet)
+            self.assertIn("prefers-reduced-motion", sheet)
+            self.assertNotIn("@import", sheet)
+            self.assertNotIn("url(http", sheet)
 
             channel = ET.parse(out / "feed.xml").getroot().find("channel")
             item = next(
                 node for node in channel.findall("item")
                 if node.find("guid").text ==
-                "urn:elfshell:transmission:clipmint-windows-x64-development-alpha"
+                "urn:elfshell:transmission:clipmint-twin-archive-joint-launch"
             )
             self.assertEqual(
                 item.find("link").text,
                 meta["url"].removesuffix("feed.xml") + post["page"],
             )
-            self.assertIn("development alpha", item.find("description").text.lower())
             index = (out / "index.html").read_text(encoding="utf-8")
-            self.assertIn('href="dispatches/clipmint-windows-x64-alpha.html"', index)
-            self.assertIn('id="clipmint-windows-x64-development-alpha"', index)
+            self.assertIn('href="dispatches/clipmint-twin-archive.html"', index)
+            self.assertIn('id="clipmint-twin-archive-joint-launch"', index)
 
     def test_illustrated_serviteur_release_page_and_rss_permalink(self):
         with tempfile.TemporaryDirectory() as tmp:
