@@ -225,6 +225,47 @@ try:
     verify("Sidebar exposes one explicit submit and stop action",
            len(driver.find_elements(By.ID, "ai-send")) == 1
            and len(driver.find_elements(By.ID, "ai-cancel")) == 1)
+    # Exercise real cross-view session history without a provider key, network
+    # permission, live inference request, or private conversation contents.
+    synthetic = driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.local.set({'elfshell.unified.aiEnabled.v1':true})
+        .then(()=>browser.runtime.sendMessage({
+          type:'AI_CONVERSATION_APPEND',prompt:'QA local prompt',
+          answer:'QA local-only reply',provider:'openai',model:'gpt-6-luna'
+        }))
+        .then(done,error=>done({ok:false,error:String(error)}));
+    """)
+    verify("local synthetic exchange stored without provider inference",
+           isinstance(synthetic, dict) and synthetic.get("ok") is True
+           and len(synthetic.get("entries", [])) == 1)
+    WebDriverWait(driver, 10).until(lambda d:
+        "1 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("sidebar displays session-only reply without enabling context sending",
+           "QA local-only reply" in driver.find_element(
+               By.ID, "ai-conversation-list").text and
+           not driver.find_element(By.ID, "ai-context-enable").is_selected())
+    driver.get(hub)
+    WebDriverWait(driver, 15).until(lambda d:
+        "1 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("Hub loads the same Firefox-session exchange",
+           "QA local prompt" in driver.find_element(
+               By.ID, "ai-conversation-list").text)
+    driver.find_element(By.ID, "ai-conversation-clear").click()
+    WebDriverWait(driver, 10).until(lambda d:
+        "0 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("Clear conversation removes only the session transcript",
+           driver.find_element(By.ID, "ai-conversation-clear").get_property(
+               "disabled"))
+    driver.get(sidebar)
+    WebDriverWait(driver, 10).until(lambda d:
+        "0 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("sidebar sees history removal after reloading", True)
+    driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.local.remove('elfshell.unified.aiEnabled.v1')
+        .then(()=>done(true),()=>done(false));
+    """)
     report = {"status": "PASS", "checks": checks}
 except Exception as error:
     print("FAIL:", error, file=sys.stderr, flush=True)
