@@ -46,3 +46,21 @@ body[data-view="sidebar"] .unified-provider-settings[open] > summary {
   margin-bottom: 9px;
 }
 body[data-view="sidebar"] .unified-provider-settings .quiet {overflow-wrap: anywhere;}
+
+/* At 320px Firefox content width is reduced further by its vertical scrollbar.
+   Give the Hub an additional compact gutter without clipping interactive controls. */
+@media (max-width: 420px) {
+  body[data-view="hub"] .shell {padding: 12px;}
+  body[data-view="hub"] .frame {padding: 14px;}
+  body[data-view="hub"] .masthead {gap: 10px;}
+  body[data-view="hub"] .columns {gap: 12px;}
+  body[data-view="hub"] :is(.section-head,.offer-meter-head,.trace-head) {
+    flex-wrap: wrap;
+  }
+  body[data-view="hub"] :is(.ai-console,.conversation-panel,.ai-form,.ai-key-controls) {
+    min-width: 0;
+  }
+  body[data-view="hub"] :is(.resource-row,.offer-panel,.conversation-bubble,.quiet) {
+    overflow-wrap: anywhere;
+  }
+}
