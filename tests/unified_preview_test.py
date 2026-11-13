@@ -122,6 +122,13 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('conversation-bubble',css)
         self.assertNotIn("unified/ui-polish.css",(ROOT/"newtab.html").read_text())
         self.assertNotIn("unified/ui-polish.css",(ROOT/"manifest.json").read_text())
+        sidebar=(STAGE/"sidebar.html").read_text()
+        self.assertEqual(sidebar.count('<details class="unified-provider-settings">'),1)
+        self.assertIn('PROVIDER &amp; API KEY SETTINGS',sidebar)
+        self.assertIn('id="ai-settings-form"',sidebar)
+        self.assertIn('id="ai-key"',sidebar)
+        self.assertEqual(sidebar.count('id="ai-provider"'),1)
+        self.assertNotIn('unified-provider-settings',(STAGE/"hub.html").read_text())
 
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())
