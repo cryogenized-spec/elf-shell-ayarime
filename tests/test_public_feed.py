@@ -118,6 +118,53 @@ class FeedTests(unittest.TestCase):
             self.assertEqual(item.find("title").text, doc["items"][0]["title"])
 
 
+    def test_clipmint_windows_alpha_rss_and_editorial_article(self):
+        """A separate Windows alpha dispatch is not an invented public beta release."""
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            meta = build(out=out)
+            source = json.loads(SOURCE.read_text(encoding="utf-8"))
+            post = next(
+                row for row in source["items"]
+                if row["id"] == "clipmint-windows-x64-development-alpha"
+            )
+            self.assertEqual(meta["count"], 4)
+            self.assertEqual(post["category"], "From the Workshop")
+            self.assertEqual(post["page"], "dispatches/clipmint-windows-x64-alpha.html")
+
+            page = out / post["page"]
+            self.assertTrue(page.is_file())
+            article = page.read_text(encoding="utf-8")
+            css = out / "dispatches/clipmint.css"
+            self.assertTrue(css.is_file())
+            self.assertIn('href="clipmint.css"', article)
+            self.assertIn("development alpha", article.lower())
+            self.assertIn("self-signed Authenticode", article)
+            self.assertIn("GitHub-signed build provenance", article)
+            self.assertIn("stored locally in plaintext", article)
+            self.assertIn("32 passing", article)
+            self.assertIn("43473029848", article)
+            self.assertIn("Windows SmartScreen", article)
+            self.assertIn("physical Windows", article.lower())
+            self.assertNotIn("<script", article)
+            self.assertNotIn("@import", css.read_text(encoding="utf-8"))
+            self.assertNotIn("url(http", css.read_text(encoding="utf-8"))
+
+            channel = ET.parse(out / "feed.xml").getroot().find("channel")
+            item = next(
+                node for node in channel.findall("item")
+                if node.find("guid").text ==
+                "urn:elfshell:transmission:clipmint-windows-x64-development-alpha"
+            )
+            self.assertEqual(
+                item.find("link").text,
+                meta["url"].removesuffix("feed.xml") + post["page"],
+            )
+            self.assertIn("developer alpha", item.find("description").text.lower())
+            index = (out / "index.html").read_text(encoding="utf-8")
+            self.assertIn('href="dispatches/clipmint-windows-x64-alpha.html"', index)
+            self.assertIn('id="clipmint-windows-x64-development-alpha"', index)
+
     def test_illustrated_serviteur_release_page_and_rss_permalink(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
@@ -125,7 +172,7 @@ class FeedTests(unittest.TestCase):
             source = json.loads(SOURCE.read_text(encoding="utf-8"))
             dispatch = next(post for post in source["items"] if post["id"] == "clickup-serviteur-public-beta")
             page = out / dispatch["page"]
-            self.assertEqual(meta["count"], 3)
+            self.assertEqual(meta["count"], len(source["items"]))
             self.assertTrue(page.is_file())
             content = page.read_text(encoding="utf-8")
             self.assertIn("THE SERVITEUR ENGINE", content)
