@@ -74,6 +74,33 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_unified_upgrade.py
+      - name: Download published signed AMO v0.5.5 baseline and verify immutable version and identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 10 --max-time 90 \
+            --output dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi \
+            'https://addons.mozilla.org/firefox/downloads/latest/7e0cfe2376c04bda9f5c/latest.xpi'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from zipfile import ZipFile
+          p=Path('dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi')
+          assert 100_000 < p.stat().st_size < 30*1024*1024, 'Unexpected signed XPI size'
+          with ZipFile(p) as archive:
+              assert archive.testzip() is None, 'Corrupt AMO download'
+              m=json.loads(archive.read('manifest.json'))
+              assert m['version']=='0.5.5', 'Public version changed: do not infer a v0.5.5 migration'
+              assert m['browser_specific_settings']['gecko']['id']=='elf-shell-ayarime@local.theme'
+          print('Published AMO v0.5.5 baseline manifest verified')
+          PY
+      - name: Test published AMO signed baseline with isolated Firefox migration and rollback
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+          ELFSHELL_UPGRADE_BASELINE_XPI: dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi
+          ELFSHELL_UPGRADE_BASELINE_VERSION: '0.5.5'
+          ELFSHELL_UPGRADE_REPORT_SUBDIR: upgrade-acceptance-amo-baseline
+        run: python3 tests/native_unified_upgrade.py
       - name: Upload developer package and Firefox evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,5 +111,6 @@ jobs:
             dist/unified-firefox/
             dist/native-approval/
             dist/upgrade-acceptance/
+            dist/upgrade-acceptance-amo-baseline/
             dist/firefox-permission-qa/
           if-no-files-found: warn
