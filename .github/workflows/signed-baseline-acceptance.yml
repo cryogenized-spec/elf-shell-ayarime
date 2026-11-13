@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: cryogenized-spec/elf-shell-workspace-ai
-          ref: c8e03ad8b626b25cefc72db499edff4acc197002
+          ref: 596b31314cab68c4f43ab9ef2b48ee6638b33cd5
           path: workspace-ai
           persist-credentials: false
       - uses: actions/setup-python@v5
