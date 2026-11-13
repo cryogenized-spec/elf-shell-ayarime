@@ -125,6 +125,15 @@ try:
 
     driver.get(sidebar)
     stable_page("Sidebar")
+    disclosure = driver.find_element(By.CSS_SELECTOR, ".unified-provider-settings")
+    verify("Sidebar collapses duplicate provider settings by default",
+           not disclosure.get_property("open"))
+    disclosure.find_element(By.CSS_SELECTOR, "summary").click()
+    verify("Sidebar can reveal and use shared provider settings on demand",
+           disclosure.get_property("open")
+           and driver.find_element(By.ID, "ai-provider").is_displayed()
+           and driver.find_element(By.ID, "ai-key").is_displayed())
+    disclosure.find_element(By.CSS_SELECTOR, "summary").click()
     for width, height in [(390, 844), (320, 700)]:
         no_horizontal_overflow("sidebar", width, height)
     run_js("document.querySelector('#ai-prompt').focus()")
