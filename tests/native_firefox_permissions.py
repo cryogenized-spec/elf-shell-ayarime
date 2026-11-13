@@ -228,6 +228,75 @@ try:
             raise AssertionError("Refreshing after host revocation made a new feed attempt")
     check("refresh after host revocation makes no new RSS fetch",post_revoke_no_fetch)
 
+    def official_one_click_deny_allow_and_deduplicate():
+        # Exercise the dedicated first-party button, not the custom feed form.
+        # Keep a half-written custom feed in place throughout the new flow.
+        origin="https://cryogenized-spec.github.io/*"
+        url="https://cryogenized-spec.github.io/elf-shell-ayarime/feed.xml"
+        assert await_api('return await browser.permissions.contains({origins:["'+origin+'"]});') is False
+        driver.find_element(By.ID,"feed-url").send_keys("https://example.net/unfinished.xml")
+        driver.find_element(By.ID,"feed-label").send_keys("Unfinished custom draft")
+        driver.find_element(By.ID,"feed-group").send_keys("WRITING")
+        btn=driver.find_element(By.ID,"feed-official-subscribe")
+        assert btn.is_enabled(), "Official feed must begin as an optional action"
+        btn.click()
+        WebDriverWait(driver,8).until(lambda d:not d.find_element(By.ID,"feed-official-subscribe").is_enabled())
+        with driver.context(driver.CONTEXT_CHROME):
+            WebDriverWait(driver,10).until(lambda d:d.execute_script("""
+              return document.getElementById("addon-webext-permissions-notification")
+                ?.textContent?.includes("cryogenized-spec.github.io")===true;
+            """))
+        click_prompt_choice("secondary")
+        WebDriverWait(driver,10).until(lambda d:
+            "declined" in d.find_element(By.ID,"feed-message").text.lower())
+        WebDriverWait(driver,10).until(lambda d:d.find_element(By.ID,"feed-official-subscribe").is_enabled())
+        if await_api('return await browser.permissions.contains({origins:["'+origin+'"]});'):
+            raise AssertionError("Official feed Deny granted host access")
+        saved=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
+        if len((saved or {}).get("feeds",[]))!=1:
+            raise AssertionError("Official feed saved on Deny")
+        if driver.find_element(By.ID,"feed-label").get_attribute("value")!="Unfinished custom draft":
+            raise AssertionError("Featured source overwrote custom draft on Deny")
+        btn.click()
+        with driver.context(driver.CONTEXT_CHROME):
+            WebDriverWait(driver,10).until(lambda d:d.execute_script("""
+              return document.getElementById("addon-webext-permissions-notification")
+                ?.textContent?.includes("cryogenized-spec.github.io")===true;
+            """))
+        click_prompt_choice("primary")
+        WebDriverWait(driver,15).until(lambda d:
+            await_api('return await browser.permissions.contains({origins:["'+origin+'"]});') is True)
+        WebDriverWait(driver,15).until(lambda d:
+            len((await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];') or {}).get("feeds",[]))==2)
+        WebDriverWait(driver,25).until(lambda d:d.find_element(By.ID,"feed-official-subscribe").is_enabled())
+        saved=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
+        if len([feed for feed in saved["feeds"] if feed["url"]==url])!=1:
+            raise AssertionError("Official feed duplicated")
+        if (await_api('return await browser.permissions.getAll();')).get("origins")!=[origin]:
+            raise AssertionError("Official feed approval granted an unexpected host")
+        if driver.find_element(By.ID,"feed-url").get_attribute("value")!="https://example.net/unfinished.xml":
+            raise AssertionError("Official subscription erased the unfinished custom URL")
+        if driver.find_element(By.ID,"feed-label").get_attribute("value")!="Unfinished custom draft":
+            raise AssertionError("Official subscription erased the unfinished custom title")
+        btn.click()
+        WebDriverWait(driver,8).until(lambda d:"already listed" in d.find_element(By.ID,"feed-message").text)
+        saved_after=await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];')
+        if len(saved_after["feeds"])!=2:
+            raise AssertionError("Repeat official click saved a duplicate")
+        with driver.context(driver.CONTEXT_CHROME):
+            pending=driver.execute_script("""
+              const p=document.getElementById("addon-webext-permissions-notification");
+              return !!p&&!p.hidden&&["showing","open"].includes(
+                document.getElementById("notification-popup")?.state);
+            """)
+        if pending:
+            raise AssertionError("Repeat official click unexpectedly triggered a permission prompt")
+        result["officialOneClick"]={
+          "denied":True,"approved":True,"saved":len(saved_after["feeds"]),
+          "origin":origin,"draftPreserved":True,"duplicateIgnored":True}
+    check("one-click official RSS Deny/Allow preserves drafts and ignores duplicates",
+          official_one_click_deny_allow_and_deduplicate)
+
     result["status"]="PASS"
 except Exception as exc:
     result["status"]="FAIL"
