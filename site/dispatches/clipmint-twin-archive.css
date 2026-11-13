@@ -72,6 +72,7 @@ h1 em,h2 em,h3 em{font-weight:400;color:var(--rose)}
 .scene-art{height:245px;position:relative;overflow:hidden;display:grid;place-items:center;isolation:isolate}
 .scene-art::before,.scene-art::after{content:"";position:absolute;display:block;pointer-events:none}
 .scene-mark{position:relative;z-index:2;font:400 92px/1 Georgia,serif;text-shadow:0 2px 15px #05080c,0 0 25px currentColor;opacity:.94}
+.terminal-mark{font:600 56px/1 ui-monospace,monospace;letter-spacing:-.06em}
 .plate figcaption{min-height:151px;padding:18px 16px 21px;display:flex;flex-direction:column;gap:6px;border-top:1px solid #5e7376}
 .plate-num{font-size:9px;letter-spacing:.08em;color:var(--gold)}
 .plate figcaption strong{font:400 20px/1.2 Georgia,serif;color:var(--light)}
