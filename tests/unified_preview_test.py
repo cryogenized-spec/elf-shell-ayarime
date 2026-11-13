@@ -63,6 +63,8 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('openAssistant:()=>launch("OPEN_ASSISTANT",["tabs"])',bridge)
         self.assertIn('openWorkspace:()=>launch("OPEN_WORKSPACE",["tabs","tabGroups"])',bridge)
         self.assertIn("browser.permissions.request({permissions})",bridge)
+        self.assertIn("This does not grant Google account access.",bridge)
+        self.assertIn("Google account access remains separate.",bridge)
         self.assertIn('type:"OPEN_WORKSPACE"',(STAGE/"ui.js").read_text())
         self.assertIn('permissions:["tabs","tabGroups"]',(STAGE/"ui.js").read_text())
         self.assertIn("Google OAuth and update checks are disabled",
@@ -87,6 +89,26 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertNotIn("OPTIONAL WORKSPACE AI COMPANION",js)
         self.assertNotIn("optional companion",html)
         self.assertIn("OPTIONAL WORKSPACE AI COMPANION",(ROOT/"newtab.js").read_text())
+
+    def test_ai_module_is_opt_in_without_touching_existing_settings(self):
+        page=(STAGE/"newtab.html").read_text()
+        module=(STAGE/"unified/module.js").read_text()
+        bridge=(STAGE/"workspace/bridge.js").read_text()
+        background=(STAGE/"workspace-ai-background.js").read_text()
+        self.assertIn('id="ai-module-toggle"',page)
+        self.assertIn('src="unified/module.js"',page)
+        self.assertIn('id="ai-module-status"',page)
+        self.assertIn('"elfshell.unified.aiEnabled.v1"',module)
+        self.assertIn("enabled=data[KEY]===true",module)
+        self.assertIn("AI module off",module)
+        self.assertIn("AyarimeUnifiedModule?.isEnabled()",bridge)
+        self.assertIn("unifiedAiEnabled().then(allowed=>allowed ? handle(message)",background)
+        self.assertIn("unifiedAiEnabled().then(allowed=>{",background)
+        self.assertIn("AI_CONVERSATION_CLEAR",background)
+        self.assertNotIn('elfshell.unified.aiEnabled.v1',(ROOT/"newtab.js").read_text())
+        self.assertNotIn('ai-module-toggle',(ROOT/"newtab.html").read_text())
+        self.assertNotIn('unified/module.js',(ROOT/"manifest.json").read_text())
+        self.assertIn('const dataKey="elfshell-workspace-v3";',(ROOT/"newtab.js").read_text())
 
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())

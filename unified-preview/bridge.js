@@ -38,9 +38,13 @@
       throw Error("Workspace access was declined. Your existing tabs are unchanged.");
   }
   async function launch(command,permissions) {
+    if(command==="OPEN_ASSISTANT"&&!window.AyarimeUnifiedModule?.isEnabled()){
+      report("Enable Ayarime AI in the Station first. Your Firefox tab permissions and Google accounts are unchanged.",true);
+      return null;
+    }
     report(command==="OPEN_ASSISTANT"
-      ? "Preparing Ayarime's local AI console…"
-      : "Preparing your Firefox workspace…");
+      ? "Firefox may request tab access to focus your Ayarime AI Hub. This does not grant Google account access."
+      : "Firefox may request tab and tab-group access to restore saved workspace tabs. Google account access remains separate.");
     try {
       await allowed(permissions);
       const hello=await message("HELLO");

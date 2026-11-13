@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from package import sources as core_sources  # reviewed release inventory, not a recursive scan
 
-COMPANION_COMMIT = "3c678bda35a64fe185135eb1b937e2d5eb26d810"
+COMPANION_COMMIT = "3a586bcce19a6e66bf924521d54fefc732faffb3"
 KIND = "elfshell.workspace.bridge"
 BRIDGE_COMMAND = "elfshell:unified:bridge:v1"
 OUTPUT = ROOT / "dist" / "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
@@ -182,6 +182,11 @@ def adapt_background(source: str) -> str:
         'message.type.startsWith("UPDATE_"))\n'
         '    return Promise.resolve({ok:false,error:"Google OAuth and update checks are disabled '
         'in this unsigned unified preview."});\n'
+        '  if (message.type==="UNIFIED_OPEN_ASSISTANT" || '
+        '(message.type.startsWith("AI_") && '
+        '!["AI_CLEAR_SESSION_KEY","AI_CONVERSATION_CLEAR"].includes(message.type)))\n'
+        '    return unifiedAiEnabled().then(allowed=>allowed ? handle(message) '
+        ': {ok:false,error:"Enable Ayarime AI in the Station before using the assistant"});\n'
         '  return handle(message);\n'
         '});'
     )
@@ -203,7 +208,31 @@ def adapt_background(source: str) -> str:
     )
     check(source.count(external) == 1, "Companion external listener changed")
     source = source.replace(external, "// Disabled: one-extension build has no external connection.")
-    return '(function(){\n"use strict";\n' + source + '\n})();\n'
+    gate = (
+        'const UNIFIED_AI_KEY="elfshell.unified.aiEnabled.v1";\n'
+        'async function unifiedAiEnabled(){\n'
+        '  const state=await browser.storage.local.get(UNIFIED_AI_KEY);\n'
+        '  return state[UNIFIED_AI_KEY]===true;\n'
+        '}\n'
+    )
+    stream_marker = '      globalThis.WorkspaceOpenAIStream.run({'
+    check(source.count(stream_marker) == 1, "OpenAI streaming entrypoint changed")
+    # The model stream must enforce the same persisted flag as the one-shot
+    # router; a direct Port message may not bypass the Station toggle.
+    source = source.replace(stream_marker, (
+        '      unifiedAiEnabled().then(allowed=>{\n'
+        '        if(!allowed){send({kind:"terminal",status:"failed",\n'
+        '          message:"Enable Ayarime AI in the Station before streaming"});return;}\n'
+        '        if(controller.signal.aborted)return;\n'
+        + stream_marker
+    ))
+    end_marker = '      });\n    });\n    port.onDisconnect.addListener'
+    check(source.count(end_marker) == 1, "OpenAI stream close structure changed")
+    source = source.replace(end_marker,
+        '      });\n      }).catch(()=>send({kind:"terminal",status:"failed",\n'
+        '        message:"Could not read local AI module preference"}));\n'
+        '    });\n    port.onDisconnect.addListener')
+    return '(function(){\n"use strict";\n' + gate + source + '\n})();\n'
 
 def adapt_ui(source: str) -> str:
     needle = '    const response=await request({type:"OPEN_WORKSPACE"});'
@@ -254,6 +283,28 @@ def build(companion_dir: Path) -> None:
     # while preserving the original core dashboard source byte-for-byte.
     station_html = inventory["newtab.html"].decode("utf-8")
     station_js = inventory["newtab.js"].decode("utf-8")
+    script_tag = '<script defer src="workspace/bridge.js"></script>'
+    check(station_html.count(script_tag) == 1, "Core bridge include changed")
+    station_html = station_html.replace(script_tag,
+        '<script defer src="unified/module.js"></script>\n' + script_tag)
+    tool_button = '<button id="ask-ayarime-toggle"'
+    check(station_html.count(tool_button) == 1, "Station assistant control changed")
+    toggle_html = (
+        '<button id="ai-module-toggle" class="settings-toggle" type="button" '
+        'aria-pressed="false" disabled>✧ ENABLE AYARIME AI</button>\n'
+    )
+    station_html = station_html.replace(tool_button, toggle_html + '          ' + tool_button)
+    label = '<p id="workspace-bridge-status"'
+    check(station_html.count(label) == 1, "Core bridge status element changed")
+    station_html = station_html.replace(label,
+        '<p id="ai-module-status" class="workspace-bridge-status" '
+        'role="status" aria-live="polite"></p>\n      ' + label)
+    inventory["unified/module.js"] = (
+        ROOT / "unified-preview" / "module.js").read_bytes()
+    # Inert by design: bundled for contract review and tests, NOT injected into
+    # the page or background until OAuth scopes and host allowlists are accepted.
+    inventory["unified/google-worker-contract.js"] = (
+        ROOT / "unified-preview" / "google-worker-contract.js").read_bytes()
     copy = {
         "Restore Google workspace using optional companion":
             "Open your integrated Ayarime Workspace Hub",
