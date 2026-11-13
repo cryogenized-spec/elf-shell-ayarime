@@ -17,9 +17,14 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT=Path(__file__).resolve().parents[1]
-OLD=ROOT/"dist"/"ELF-SHELL-Ayarime-core-before-upgrade-UNSIGNED.xpi"
+OLD=Path(os.environ.get("ELFSHELL_UPGRADE_BASELINE_XPI",
+    str(ROOT/"dist"/"ELF-SHELL-Ayarime-core-before-upgrade-UNSIGNED.xpi")))
+EXPECTED_BASELINE_VERSION=os.environ.get("ELFSHELL_UPGRADE_BASELINE_VERSION","0.5.6")
 NEW=ROOT/"dist"/"ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
-OUT=ROOT/"dist"/"upgrade-acceptance"
+REPORT_SUBDIR=os.environ.get("ELFSHELL_UPGRADE_REPORT_SUBDIR","upgrade-acceptance")
+if REPORT_SUBDIR not in ("upgrade-acceptance","upgrade-acceptance-amo-baseline"):
+    raise SystemExit("Unsupported migration QA report directory")
+OUT=ROOT/"dist"/REPORT_SUBDIR
 OUT.mkdir(parents=True,exist_ok=True)
 ADDON_ID="elf-shell-ayarime@local.theme"
 FIELDS=["links","note","focus","motion","contrast","cursor","typography","bangs","sessions"]
@@ -83,6 +88,9 @@ try:
     first=driver.install_web_extension(str(OLD),permanent=False).id
     check("pre-fusion core installed under production add-on ID",first==ADDON_ID)
     old_handle=open_station()
+    old_version=driver.execute_script("return browser.runtime.getManifest().version")
+    check("baseline has verified expected version",
+          old_version==EXPECTED_BASELINE_VERSION)
     check("pre-fusion core has no AI toggle",
           not driver.find_elements(By.ID,"ai-module-toggle"))
     WebDriverWait(driver,15).until(lambda d:d.find_element(By.ID,"note-input").is_displayed())
@@ -253,7 +261,8 @@ try:
     assert_preserved(snapshot(),after_import,"re-upgrade preserved data")
 
     results={"status":"PASS","checks":checks,
-             "note":"Clean synthetic Firefox temporary-addon replacement; not a signed AMO upgrade"}
+             "baselineVersion":EXPECTED_BASELINE_VERSION,
+             "note":"Signed/public baseline when explicitly configured; unified target remains unsigned and temporary. Not a signed AMO upgrade."}
     driver.save_screenshot(str(OUT/"unified-after-upgrade.png"))
 except Exception as error:
     results={"status":"FAIL","checks":checks,"error":str(error),
