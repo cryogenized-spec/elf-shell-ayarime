@@ -25,3 +25,24 @@ body[data-view="sidebar"] :is(.ai-console,.conversation-panel,.ai-form,.ai-key-c
   body[data-view="sidebar"] :is(input,textarea,select) {min-width: 0;width: 100%;}
   body[data-view="sidebar"] .conversation-bubble {max-width: 100%;overflow-wrap: anywhere;}
 }
+
+/* Keep the narrow sidebar focused on conversation; advanced provider controls
+   are still one keyboard-accessible disclosure away, with no duplicated state. */
+body[data-view="sidebar"] .unified-provider-settings {
+  margin: 10px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--ayarime-outline);
+  background: rgba(25, 25, 43, .88);
+}
+body[data-view="sidebar"] .unified-provider-settings > summary {
+  color: var(--cyan);
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: .07em;
+  line-height: 1.6;
+}
+body[data-view="sidebar"] .unified-provider-settings[open] > summary {
+  color: var(--lime);
+  margin-bottom: 9px;
+}
+body[data-view="sidebar"] .unified-provider-settings .quiet {overflow-wrap: anywhere;}
