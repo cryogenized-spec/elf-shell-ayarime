@@ -149,6 +149,33 @@ try:
     check("module preference preserves existing field keys and unrelated storage",
           saved.get("elfshell.unified.aiEnabled.v1") is True and
           all(saved.get(k)==v for k,v in stored.items()))
+    # Disabling the module must clear even a previously entered session key.
+    # A synthetic sentinel avoids any live provider credential or request.
+    staged_key=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.session.set({
+        "elfshell.byok.apiKey.v1":{provider:"openai",key:"CI-SENTINEL-DO-NOT-SEND"}
+      }).then(()=>done(true),()=>done(false));
+    """)
+    check("synthetic BYOK key staged only in Firefox session storage",staged_key is True)
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,10).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
+    cleared=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.session.get("elfshell.byok.apiKey.v1")
+        .then(v=>done(!Object.hasOwn(v,"elfshell.byok.apiKey.v1")),()=>done(false));
+    """)
+    check("disabling Ayarime AI removes BYOK key without modifying core settings",cleared is True)
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,10).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
+    check("re-enabling AI does not restore a cleared credential",
+          driver.execute_async_script("""
+            const done=arguments[arguments.length-1];
+            browser.storage.session.get("elfshell.byok.apiKey.v1")
+              .then(v=>done(!Object.hasOwn(v,"elfshell.byok.apiKey.v1")));
+          """) is True)
     check("AI enabled does not grant Firefox tab permissions",
           driver.execute_async_script("""
             const done=arguments[arguments.length-1];
