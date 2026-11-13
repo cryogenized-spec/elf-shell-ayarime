@@ -160,7 +160,7 @@ class FeedTests(unittest.TestCase):
                 item.find("link").text,
                 meta["url"].removesuffix("feed.xml") + post["page"],
             )
-            self.assertIn("developer alpha", item.find("description").text.lower())
+            self.assertIn("development alpha", item.find("description").text.lower())
             index = (out / "index.html").read_text(encoding="utf-8")
             self.assertIn('href="dispatches/clipmint-windows-x64-alpha.html"', index)
             self.assertIn('id="clipmint-windows-x64-development-alpha"', index)
