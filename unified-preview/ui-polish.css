@@ -89,3 +89,29 @@ body[data-view="sidebar"] .ai-context-optin strong {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* Firefox gives anonymous flex text inside checkbox labels a min-content width.
+   Use ordinary block flow in narrow sidebars so web-search consent, offer
+   confirmation, and per-request history context wrap instead of scrolling. */
+body[data-view="sidebar"] :is(
+  .ai-context-optin,
+  .trace-options .trace-check,
+  .offer-panel .offer-confirm
+) {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body[data-view="sidebar"] :is(
+  .ai-context-optin,
+  .trace-options .trace-check,
+  .offer-panel .offer-confirm
+) > input[type="checkbox"] {
+  float: left;
+  margin: 2px 10px 4px 0;
+}
+body[data-view="sidebar"] .ai-context-optin > span {
+  display: inline;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
