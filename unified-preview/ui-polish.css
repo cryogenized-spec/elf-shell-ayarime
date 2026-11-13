@@ -1,0 +1,27 @@
+/* Unified 0.5.6 preview polish; applied only to the pinned Hub/sidebar build.
+   Leave the standalone companion and published core extension untouched. */
+body[data-view="hub"] :is(a,select,textarea,summary):focus-visible,
+body[data-view="sidebar"] :is(a,select,textarea,summary):focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+body[data-view="hub"] .shell,
+body[data-view="sidebar"] .side-shell,
+body[data-view="hub"] .frame,
+body[data-view="sidebar"] .frame {
+  min-width: 0;
+}
+body[data-view="hub"] :is(input,textarea,select),
+body[data-view="sidebar"] :is(input,textarea,select) {
+  max-width: 100%;
+}
+body[data-view="sidebar"] :is(.ai-console,.conversation-panel,.ai-form,.ai-key-controls,.trace-board) {
+  min-width: 0;
+}
+@media (max-width: 420px) {
+  body[data-view="sidebar"] .side-shell {padding: 8px;}
+  body[data-view="sidebar"] .frame {padding: 12px;}
+  body[data-view="sidebar"] .resource-actions {flex-wrap: wrap;max-width: 100%;}
+  body[data-view="sidebar"] :is(input,textarea,select) {min-width: 0;width: 100%;}
+  body[data-view="sidebar"] .conversation-bubble {max-width: 100%;overflow-wrap: anywhere;}
+}
