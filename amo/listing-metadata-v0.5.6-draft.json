@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "en-US": "Ayarime's illustrated Firefox dashboard: local workspaces, opt-in RSS, and an optional bring-your-own-key AI sidebar."
+  },
+  "categories": [
+    "appearance",
+    "tabs"
+  ],
+  "version": {
+    "license": "MPL-2.0",
+    "release_notes": {
+      "en-US": "v0.5.6 adds an optional Ayarime AI Hub and Firefox sidebar with provider-by-provider consent, session-only API keys, explicit conversation history opt-in, Rose Seal progress display, six cursor hover previews, and one-click official RSS subscription. Google account/MCP integration remains disabled."
+    },
+    "approval_notes": "UNSIGNED v0.5.6 unified release-candidate DRAFT, not authorized for Mozilla upload or signing. Update existing Firefox ID elf-shell-ayarime@local.theme; do not create a second add-on. Required permissions remain theme/search/storage. Optional tabs/tabGroups/sessions/bookmarks/history/nativeMessaging and HTTPS hosts are user-gesture gated. Firefox optional data collection types for voluntary BYOK interactions: authenticationInfo, personalCommunications, websiteContent, personallyIdentifyingInfo; required type none. The selected API key is in Firefox storage.session only, removed by Forget or AI Disable. Prompt/persona/explicitly selected previous exchanges are transmitted directly to a chosen provider following consent; provider retention/billing applies. No developer analytics. The Google Master MCP, Google OAuth/account operations and automatic update checks are disabled in this build. Source archive contains exact tracked core and pinned Workspace AI source; build with scripts/package_unified_rc.py and see RC-BUILD-INSTRUCTIONS.txt and PRIVACY.md. No live-key provider inference has been certified in this automatic workflow; owner will test in a disposable Firefox profile and approve separately."
+  }
+}
