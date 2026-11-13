@@ -23,7 +23,7 @@ requests the corresponding feature.
 
 - Required: theme, search, storage. Firefox chrome tint and user-initiated
   searches use Mozilla's supported browser APIs.
-- Optional: tabs, sessions, bookmarks, history for explicitly requested
+- Optional: tabs, tabGroups (unified only), sessions, bookmarks, history for explicitly requested
   workspace utilities; these may be denied or revoked.
 - Optional HTTPS host access (https://*/* declaration): **only** for
   user-chosen RSS/Atom publications. This is not an installation-time blanket
@@ -40,6 +40,65 @@ those hosts see ordinary connection metadata, including IP addresses.
 RSS requests omit credentials and referrers and reject redirects.
 Cached feed metadata contains titles, dates and URLs, not article bodies.
 
+## v0.5.6 optional Ayarime AI (unified release candidate)
+
+The unified extension includes an **optional BYOK (bring your own API key)**
+assistant. AI is **off by default**. Enabling it does not automatically send
+anything, connect a Google account, authorize a model provider, or grant Firefox
+tab access. Browser tab/workspace access and AI-provider access require separate
+user actions and Firefox permissions.
+
+When you explicitly allow an AI provider, Firefox requests that provider's
+HTTPS API host and the following **optional data collection** categories:
+`authenticationInfo` (API credential), `personalCommunications` (chat
+prompts), `websiteContent` (content you voluntarily paste into a prompt),
+and `personallyIdentifyingInfo` (details you choose to include). These
+categories are optional in the Firefox manifest; the required declaration
+remains `none`. You can decline or later revoke consent through Firefox
+**Add-ons → Permissions and data**. Without provider consent and a session
+API key, the add-on must not make model inference requests.
+
+After those separate approvals, selecting **Ask Ayarime** sends your written
+prompt, selected local persona instructions, and an API credential directly
+to the **selected** OpenAI, Anthropic or Google Gemini API endpoint. The
+provider processes the content under its own terms, retention policies and
+billing. OpenAI requests set `store:false`, which does **not** eliminate
+all service-side retention. Web search is separately opted in per request
+for supported OpenAI models and may incur provider charges. No model is
+contacted simply by opening a Firefox tab or reading stored conversation
+history. Neither ChatGPT Plus nor another consumer chat subscription
+automatically supplies an API key.
+
+Your selected provider/model and AI on/off state are in Firefox local storage.
+The entered API key lives **only** in Firefox `storage.session`, which is
+not an encrypted credential vault. It is never added to an export or saved in
+extension-local persistent storage. **Forget session key** removes it on
+request. The unified AI toggle also clears the session API key before turning
+AI off; background handling aborts ongoing streamed requests when AI is
+disabled, and rejects requests made while disabled. Clear conversation is
+a separate explicit action, not the same as forgetting an API key.
+
+Up to ten recent prompt/reply exchanges may be retained in Firefox
+**session-only storage** for display across the Hub and native sidebar.
+This content is **not encrypted**. Previous exchanges are never added
+to a new model request unless the user separately selects the
+**Include recent conversation** option for that request; that checkbox
+resets after sending. Clearing history removes this session transcript.
+Explicitly typed personal information can reach the chosen provider, so
+do not enter information you are unwilling to share with it.
+
+**Google account and Google Master MCP connections are not enabled in
+the v0.5.6 candidate.** Its Google-account, Morning Coffee and update-check
+interface is hidden; their background requests are blocked. There are no
+automatic Gmail, Calendar, Docs, Sheets, Drive, or Tasks reads, and no
+account data is silently included in model requests. The inert future
+Google Worker contract is not an active transport.
+
+No prompts, provider credentials, conversation transcripts, Google records,
+browsing history or telemetry are routed to an ELF//SHELL-operated backend.
+The project has no developer analytics. Optional RSS requests and user-chosen
+browser searches still operate separately, as described below.
+
 ## Native Linux cursor package
 
 The optional Ayarime Linux cursor archive is **not a Firefox extension
@@ -51,10 +110,14 @@ is documented in ARTWORK_LICENSE.md.
 
 ## Mozilla data-collection disclosure
 
-The manifest's Firefox data-collection declaration is required: none.
-This means there is no developer data-collection endpoint; it does
-not claim user-authorized searches and RSS requests never contact
-external websites.
+For the core-only extension, the required declaration is `none`.
+For the **unified v0.5.6 candidate**, the required declaration remains
+`none`, with the four optional BYOK data categories disclosed above.
+This does not mean optional model requests avoid third-party processing:
+user-approved model inference transmits the prompt and API credential
+directly to the selected provider. It does mean no developer-controlled
+analytics endpoint exists. Ordinary chosen searches and RSS requests also
+contact their explicitly selected external websites.
 
 ## Optional local hardware readings
 
