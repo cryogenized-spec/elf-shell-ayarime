@@ -27,12 +27,12 @@
       "page": "dispatches/clickup-serviteur-v0.3.0-beta.1.html"
     },
     {
-      "id": "clipmint-windows-x64-development-alpha",
-      "title": "Transmission 004 — ClipMint: a second window opens",
+      "id": "clipmint-twin-archive-joint-launch",
+      "title": "Transmission 004 — The Twin Archive: ClipMint on two desktops",
       "published": "2026-11-13T17:36:00Z",
       "category": "From the Workshop",
-      "summary": "ClipMint's clipboard-and-capture archive now has an independent Windows x64 development alpha alongside the Linux Mint edition. A single portable ZIP bundles the Windows app, Qt/Python runtime and FFmpeg. GitHub Actions passed 32 automated tests, applied a self-signed (not publicly trusted) Authenticode development signature, and verified GitHub-signed build provenance for the ZIP. The Windows build is not a public beta, a verified-publisher release or a fully field-tested desktop application: physical Windows acceptance is still pending. Read the dispatch for what is included, how to inspect the GitHub Actions artifact and the remaining limitations.",
-      "page": "dispatches/clipmint-windows-x64-alpha.html"
+      "summary": "Ayarime's Twin Archive is an illustrated story and design journal for a planned coordinated release of ClipMint on Linux Mint and Windows x64. Both editions have independent codebases and local history; they do not synchronise data. Linux Mint already has preview builds, while Windows x64 has a complete development-signed alpha with a verified GitHub build. Neither is being announced here as a finished public beta: physical desktop testing, Linux illustration-rights review, and permanent two-platform release packages remain prerequisites. The two doors will open together only after both pass their release gates.",
+      "page": "dispatches/clipmint-twin-archive.html"
     }
   ]
 }
