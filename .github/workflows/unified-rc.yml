@@ -9,6 +9,7 @@ on:
       - 'scripts/package_unified_rc.py'
       - 'tests/rc_package_test.py'
       - 'tests/native_unified_preview.py'
+      - 'tests/native_unified_provider_consent.py'
       - 'tests/native_unified_upgrade.py'
       - 'unified-preview/**'
       - 'PRIVACY.md'
@@ -81,6 +82,10 @@ jobs:
           python3 tests/native_unified_preview.py
           python3 tests/native_unified_interface.py
           python3 tests/native_unified_approval.py
+      - name: Native Firefox — provider Deny/Allow, optional-data consent, forget key and revoke
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_unified_provider_consent.py
       - name: Retrieve historical signed AMO v0.5.5 baseline — no Mozilla upload
         shell: bash
         run: |
@@ -122,6 +127,7 @@ jobs:
             dist/unified-firefox/
             dist/unified-interface/
             dist/native-approval/
+            dist/native-provider-consent/
             dist/upgrade-acceptance-amo-baseline/
           if-no-files-found: warn
           retention-days: 30
