@@ -210,11 +210,31 @@ def adapt_background(source: str) -> str:
     source = source.replace(external, "// Disabled: one-extension build has no external connection.")
     gate = (
         'const UNIFIED_AI_KEY="elfshell.unified.aiEnabled.v1";\n'
+        'const UNIFIED_STREAMS=new Set();\n'
         'async function unifiedAiEnabled(){\n'
         '  const state=await browser.storage.local.get(UNIFIED_AI_KEY);\n'
         '  return state[UNIFIED_AI_KEY]===true;\n'
         '}\n'
+        'browser.storage.onChanged.addListener((changes,area)=>{\n'
+        '  if(area!=="local" || !Object.hasOwn(changes,UNIFIED_AI_KEY) ||\n'
+        '     changes[UNIFIED_AI_KEY].newValue===true)return;\n'
+        '  for(const controller of UNIFIED_STREAMS)controller.abort();\n'
+        '  browser.storage.session.remove("elfshell.byok.apiKey.v1")\n'
+        '    .catch(()=>console.warn("Ayarime AI session-key removal failed"));\n'
+        '});\n'
+        'unifiedAiEnabled().then(enabled=>{\n'
+        '  if(!enabled)return browser.storage.session.remove("elfshell.byok.apiKey.v1");\n'
+        '}).catch(()=>console.warn("Ayarime AI startup credential check failed"));\n'
     )
+    open_marker = '      controller=new AbortController();'
+    check(source.count(open_marker)==1, "OpenAI stream controller allocation changed")
+    source = source.replace(open_marker, open_marker +
+        '\n      UNIFIED_STREAMS.add(controller);')
+    close_marker = '    port.onDisconnect.addListener(()=>{closed=true;controller?.abort();});'
+    check(source.count(close_marker)==1, "OpenAI stream cleanup changed")
+    source = source.replace(close_marker,
+        '    port.onDisconnect.addListener(()=>{closed=true;controller?.abort();'
+        'if(controller)UNIFIED_STREAMS.delete(controller);});')
     stream_marker = '      globalThis.WorkspaceOpenAIStream.run({'
     check(source.count(stream_marker) == 1, "OpenAI streaming entrypoint changed")
     # The model stream must enforce the same persisted flag as the one-shot
