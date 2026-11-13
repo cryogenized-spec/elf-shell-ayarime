@@ -100,6 +100,8 @@ def no_horizontal_overflow(page, width, height):
           })
           .map(el=>({tag:el.tagName.toLowerCase(),id:el.id,
             cls:String(el.className||'').slice(0,70),
+            parent:String(el.parentElement?.className||'').slice(0,70),
+            sample:(el.textContent||'').trim().slice(0,80),
             width:Math.round(el.getBoundingClientRect().width),
             left:Math.round(el.getBoundingClientRect().left),
             right:Math.round(el.getBoundingClientRect().right)}))
