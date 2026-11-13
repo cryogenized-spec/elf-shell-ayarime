@@ -48,6 +48,14 @@ jobs:
           for name in ('index.html', 'style.css', '.nojekyll'):
               assert (out / name).exists(), name
           PY
+      - name: Upload review-only rendered website preview (not public Pages)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: elfshell-feed-editorial-preview
+          path: dist/feed-site/
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload only rendered public site (no repository files)
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
