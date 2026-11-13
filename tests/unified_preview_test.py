@@ -110,6 +110,19 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertNotIn('unified/module.js',(ROOT/"manifest.json").read_text())
         self.assertIn('const dataKey="elfshell-workspace-v3";',(ROOT/"newtab.js").read_text())
 
+    def test_unified_interface_polish_is_scoped_and_accessible(self):
+        css=(STAGE/"unified/ui-polish.css").read_text()
+        for name in ("hub.html","sidebar.html"):
+            html=(STAGE/name).read_text()
+            self.assertIn('href="unified/ui-polish.css"',html)
+            self.assertEqual(html.count('href="unified/ui-polish.css"'),1)
+        self.assertIn('a,select,textarea,summary',css)
+        self.assertIn(':focus-visible',css)
+        self.assertIn('max-width: 420px',css)
+        self.assertIn('conversation-bubble',css)
+        self.assertNotIn("unified/ui-polish.css",(ROOT/"newtab.html").read_text())
+        self.assertNotIn("unified/ui-polish.css",(ROOT/"manifest.json").read_text())
+
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())
         for name in ["hub.html","sidebar.html","newtab.html","ui.css",
