@@ -16,7 +16,7 @@ STAGING = DIST / 'amo'
 OUTPUT = DIST / f'ELF-SHELL-Ayarime-v{VERSION}-AMO.zip'
 SOURCES = [
     'LICENSE', 'LICENSE_SCOPE.md', 'LICENSES/MIT-legacy.txt', 'LICENSES/bootstrap-icons-MIT.txt', 'ARTWORK_LICENSE.md',
-    'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js',
+    'manifest.json', 'background.js', 'favicon.ico', 'newtab.html', 'newtab.js', 'workspace/bridge.js',
     'memory.js', 'feeds.js', 'telemetry.js', 'styles.css', 'typography.css',
     'stories/archive.html', 'stories/archive.css', 'stories/archive.js',
     *['stories/assets/' + name for name in (

@@ -24,7 +24,7 @@ assert(!/fetch\s*\(/.test(js),"Reader must not fetch remotely");
 assert(!/XMLHttpRequest|sendBeacon|localStorage|browser\.storage/.test(js),"Reader is non-tracking and read-only");
 assert(!/https?:\/\//.test(html+css+js),"Reader must have no external resource URLs");
 assert.equal((tab.match(/href="stories\/archive\.html"/g)||[]).length,3);
-assert(tab.includes("8 TOOLS · CTRL+K"));
+assert(tab.includes("10 TOOLS · CTRL+K"));
 assert(palette.includes('Browse illustrated Ayarime stories'));
 assert(!tab.includes("window.open("),"Shortcuts and toolbar links must remain native");
 assert(manifest.requiresExplicitHumanMergeApproval===true);
