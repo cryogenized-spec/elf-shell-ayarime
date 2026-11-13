@@ -25,6 +25,14 @@
       "category": "From the Workshop",
       "summary": "An illustrated eight-sliver dossier accompanies ClickUp Serviteur MCP v0.3.0-beta.1, first released as a public GitHub source prerelease on 7 November 2026. The article now includes a separately dated field guide to 80 current named MCP tools and an evidence-linked comparison with ClickUp MCP alternatives researched on Glama. It explains Serviteur's independent, self-hosted per-user OAuth approach, server-enforced resource scopes, distinct named operations and practical workflows, while acknowledging competitors' broader API coverage and specialist strengths. This remains an independent source beta, not a hosted service or an endorsement by ClickUp.",
       "page": "dispatches/clickup-serviteur-v0.3.0-beta.1.html"
+    },
+    {
+      "id": "clipmint-windows-x64-development-alpha",
+      "title": "Transmission 004 — ClipMint: a second window opens",
+      "published": "2026-11-13T17:36:00Z",
+      "category": "From the Workshop",
+      "summary": "ClipMint's clipboard-and-capture archive now has an independent Windows x64 development alpha alongside the Linux Mint edition. A single portable ZIP bundles the Windows app, Qt/Python runtime and FFmpeg. GitHub Actions passed 32 automated tests, applied a self-signed (not publicly trusted) Authenticode development signature, and verified GitHub-signed build provenance for the ZIP. The Windows build is not a public beta, a verified-publisher release or a fully field-tested desktop application: physical Windows acceptance is still pending. Read the dispatch for what is included, how to inspect the GitHub Actions artifact and the remaining limitations.",
+      "page": "dispatches/clipmint-windows-x64-alpha.html"
     }
   ]
 }
