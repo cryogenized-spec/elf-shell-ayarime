@@ -89,6 +89,14 @@ def respond_to_permission(approve):
         # Only UI identifiers, not permission contents or browser profile data.
         print("PERMISSION_UI_DIAGNOSTIC:",json.dumps(popup_details()),flush=True)
         raise
+    # Firefox's PopupNotifications may ignore click events during its
+    # initial anti-clickjacking delay, even after the visible buttons exist.
+    # Give the *actual browser notification* time to become interactive:
+    # this is not a forged permission response or a mocked browser API.
+    time.sleep(1.4)
+    info=popup_details()
+    require(info["visible"] and info["primary"] and info["secondary"],
+            "Firefox permission prompt disappeared before a choice was made")
     with driver.context(driver.CONTEXT_CHROME):
         selector=(".popup-notification-primary-button" if approve else
                   ".popup-notification-secondary-button")
