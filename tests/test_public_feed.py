@@ -152,6 +152,8 @@ class FeedTests(unittest.TestCase):
                 self.assertIn('class="plate ' + name + '"', article)
             self.assertIn('class="edition edition-mint"', article)
             self.assertIn('class="edition edition-windows"', article)
+            self.assertIn('class="scene-mark terminal-mark"', article)
+            self.assertNotIn("⌘", article, "Linux scene must not use a macOS Command glyph")
             self.assertIn("cryogenized-spec/clipmint-linux", article)
             self.assertIn("cryogenized-spec/clipmint-windows", article)
             self.assertIn("32 automated tests", article)
