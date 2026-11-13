@@ -277,7 +277,27 @@ def build(companion_dir: Path) -> None:
                       'UNSIGNED UNIFIED PREVIEW — Google OAuth/account operations '
                       'and automatic update checks are disabled until separately reviewed.'
                       '</div>')
-            data = html.replace(container, container + "\n" + banner, 1).encode("utf-8")
+            html = html.replace(container, container + "\n" + banner, 1)
+            if rel == "sidebar.html":
+                # Settings are shared with the Hub; keep all existing inputs and
+                # handlers available but give the narrow sidebar a chat-first view.
+                start = '<form id="ai-settings-form" class="ai-form">'
+                end = '  </section>\n    <section class="conversation-panel"'
+                check(html.count(start) == html.count(end) == 1,
+                      "Sidebar provider settings structure changed")
+                html = html.replace(start,
+                    '<details class="unified-provider-settings">\n'
+                    '<summary>PROVIDER &amp; API KEY SETTINGS</summary>\n'
+                    '<p class="quiet">Shared with Workspace Hub. Expand to configure or clear a session key.</p>\n'
+                    + start, 1)
+                html = html.replace(end,
+                    '  </section>\n</details>\n    <section class="conversation-panel"', 1)
+            css_link = '<link rel="stylesheet" href="ui.css">'
+            check(html.count(css_link) == 1,
+                  "Companion page stylesheet changed: " + rel)
+            html = html.replace(css_link, css_link +
+                '<link rel="stylesheet" href="unified/ui-polish.css">', 1)
+            data = html.encode("utf-8")
         inventory[rel] = data
     # Preview-only copy: remove references to a separate companion installation
     # while preserving the original core dashboard source byte-for-byte.
@@ -299,6 +319,8 @@ def build(companion_dir: Path) -> None:
     station_html = station_html.replace(label,
         '<p id="ai-module-status" class="workspace-bridge-status" '
         'role="status" aria-live="polite"></p>\n      ' + label)
+    inventory["unified/ui-polish.css"] = (
+        ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
     # Inert by design: bundled for contract review and tests, NOT injected into

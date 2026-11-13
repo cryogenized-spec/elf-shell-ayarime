@@ -1,0 +1,117 @@
+/* Unified 0.5.6 preview polish; applied only to the pinned Hub/sidebar build.
+   Leave the standalone companion and published core extension untouched. */
+body[data-view="hub"] :is(a,select,textarea,summary):focus-visible,
+body[data-view="sidebar"] :is(a,select,textarea,summary):focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+body[data-view="hub"] .shell,
+body[data-view="sidebar"] .side-shell,
+body[data-view="hub"] .frame,
+body[data-view="sidebar"] .frame {
+  min-width: 0;
+}
+body[data-view="hub"] :is(input,textarea,select),
+body[data-view="sidebar"] :is(input,textarea,select) {
+  max-width: 100%;
+}
+body[data-view="sidebar"] :is(.ai-console,.conversation-panel,.ai-form,.ai-key-controls,.trace-board) {
+  min-width: 0;
+}
+@media (max-width: 420px) {
+  body[data-view="sidebar"] .side-shell {padding: 8px;}
+  body[data-view="sidebar"] .frame {padding: 12px;}
+  body[data-view="sidebar"] .resource-actions {flex-wrap: wrap;max-width: 100%;}
+  body[data-view="sidebar"] :is(input,textarea,select) {min-width: 0;width: 100%;}
+  body[data-view="sidebar"] .conversation-bubble {max-width: 100%;overflow-wrap: anywhere;}
+}
+
+/* Keep the narrow sidebar focused on conversation; advanced provider controls
+   are still one keyboard-accessible disclosure away, with no duplicated state. */
+body[data-view="sidebar"] .unified-provider-settings {
+  margin: 10px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--ayarime-outline);
+  background: rgba(25, 25, 43, .88);
+}
+body[data-view="sidebar"] .unified-provider-settings > summary {
+  color: var(--cyan);
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: .07em;
+  line-height: 1.6;
+}
+body[data-view="sidebar"] .unified-provider-settings[open] > summary {
+  color: var(--lime);
+  margin-bottom: 9px;
+}
+body[data-view="sidebar"] .unified-provider-settings .quiet {overflow-wrap: anywhere;}
+
+/* At 320px Firefox content width is reduced further by its vertical scrollbar.
+   Give the Hub an additional compact gutter without clipping interactive controls. */
+@media (max-width: 420px) {
+  body[data-view="hub"] .shell {padding: 12px;}
+  body[data-view="hub"] .frame {padding: 14px;}
+  body[data-view="hub"] .masthead {gap: 10px;}
+  body[data-view="hub"] .columns {gap: 12px;}
+  body[data-view="hub"] :is(.section-head,.offer-meter-head,.trace-head) {
+    flex-wrap: wrap;
+  }
+  body[data-view="hub"] :is(.ai-console,.conversation-panel,.ai-form,.ai-key-controls) {
+    min-width: 0;
+  }
+  body[data-view="hub"] :is(.resource-row,.offer-panel,.conversation-bubble,.quiet) {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Grid auto-minimums must not inherit the intrinsic width of long provider
+   choices and labels in Firefox's compact native sidebar. */
+body[data-view="sidebar"] .ai-console,
+body[data-view="sidebar"] :is(.trace-options,.ai-context-panel,.offer-panel,.conversation-panel) {
+  grid-template-columns: minmax(0, 1fr);
+}
+body[data-view="sidebar"] .ai-console > *,
+body[data-view="sidebar"] :is(.trace-options,.ai-context-panel) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+body[data-view="sidebar"] select {min-width: 0;}
+
+/* A label's inline <span>/<strong> can otherwise preserve a 443px min-content
+   width in the 390px Firefox sidebar, extending beyond the viewport. */
+body[data-view="sidebar"] .ai-context-optin > span {
+  min-width: 0;
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+}
+body[data-view="sidebar"] .ai-context-optin strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Firefox gives anonymous flex text inside checkbox labels a min-content width.
+   Use ordinary block flow in narrow sidebars so web-search consent, offer
+   confirmation, and per-request history context wrap instead of scrolling. */
+body[data-view="sidebar"] :is(
+  .ai-context-optin,
+  .trace-options .trace-check,
+  .offer-panel .offer-confirm
+) {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body[data-view="sidebar"] :is(
+  .ai-context-optin,
+  .trace-options .trace-check,
+  .offer-panel .offer-confirm
+) > input[type="checkbox"] {
+  float: left;
+  margin: 2px 10px 4px 0;
+}
+body[data-view="sidebar"] .ai-context-optin > span {
+  display: inline;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

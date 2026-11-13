@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+"""Native Firefox UI acceptance for the *unsigned* integrated v0.5.6 preview.
+
+No live provider, Google auth, or browsing data is used. Tests only extension
+pages in a disposable Firefox profile; separate signed upgrade QA still applies.
+"""
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.support.ui import WebDriverWait
+
+ROOT = Path(__file__).resolve().parents[1]
+XPI = ROOT / "dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
+OUT = ROOT / "dist/unified-interface"
+OUT.mkdir(parents=True, exist_ok=True)
+checks = []
+driver = None
+
+
+def verify(label, ok):
+    if not ok:
+        raise AssertionError(label)
+    print("PASS:", label, flush=True)
+    checks.append(label)
+
+
+def run_js(script):
+    return driver.execute_script(script)
+
+
+def stable_page(page):
+    WebDriverWait(driver, 20).until(
+        lambda d: len(d.find_elements(By.ID, "ai-prompt")) == 1)
+    verify(page + " has exactly one conversation composer",
+           len(driver.find_elements(By.ID, "ai-prompt")) == 1)
+    verify(page + " has exactly one history panel and one Rose Seal",
+           len(driver.find_elements(By.ID, "ai-conversation-list")) == 1
+           and len(driver.find_elements(By.CLASS_NAME, "ayarime-rose-loader")) == 1)
+    verify(page + " begins with no history/context sharing",
+           run_js("""return document.querySelector('#ai-conversation-count')
+                      .textContent.includes('0 / 10') &&
+                      document.querySelector('#ai-conversation-clear').disabled &&
+                      !document.querySelector('#ai-context-enable').checked"""))
+    verify(page + " stylesheet covers keyboard input and link focus",
+           run_js("""return [...document.styleSheets].some(s =>
+             (s.href || '').endsWith('/unified/ui-polish.css'))"""))
+
+
+def no_horizontal_overflow(page, width, height):
+    # Selenium's outer window includes Firefox chrome. Calibrate against the
+    # actual content viewport rather than mistakenly testing 155px at 390px.
+    # The Firefox runner currently has 345px of effective outer-vs-content
+    # width. Starting directly at 320px can enter the headless minimum-window
+    # clamp and make iterative corrections oscillate. Measure at a safe size.
+    driver.set_window_size(1000, 900)
+    chrome_width = max(0, run_js("return outerWidth - innerWidth"))
+    outer = width + chrome_width
+    metrics = None
+    last_inner = None
+    for _ in range(4):
+        driver.set_window_size(outer, height)
+        metrics = run_js("""return {
+          inner: innerWidth,
+          content: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth
+        }""")
+        if abs(metrics["inner"] - width) <= 5:
+            break
+        if last_inner == metrics["inner"]:
+            break  # headless desktop screen may cap a wide outer window
+        last_inner = metrics["inner"]
+        outer += width - metrics["inner"]
+    print("VIEWPORT_DIAGNOSTIC:", json.dumps({
+        "page": page, "target": width, "outer": outer, **metrics
+    }), flush=True)
+    if width <= 390:
+        if abs(metrics["inner"] - width) <= 12:
+            verify(page + " calibrated actual mobile viewport " + str(width) + "px", True)
+        elif width == 320 and 320 <= metrics["inner"] <= 390:
+            # Some headless Firefox chrome configurations clamp their minimum
+            # window. Do not mislabel the observed size as a tested 320px view.
+            print("MANUAL_GATE: 320px viewport cannot be reached in this runner; "
+                  "verify at 320px in Firefox Responsive Design Mode.", flush=True)
+            checks.append(page + " 320px responsive manual acceptance remains")
+        else:
+            verify(page + " calibrated actual mobile viewport " + str(width) + "px", False)
+    if metrics["content"] > metrics["client"] + 2:
+        # Closing a details element and resizing the headless Firefox sidebar
+        # can leave a stale root scroll width for one layout frame. Recheck
+        # real geometry before reporting overflow; do not widen the threshold.
+        try:
+            WebDriverWait(driver, 3, poll_frequency=.1).until(
+                lambda d: d.execute_script(
+                    "return document.documentElement.scrollWidth <= "
+                    "document.documentElement.clientWidth + 2"))
+            metrics = run_js("""return {
+              inner:innerWidth,
+              content:document.documentElement.scrollWidth,
+              client:document.documentElement.clientWidth
+            }""")
+        except Exception:
+            pass
+    if metrics["content"] > metrics["client"] + 2:
+        debug = run_js("""return [...document.querySelectorAll('*')]
+          .filter(el=>el.clientWidth>0 && el.scrollWidth>el.clientWidth+2)
+          .map(el=>({tag:el.tagName.toLowerCase(),id:el.id,
+            cls:String(el.className||'').slice(0,70),
+            client:el.clientWidth,scroll:el.scrollWidth,
+            sample:(el.textContent||'').trim().slice(0,65)}))
+          .sort((a,b)=>(b.scroll-b.client)-(a.scroll-a.client)).slice(0,15);""")
+        print("INNER_SCROLL_OFFENDERS:", json.dumps(debug), flush=True)
+        offenders = run_js("""return [...document.querySelectorAll('*')]
+          .filter(el => {
+            const r=el.getBoundingClientRect();
+            return r.width>0 && (r.right>document.documentElement.clientWidth+2 ||
+                                 r.left< -2);
+          })
+          .map(el=>({tag:el.tagName.toLowerCase(),id:el.id,
+            cls:String(el.className||'').slice(0,70),
+            parent:String(el.parentElement?.className||'').slice(0,70),
+            sample:(el.textContent||'').trim().slice(0,80),
+            width:Math.round(el.getBoundingClientRect().width),
+            left:Math.round(el.getBoundingClientRect().left),
+            right:Math.round(el.getBoundingClientRect().right)}))
+          .sort((a,b)=>b.right-a.right).slice(0,18);""")
+        print("VIEWPORT_OFFENDERS:", json.dumps(offenders), flush=True)
+    verify(page + " no horizontal overflow at " + str(metrics["inner"]) + "px viewport",
+           metrics["content"] <= metrics["client"] + 2)
+    driver.save_screenshot(str(OUT / (page + "-" + str(width) + ".png")))
+
+
+try:
+    verify("preview package exists", XPI.is_file())
+    options = webdriver.FirefoxOptions()
+    options.add_argument("-headless")
+    binary = os.environ.get("FIREFOX_BINARY")
+    if binary:
+        options.binary_location = binary
+    options.set_preference("browser.startup.homepage", "about:blank")
+    options.set_preference("browser.shell.checkDefaultBrowser", False)
+    driver = webdriver.Firefox(
+        options=options,
+        service=FirefoxService(service_args=["--allow-system-access"]),
+    )
+    driver.set_script_timeout(25)
+    ext_id = driver.install_web_extension(str(XPI), permanent=False).id
+    verify("unified ID is unchanged", ext_id == "elf-shell-ayarime@local.theme")
+    handles = set(driver.window_handles)
+    with driver.context(driver.CONTEXT_CHROME):
+        driver.execute_script("window.BrowserCommands.openTab();")
+    WebDriverWait(driver, 15).until(
+        lambda d: len(set(d.window_handles) - handles) == 1)
+    driver.switch_to.window(next(iter(set(driver.window_handles) - handles)))
+    hub = run_js('return browser.runtime.getURL("hub.html")')
+    sidebar = run_js('return browser.runtime.getURL("sidebar.html")')
+
+    driver.get(hub + "#assistant")
+    stable_page("Hub")
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script(
+            "return document.activeElement?.id === 'ai-prompt'"))
+    verify("Hub #assistant shortcut focuses the actual composer",
+           run_js("return document.activeElement.id === 'ai-prompt'"))
+    for width, height in [(1366, 900), (390, 844), (320, 700)]:
+        no_horizontal_overflow("hub", width, height)
+
+    # Trigger only a local CSS state; absolutely no provider call is made.
+    run_js("""const board=document.querySelector('#ai-trace');
+      board.hidden=false; board.dataset.stage='thinking';""")
+    active = run_js("""return {
+      tile:getComputedStyle(document.querySelector('.rose-tile--right')).animationName,
+      spirit:getComputedStyle(document.querySelector('.rose-spirit')).animationName
+    }""")
+    verify("Rose Seal animates its fold and alternating-axis spirit when active",
+           "rose-fold-right" in active["tile"] and
+           "rose-alternate-axes" in active["spirit"])
+    with driver.context(driver.CONTEXT_CHROME):
+        driver.execute_script("Services.prefs.setIntPref('ui.prefersReducedMotion', 1);")
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script(
+            "return matchMedia('(prefers-reduced-motion: reduce)').matches"))
+    reduced_script = """return {
+      tile:getComputedStyle(document.querySelector('.rose-tile--right')).animationName,
+      spirit:getComputedStyle(document.querySelector('.rose-spirit')).animationName,
+      spark:getComputedStyle(document.querySelector('.rose-spark')).animationName
+    }"""
+    # Firefox updates matchMedia and computed animation styles asynchronously.
+    # Inspect the actual styles after propagation, not just the media-query flag.
+    try:
+        WebDriverWait(driver, 10, poll_frequency=.1).until(
+            lambda d: all(value == "none" for value in
+                          d.execute_script(reduced_script).values()))
+    except Exception:
+        print("REDUCED_MOTION_DIAGNOSTIC:",
+              json.dumps(run_js(reduced_script)), flush=True)
+        raise
+    reduced = run_js(reduced_script)
+    verify("Firefox reduced-motion stops tiles, spirit and sparks",
+           all(v == "none" for v in reduced.values()))
+
+    driver.get(sidebar)
+    stable_page("Sidebar")
+    disclosure = driver.find_element(By.CSS_SELECTOR, ".unified-provider-settings")
+    verify("Sidebar collapses duplicate provider settings by default",
+           not disclosure.get_property("open"))
+    disclosure.find_element(By.CSS_SELECTOR, "summary").click()
+    verify("Sidebar can reveal and use shared provider settings on demand",
+           disclosure.get_property("open")
+           and driver.find_element(By.ID, "ai-provider").is_displayed()
+           and driver.find_element(By.ID, "ai-key").is_displayed())
+    disclosure.find_element(By.CSS_SELECTOR, "summary").click()
+    for width, height in [(390, 844), (320, 700)]:
+        no_horizontal_overflow("sidebar", width, height)
+    run_js("document.querySelector('#ai-prompt').focus()")
+    verify("Sidebar keyboard composer receives a visible focus ring",
+           run_js("""return getComputedStyle(
+               document.querySelector('#ai-prompt')).outlineStyle === 'solid'"""))
+    verify("Sidebar exposes one explicit submit and stop action",
+           len(driver.find_elements(By.ID, "ai-send")) == 1
+           and len(driver.find_elements(By.ID, "ai-cancel")) == 1)
+    # Exercise real cross-view session history without a provider key, network
+    # permission, live inference request, or private conversation contents.
+    synthetic = driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.local.set({'elfshell.unified.aiEnabled.v1':true})
+        .then(()=>browser.runtime.sendMessage({
+          type:'AI_CONVERSATION_APPEND',prompt:'QA local prompt',
+          answer:'QA local-only reply',provider:'openai',model:'gpt-6-luna'
+        }))
+        .then(done,error=>done({ok:false,error:String(error)}));
+    """)
+    verify("local synthetic exchange stored without provider inference",
+           isinstance(synthetic, dict) and synthetic.get("ok") is True
+           and len(synthetic.get("entries", [])) == 1)
+    WebDriverWait(driver, 10).until(lambda d:
+        "1 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("sidebar displays session-only reply without enabling context sending",
+           "QA local-only reply" in driver.find_element(
+               By.ID, "ai-conversation-list").text and
+           not driver.find_element(By.ID, "ai-context-enable").is_selected())
+    driver.get(hub)
+    WebDriverWait(driver, 15).until(lambda d:
+        "1 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("Hub loads the same Firefox-session exchange",
+           "QA local prompt" in driver.find_element(
+               By.ID, "ai-conversation-list").text)
+    driver.find_element(By.ID, "ai-conversation-clear").click()
+    WebDriverWait(driver, 10).until(lambda d:
+        "0 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("Clear conversation removes only the session transcript",
+           driver.find_element(By.ID, "ai-conversation-clear").get_property(
+               "disabled"))
+    driver.get(sidebar)
+    WebDriverWait(driver, 10).until(lambda d:
+        "0 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    verify("sidebar sees history removal after reloading", True)
+    driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.local.remove('elfshell.unified.aiEnabled.v1')
+        .then(()=>done(true),()=>done(false));
+    """)
+    report = {"status": "PASS", "checks": checks}
+except Exception as error:
+    print("FAIL:", error, file=sys.stderr, flush=True)
+    report = {"status": "FAIL", "checks": checks,
+              "error": str(error), "traceback": traceback.format_exc()}
+    if driver:
+        try:
+            driver.save_screenshot(str(OUT / "failure.png"))
+        except Exception:
+            pass
+finally:
+    (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    if driver:
+        driver.quit()
+
+if report["status"] != "PASS":
+    raise SystemExit(1)
