@@ -8,7 +8,13 @@ function harness(){
       setAttribute(name,value){this.attributes[name]=value;},
       addEventListener(name,cb){this[name]=cb;}});
   let onLoad,onChanged,hasKey=false,value=false,fail=false;
-  const browser={storage:{
+  let clearFails=false,clearCalls=0;
+  const browser={runtime:{sendMessage:async message=>{
+    assert.equal(message.type,"AI_CLEAR_SESSION_KEY");
+    clearCalls++;
+    if(clearFails)return {ok:false};
+    return {ok:true,ai:{hasSessionKey:false}};
+  }},storage:{
     local:{
       get:async()=>hasKey?{"elfshell.unified.aiEnabled.v1":value}:{},
       set:async obj=>{
@@ -29,7 +35,9 @@ function harness(){
   },click:async()=>{
     nodes.get("ai-module-toggle").click();
     await new Promise(resolve=>setImmediate(resolve));
-  },fail:next=>{fail=next;},stored:()=>({hasKey,value})};
+  },fail:next=>{fail=next;},
+    failCredentialClear:next=>{clearFails=next;},
+    clearCalls:()=>clearCalls,stored:()=>({hasKey,value})};
 }
 test("AI opt-in begins off, without creating preference storage",async()=>{
   const h=harness();await h.load();
@@ -53,4 +61,17 @@ test("failed preference save leaves previous setting and visible error intact",a
   assert.match(h.nodes.get("ai-module-status").textContent,/could not save/);
   assert.equal(h.nodes.get("ai-module-toggle").attributes["aria-pressed"],"true");
   assert.deepEqual(h.stored(),{hasKey:true,value:true});
+});
+test("AI disable first purges credentials, and a failure does not claim success",async()=>{
+  const h=harness();await h.load();await h.click();
+  assert.equal(h.stored().value,true);
+  h.failCredentialClear(true);
+  await h.click();
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true);
+  assert.match(h.nodes.get("ai-module-status").textContent,/session key/);
+  assert.equal(h.clearCalls(),1);
+  h.failCredentialClear(false);
+  await h.click();
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),false);
+  assert.equal(h.clearCalls(),2);
 });
