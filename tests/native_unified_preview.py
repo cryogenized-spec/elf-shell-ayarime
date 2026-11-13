@@ -93,6 +93,27 @@ try:
     check("disabled AI module blocks direct provider status requests",
           isinstance(blocked_model,dict) and blocked_model.get("ok") is False and
           "enable ayarime ai" in blocked_model.get("error","").lower())
+    blocked_stream=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      const port=browser.runtime.connect({name:"elfshell.openai.trace.v1"});
+      let completed=false;
+      port.onMessage.addListener(msg=>{
+        if(completed || msg.kind!=="terminal")return;
+        completed=true;
+        done({status:msg.status,message:msg.message||""});
+        port.disconnect();
+      });
+      port.onDisconnect.addListener(()=>{
+        if(!completed){completed=true;done({status:"disconnect"});}
+      });
+      port.postMessage({type:"start",text:"Do not send this to a provider",
+        effort:"medium",webSearch:false,maxOutputTokens:768,
+        includeHistory:false,historyLimit:0});
+    """)
+    check("disabled AI module rejects streaming before any provider request",
+          isinstance(blocked_stream,dict) and
+          blocked_stream.get("status")=="failed" and
+          "enable ayarime ai" in blocked_stream.get("message","").lower())
 
     # Seed representative existing ELF//SHELL per-field settings, plus an
     # unrelated local key. The AI toggle must not overwrite any of them.

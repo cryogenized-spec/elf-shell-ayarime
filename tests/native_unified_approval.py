@@ -204,6 +204,32 @@ try:
              {tab["id"] for tab in window_tabs()}==initial_ids,
              "Repeat Ask Ayarime created duplicate tabs"))
 
+    # Switching the AI module off does not revoke unrelated browser
+    # permissions or alter existing tabs, but it must block any *new* AI launch.
+    driver.switch_to.window(dashboard)
+    menu=driver.find_element(By.ID,"station-menu")
+    if not menu.get_property("open"):
+        menu.find_element(By.CSS_SELECTOR,"summary").click()
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
+    no_new_ai=ext_call("""
+      const done=arguments[arguments.length-1];
+      browser.runtime.sendMessage({
+        type:"UNIFIED_OPEN_ASSISTANT",
+        kind:"elfshell.workspace.bridge",version:1
+      }).then(done,error=>done({ok:false,error:String(error)}));
+    """)
+    check("disabling AI blocks new assistant launches despite prior tab grant",
+          lambda:require(isinstance(no_new_ai,dict) and
+            no_new_ai.get("ok") is False and
+            "enable ayarime ai" in no_new_ai.get("error","").lower(),
+            "Disabling AI did not enforce the background guard"))
+    check("turning AI off leaves Firefox permission and existing Hub untouched",
+          lambda:require(granted("tabs") is True and
+            {tab["id"] for tab in window_tabs()}==initial_ids,
+            "Disabling AI unexpectedly revoked tabs or destroyed the Hub"))
+
     results["status"]="PASS"
     driver.save_screenshot(str(REPORTS/"approval-flow.png"))
 except Exception as exc:

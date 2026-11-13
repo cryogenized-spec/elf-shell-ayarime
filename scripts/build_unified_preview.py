@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from package import sources as core_sources  # reviewed release inventory, not a recursive scan
 
-COMPANION_COMMIT = "3c678bda35a64fe185135eb1b937e2d5eb26d810"
+COMPANION_COMMIT = "3a586bcce19a6e66bf924521d54fefc732faffb3"
 KIND = "elfshell.workspace.bridge"
 BRIDGE_COMMAND = "elfshell:unified:bridge:v1"
 OUTPUT = ROOT / "dist" / "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
@@ -301,6 +301,10 @@ def build(companion_dir: Path) -> None:
         'role="status" aria-live="polite"></p>\n      ' + label)
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    # Inert by design: bundled for contract review and tests, NOT injected into
+    # the page or background until OAuth scopes and host allowlists are accepted.
+    inventory["unified/google-worker-contract.js"] = (
+        ROOT / "unified-preview" / "google-worker-contract.js").read_bytes()
     copy = {
         "Restore Google workspace using optional companion":
             "Open your integrated Ayarime Workspace Hub",

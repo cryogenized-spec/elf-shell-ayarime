@@ -6,7 +6,7 @@
   const button=()=>document.getElementById("ai-module-toggle");
   const status=()=>document.getElementById("ai-module-status");
   const ask=()=>document.getElementById("ask-ayarime-toggle");
-  let enabled=false,loaded=false;
+  let enabled=false,loaded=false,saveError=null;
   function render(){
     const toggle=button(),note=status(),launch=ask();
     if(toggle){
@@ -14,11 +14,11 @@
       toggle.textContent=enabled?"✧ DISABLE AYARIME AI":"✧ ENABLE AYARIME AI";
       toggle.disabled=!loaded;
     }
-    if(note)note.textContent=!loaded
+    if(note)note.textContent=saveError||(!loaded
       ?"Reading AI module preferences from Firefox local storage…"
       :enabled
         ?"AI module enabled locally. Firefox tab access and provider consent remain separate."
-        :"AI module off. No model requests; your existing ELF//SHELL settings are unchanged.";
+        :"AI module off. No model requests; your existing ELF//SHELL settings are unchanged.");
     if(launch){
       launch.setAttribute("aria-disabled",String(!enabled));
       launch.title=enabled?"Focus the integrated Ayarime AI console":"Enable Ayarime AI first; no account access is granted";
@@ -37,6 +37,7 @@
   async function toggle(){
     await ready;
     const next=!enabled;
+    saveError=null;
     const node=button();
     if(node)node.disabled=true;
     try{
@@ -44,9 +45,9 @@
       // migration, or its existing storage object: no legacy values are touched.
       await browser.storage.local.set({[KEY]:next});
       enabled=next;
+      saveError=null;
     }catch{
-      const note=status();
-      if(note)note.textContent="Firefox could not save the AI module preference. No changes applied.";
+      saveError="Firefox could not save the AI module preference. No changes applied.";
     }finally{render();}
   }
   document.addEventListener("DOMContentLoaded",()=>{
@@ -56,6 +57,7 @@
   browser.storage.onChanged?.addListener((changes,area)=>{
     if(area!=="local"||!Object.prototype.hasOwnProperty.call(changes,KEY))return;
     enabled=changes[KEY].newValue===true;
+    saveError=null;
     loaded=true;
     render();
   });
