@@ -56,7 +56,7 @@
     }catch{
       saveError=next
         ?"Firefox could not save the AI module preference. No changes applied."
-        :"Could not safely disable AI or forget its session API key. No changes applied.";
+        :"Firefox could not save the AI-off preference or safely forget its session key. No changes applied.";
     }finally{render();}
   }
   document.addEventListener("DOMContentLoaded",()=>{
