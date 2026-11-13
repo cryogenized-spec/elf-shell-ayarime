@@ -158,6 +158,9 @@ try:
       }).then(()=>done(true),()=>done(false));
     """)
     check("synthetic BYOK key staged only in Firefox session storage",staged_key is True)
+    station=driver.find_element(By.ID,"station-menu")
+    if not station.get_property("open"):
+        station.find_element(By.CSS_SELECTOR,"summary").click()
     driver.find_element(By.ID,"ai-module-toggle").click()
     WebDriverWait(driver,10).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
@@ -167,6 +170,9 @@ try:
         .then(v=>done(!Object.hasOwn(v,"elfshell.byok.apiKey.v1")),()=>done(false));
     """)
     check("disabling Ayarime AI removes BYOK key without modifying core settings",cleared is True)
+    station=driver.find_element(By.ID,"station-menu")
+    if not station.get_property("open"):
+        station.find_element(By.CSS_SELECTOR,"summary").click()
     driver.find_element(By.ID,"ai-module-toggle").click()
     WebDriverWait(driver,10).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
