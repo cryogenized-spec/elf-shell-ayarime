@@ -1,0 +1,127 @@
+name: Ayarime v0.5.6 unified RC — verify only
+
+# No workflow job has permission or credentials to sign, submit or deploy.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/unified-rc.yml'
+      - 'scripts/build_unified_preview.py'
+      - 'scripts/package_unified_rc.py'
+      - 'tests/rc_package_test.py'
+      - 'tests/native_unified_preview.py'
+      - 'tests/native_unified_upgrade.py'
+      - 'unified-preview/**'
+      - 'PRIVACY.md'
+      - 'RELEASE_NOTES_0.5.6.md'
+      - 'amo/listing-metadata-v0.5.6-draft.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-rc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout unified v0.5.6 core source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact reviewed Workspace AI source
+        uses: actions/checkout@v4
+        with:
+          repository: cryogenized-spec/elf-shell-workspace-ai
+          ref: 3a586bcce19a6e66bf924521d54fefc732faffb3
+          path: workspace-ai
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run both repository regression suites
+        run: |
+          npm test
+          (cd workspace-ai && npm test)
+      - name: Build exact unified unsigned candidate and BOTH reviewer source trees
+        run: python3 scripts/package_unified_rc.py --companion workspace-ai
+      - name: Verify RC manifest, privacy, source equivalence and deferred Google integration
+        run: python3 -m unittest discover -s tests -p 'rc_package_test.py' -v
+      - name: Verify compiled scripts and preview compatibility
+        run: |
+          node --check dist/unified-rc/background.js
+          node --check dist/unified-rc/workspace-ai-background.js
+          node --check dist/unified-rc/unified/module.js
+          node --check dist/unified-rc/ui.js
+          python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
+      - name: Mozilla lint — warnings are failures
+        run: npx --yes web-ext@10.8.0 lint --source-dir dist/unified-rc --warnings-as-errors
+      - name: Confirm byte-for-byte reproducible unsigned runtime and source ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="$(sha256sum dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.zip dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-source.zip)"
+          python3 scripts/package_unified_rc.py --companion workspace-ai
+          after="$(sha256sum dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.zip dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-source.zip)"
+          test "$before" = "$after"
+          printf 'Both ZIP archives reproduced byte for byte.\n%s\n' "$after"
+      - name: Install real Firefox
+        id: firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+      - name: Install Selenium
+        run: python3 -m pip install 'selenium>=4.52,<5'
+      - name: Native Firefox — privacy, default-off AI, key purge, inert provider and UI
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: |
+          python3 tests/native_unified_preview.py
+          python3 tests/native_unified_interface.py
+          python3 tests/native_unified_approval.py
+      - name: Retrieve historical signed AMO v0.5.5 baseline — no Mozilla upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 10 --max-time 90 \
+            --output dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi \
+            'https://addons.mozilla.org/firefox/downloads/latest/7e0cfe2376c04bda9f5c/latest.xpi'
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          import json
+          from pathlib import Path
+          p=Path("dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi")
+          assert 100_000 < p.stat().st_size < 30_000_000
+          with ZipFile(p) as z:
+              assert z.testzip() is None
+              m=json.loads(z.read("manifest.json"))
+              assert m["version"]=="0.5.5"
+              assert m["browser_specific_settings"]["gecko"]["id"]=="elf-shell-ayarime@local.theme"
+          print("Historical signed v0.5.5 baseline verified.")
+          PY
+      - name: Native Firefox — signed v0.5.5 to actual unsigned unified RC and rollback
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+          ELFSHELL_UPGRADE_BASELINE_XPI: dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi
+          ELFSHELL_UPGRADE_BASELINE_VERSION: '0.5.5'
+          ELFSHELL_UPGRADE_TARGET_XPI: dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.xpi
+          ELFSHELL_UPGRADE_REPORT_SUBDIR: upgrade-acceptance-amo-baseline
+        run: python3 tests/native_unified_upgrade.py
+      - name: Upload reviewed files and synthetic evidence — NEVER signed build or credentials
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ELF-SHELL-Ayarime-v056-unified-RC-UNSIGNED
+          path: |
+            dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.zip
+            dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.xpi
+            dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-source.zip
+            dist/unified-rc-evidence.json
+            dist/unified-firefox/
+            dist/unified-interface/
+            dist/native-approval/
+            dist/upgrade-acceptance-amo-baseline/
+          if-no-files-found: warn
+          retention-days: 30
