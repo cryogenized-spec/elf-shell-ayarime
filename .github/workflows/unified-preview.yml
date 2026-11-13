@@ -67,6 +67,10 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_unified_preview.py
+      - name: Audit unified Hub and sidebar keyboard, history, Rose Seal and responsive layouts
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_unified_interface.py
       - name: Exercise real Firefox optional permissions (deny, allow, reuse)
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
@@ -110,6 +114,7 @@ jobs:
           path: |
             dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
             dist/unified-firefox/
+            dist/unified-interface/
             dist/native-approval/
             dist/upgrade-acceptance/
             dist/upgrade-acceptance-amo-baseline/
