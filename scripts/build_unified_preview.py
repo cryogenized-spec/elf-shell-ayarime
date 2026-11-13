@@ -278,6 +278,20 @@ def build(companion_dir: Path) -> None:
                       'and automatic update checks are disabled until separately reviewed.'
                       '</div>')
             html = html.replace(container, container + "\n" + banner, 1)
+            if rel == "sidebar.html":
+                # Settings are shared with the Hub; keep all existing inputs and
+                # handlers available but give the narrow sidebar a chat-first view.
+                start = '<form id="ai-settings-form" class="ai-form">'
+                end = '  </section>\n    <section class="conversation-panel"'
+                check(html.count(start) == html.count(end) == 1,
+                      "Sidebar provider settings structure changed")
+                html = html.replace(start,
+                    '<details class="unified-provider-settings">\n'
+                    '<summary>PROVIDER &amp; API KEY SETTINGS</summary>\n'
+                    '<p class="quiet">Shared with Workspace Hub. Expand to configure or clear a session key.</p>\n'
+                    + start, 1)
+                html = html.replace(end,
+                    '  </section>\n</details>\n    <section class="conversation-panel"', 1)
             css_link = '<link rel="stylesheet" href="ui.css">'
             check(html.count(css_link) == 1,
                   "Companion page stylesheet changed: " + rel)
