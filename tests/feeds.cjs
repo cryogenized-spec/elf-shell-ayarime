@@ -3,6 +3,23 @@ const assert=require('node:assert/strict');
 const {officialFeed,normaliseFeedUrl,validFeedUrl,originPattern,sanitiseFeed,validateSnapshot,validArticleUrl,parseFeedXml,parseOpml,exportOpml,hasUnsafeXmlDeclaration}=require('../feeds.js');
 assert.equal(officialFeed.url,'https://cryogenized-spec.github.io/elf-shell-ayarime/feed.xml');
 assert.equal(officialFeed.group,'PROJECT');
+// Featured first-party feed is opt-in; browser host consent is requested
+// synchronously from the actual click before any network fetch begins.
+const fs=require('node:fs'),path=require('node:path');
+const ui=fs.readFileSync(path.join(__dirname,'..','newtab.html'),'utf8');
+const source=fs.readFileSync(path.join(__dirname,'..','feeds.js'),'utf8');
+assert(ui.includes('id="feed-official-subscribe"'),'Official feed needs a direct subscribe button');
+assert(ui.includes('Firefox asks for site access'),'Explicit host disclosure is needed');
+assert(source.includes('$("feed-official-subscribe").addEventListener("click",subscribeOfficialFeed)'));
+assert(/function subscribeOfficialFeed\(\)[\s\S]*?permission=requestHost\(feed.url\);/.test(source),
+       'Permission must be requested synchronously in the official click handler');
+assert(source.includes('void completeSubscription(feed,permission,false)'),
+       'Featured source must preserve unfinished custom RSS drafts');
+assert(source.includes('officialRequestPending=true')&&source.includes('button.disabled=true'),
+       'Duplicate clicks must not open repeated permission dialogs');
+assert(source.includes('const initial = () => ({enabled:true, interval:30, feeds:[]})'),
+       'Fresh installs must not automatically subscribe or fetch');
+
 assert.equal(normaliseFeedUrl(officialFeed.url),officialFeed.url,'official RSS remains canonical');
 assert.equal(originPattern(officialFeed.url),'https://cryogenized-spec.github.io/*','official feed still requires explicit site permission');
 assert.equal(normaliseFeedUrl('thebrowser.substack.com'), 'https://thebrowser.substack.com/feed');
