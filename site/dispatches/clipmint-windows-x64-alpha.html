@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="ClipMint crosses from Linux Mint to a separate Windows x64 development alpha: a self-contained portable build, CI signing and GitHub-provenance verification. Real desktop acceptance is still pending.">
+<link rel="alternate" type="application/rss+xml" title="ELF//SHELL Transmission Log" href="../feed.xml">
+<link rel="stylesheet" href="clipmint.css">
+<title>ClipMint — A Second Window Opens | ELF//SHELL Transmission 004</title>
+</head>
+<body>
+<div class="sheet" id="top">
+<a class="skip" href="#report">Skip to the dispatch</a>
+<header class="masthead">
+  <a class="brand" href="../" aria-label="ELF//SHELL Transmission Archive">ELF<span>//</span>SHELL</a>
+  <span class="ident">AYARIME CORRESPONDENCE <b>✳</b> WORKSHOP FILE 004</span>
+  <nav aria-label="Publication navigation">
+    <a href="../">ARCHIVE</a>
+    <a href="#report">REPORT</a>
+    <a href="#build">BUILD</a>
+    <a href="../feed.xml">RSS ↗</a>
+  </nav>
+</header>
+<main id="report">
+<section class="hero" aria-labelledby="page-title">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="red-dot" aria-hidden="true"></span> TRANSMISSION 004 <span aria-hidden="true">/</span> FROM THE WORKSHOP</p>
+    <h1 id="page-title">A second <em>window</em><br>opens.</h1>
+    <p class="lede">The little archive that began on Linux Mint now has a separate home on Windows x64. Its first self-contained development build has been assembled, tested and signed in GitHub Actions. The next test belongs to the real desktop.</p>
+    <div class="metadata"><span>13 NOVEMBER 2026</span><span>WINDOWS X64</span><span>DEVELOPMENT ALPHA</span></div>
+    <a class="primary" href="https://github.com/cryogenized-spec/clipmint-windows" rel="noopener noreferrer">EXPLORE THE WINDOWS REPOSITORY <span aria-hidden="true">↗</span></a>
+  </div>
+  <figure class="hero-art">
+    <div class="frame" aria-hidden="true">
+      <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+      <div class="frame-label">CLIPMINT <span>///</span> THE CRIMSON ARCHIVE</div>
+      <div class="window-emblem"><i></i><i></i><i></i><i></i><span class="bloom">✧</span></div>
+      <div class="frame-bottom">LINUX MINT <span>↔</span> WINDOWS X64</div>
+    </div>
+    <figcaption>AN EDITORIAL MOTIF, NOT A PRODUCT SCREENSHOT</figcaption>
+  </figure>
+</section>
+<div class="ribbon"><span>/// A WORKSHOP MILESTONE</span><span>SEPARATE SYSTEMS · SHARED INTENTION</span></div>
+<section class="story" aria-labelledby="story-head">
+  <div class="section-label">I <span>/</span> THE ARRIVAL</div>
+  <div class="story-main">
+    <h2 id="story-head">One archive, <em>two homes.</em></h2>
+    <p>ClipMint was built to keep small things from disappearing: copied text, images, file references and the fragments of a working day. The Windows project carries that idea into a second environment without turning the Linux Mint application into a cross-platform compromise.</p>
+    <p>The editions live in <strong>separate repositories</strong>. Windows stores its clipboard history under <code>%LOCALAPPDATA%\ClipMintWindows</code>, does not migrate or read the Linux database, and has its own Windows capture, shortcut, packaging and signing code.</p>
+  </div>
+</section>
+<section class="story story-rule" aria-labelledby="inside-head">
+  <div class="section-label">II <span>/</span> THE PACKAGE</div>
+  <div class="story-main">
+    <h2 id="inside-head">One download, <em>nothing to assemble.</em></h2>
+    <p>The Windows alpha is delivered as a single portable ZIP containing <strong>ClipMint-Windows.exe</strong>, the Python/Qt runtime, approved crimson-and-gold branding, and FFmpeg for optional MP4 screen recording. The application needs no separate Python installation, FFmpeg download or PATH configuration. Extract the whole ZIP and run the executable from its folder.</p>
+    <div class="specs" aria-label="Build details">
+      <div><span>PLATFORM</span><strong>Windows x64</strong></div>
+      <div><span>PACKAGE</span><strong>Portable ZIP · about 92 MB</strong></div>
+      <div><span>CI TESTS</span><strong>32 passing</strong></div>
+      <div><span>CHANNEL</span><strong>Developer alpha · not a beta release</strong></div>
+    </div>
+    <p>The current package supports clipboard-history collections, search, pinned entries, screenshots and optional recording. Clipboard data is <strong>stored locally in plaintext by default</strong>; sensitive material should not be entrusted to this alpha.</p>
+  </div>
+</section>
+<section class="story story-rule" id="build" aria-labelledby="build-head">
+  <div class="section-label">III <span>/</span> THE PROVENANCE</div>
+  <div class="story-main">
+    <h2 id="build-head">A signature with <em>clear limits.</em></h2>
+    <p>The Windows GitHub Actions pipeline passed its unit, packaging and frozen-application smoke tests. Its executable bears a <strong>self-signed Authenticode development signature</strong>. The final ZIP also has a <strong>GitHub-signed build provenance attestation</strong>, verified by the workflow, which ties that package to its source and CI run.</p>
+    <p>These are useful integrity and provenance checks, not a claim of Microsoft-trusted publisher identity. <strong>Windows SmartScreen may still display an Unknown Publisher warning.</strong> The package is not code-signed with a commercially trusted certificate, and no production installer or automatic updater is included.</p>
+    <div class="build-links">
+      <a href="https://github.com/cryogenized-spec/clipmint-windows/actions/runs/43473029848" rel="noopener noreferrer"><span>VERIFIED WINDOWS BUILD</span><strong>GitHub Actions run 43473029848 ↗</strong></a>
+      <a href="https://github.com/cryogenized-spec/clipmint-windows" rel="noopener noreferrer"><span>SOURCE AND HISTORY</span><strong>cryogenized-spec/clipmint-windows ↗</strong></a>
+      <a href="https://github.com/cryogenized-spec/clipmint-windows/issues/1" rel="noopener noreferrer"><span>REMAINING ACCEPTANCE</span><strong>Windows alpha field checklist ↗</strong></a>
+    </div>
+    <p class="limit">GitHub Actions artifacts are temporary and may require a signed-in GitHub account to download. This dispatch is a development milestone, not a permanent binary-release page.</p>
+  </div>
+</section>
+<section class="closing" aria-labelledby="closing-head">
+  <p class="section-label">IV <span>/</span> THE NEXT MORNING</p>
+  <h2 id="closing-head">Now, <em>put it on a real desk.</em></h2>
+  <p>Physical Windows testing is planned next: clipboard behaviour between applications, close-to-tray operation, drag-and-drop, screenshots across different display scales, and actual screen recording. Until those checks pass, the honest label remains <strong>developer alpha</strong>.</p>
+  <p>There is a particular satisfaction in seeing a working idea take a second form. There is also value in knowing when not to call it finished.</p>
+  <a class="back" href="../">RETURN TO THE TRANSMISSION LOG <span aria-hidden="true">↖</span></a>
+</section>
+</main>
+<footer class="footer"><span>ELF//SHELL — AYARIME <b>✳</b> INDEPENDENT FIELD JOURNAL</span><a href="#top">BACK TO TOP ↑</a></footer>
+</div>
+</body>
+</html>
