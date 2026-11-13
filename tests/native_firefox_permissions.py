@@ -12,7 +12,6 @@ import sys
 import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -108,28 +107,73 @@ try:
         print("NATIVE FIREFOX PERMISSION PROMPT:",json.dumps(chrome,ensure_ascii=False)[:10000],flush=True)
     check("real subscription form requests Firefox optional host permission",request_from_real_ui)
 
+    def permission_snapshot():
+        """Safely inspect native prompt state, browser grants and the page status."""
+        with driver.context(driver.CONTEXT_CHROME):
+            chrome=driver.execute_script("""
+                const panel=document.getElementById("notification-popup");
+                const notification=document.getElementById("addon-webext-permissions-notification");
+                return {
+                  state:panel?.state||"missing",
+                  visible:!!notification&&!notification.hidden,
+                  primary:notification?.button?.getAttribute("label")||null,
+                  secondary:notification?.secondaryButton?.getAttribute("label")||null
+                };
+            """)
+        return {
+            "chrome":chrome,
+            "status":driver.find_element(By.ID,"feed-message").text,
+            "granted":await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});'),
+            "origins":(await_api('return await browser.permissions.getAll();')).get("origins",[]),
+            "savedCount":len((await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];') or {}).get("feeds",[]))
+        }
+
     def click_prompt_choice(choice):
-        selector = '#addon-webext-permissions-notification .popup-notification-' + choice + '-button'
+        """Actuate the actual Firefox browser notification, not extension APIs.
+
+        Modern Firefox exposes each moz-button's clickable inner <button>
+        via shadow DOM. Old ActionChains against the outer host failed to
+        activate the notification. This test never stubs permissions.request
+        or directly sets extension permission state. The RSS request itself
+        was initiated by a real Selenium click on the subscription form.
+        """
+        if choice not in ("secondary","primary"):
+            raise AssertionError("Unknown Firefox permission choice")
+        expected="Deny" if choice=="secondary" else "Allow"
         with driver.context(driver.CONTEXT_CHROME):
             WebDriverWait(driver,8).until(
-                lambda d:d.execute_script('return ["showing","open"].includes(document.getElementById("notification-popup")?.state);'))
-            button=driver.find_element(By.CSS_SELECTOR,selector)
-            expected = "Deny" if choice=="secondary" else "Allow"
-            if button.get_attribute("label")!=expected:
-                raise AssertionError("Wrong Firefox prompt button: "+repr(button.get_attribute("label")))
-            result["lastButtonGeometry"]=driver.execute_script("""
-                const e=arguments[0],r=e.getBoundingClientRect();
-                return {x:r.x,y:r.y,width:r.width,height:r.height,
-                    display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility};
-            """,button)
-            # Firefox's new moz-button custom control is not always treated as
-            # scrollable by WebDriver's element.click(). Send a real pointer
-            # action instead, without invoking a synthetic JS click.
-            ActionChains(driver).move_to_element(button).click().perform()
+                lambda d:d.execute_script("""
+                  const panel=document.getElementById("notification-popup");
+                  const prompt=document.getElementById("addon-webext-permissions-notification");
+                  return ["showing","open"].includes(panel?.state)
+                    && !!prompt&&!prompt.hidden;
+                """))
+            outcome=driver.execute_script("""
+                const expected=arguments[0],which=arguments[1];
+                const notification=document.getElementById(
+                    "addon-webext-permissions-notification");
+                const control=which==="secondary"
+                    ?notification?.secondaryButton:notification?.button;
+                const label=control?.getAttribute("label");
+                if(label!==expected)return {clicked:false,label:label||null};
+                // Browser-chrome automation of the real Firefox permission
+                // control, rather than forging browser.permissions responses.
+                const inner=control.shadowRoot?.querySelector("button");
+                (inner||control).click();
+                return {clicked:true,label};
+            """,expected,choice)
+            if outcome.get("clicked") is not True:
+                raise AssertionError("Firefox permission control unavailable: "+repr(outcome))
+        WebDriverWait(driver,12).until(
+            lambda d:permission_snapshot()["chrome"]["state"] not in ("showing","open"))
+        result["lastChoice"]=expected
+        result["lastChoiceSnapshot"]=permission_snapshot()
 
     def deny_no_side_effect():
         click_prompt_choice("secondary")
-        WebDriverWait(driver,12).until(lambda d:"declined" in d.find_element(By.ID,"feed-message").text.lower())
+        WebDriverWait(driver,12).until(
+            lambda d:"declined" in d.find_element(By.ID,"feed-message").text.lower())
+        result["postDeny"]=permission_snapshot()
         if await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});'):
             raise AssertionError("Firefox granted host access after Deny")
         if (await_api('return await browser.permissions.getAll();')).get("origins"):
@@ -144,6 +188,7 @@ try:
         click_prompt_choice("primary")
         WebDriverWait(driver,18).until(
             lambda d:await_api('return await browser.permissions.contains({origins:["https://github.blog/*"]});') is True)
+        result["postAllow"]=permission_snapshot()
         WebDriverWait(driver,18).until(lambda d:
             len((await_api('return (await browser.storage.local.get("elfshell-rss-settings-v1"))["elfshell-rss-settings-v1"];') or {}).get("feeds",[]))==1)
         host_grants=(await_api('return await browser.permissions.getAll();')).get("origins",[])

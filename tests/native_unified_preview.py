@@ -84,6 +84,77 @@ try:
     check("internal bridge rejects inference commands",
           malformed.get("ok") is False)
 
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").is_enabled())
+    check("new unified installation leaves AI module disabled by default",
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false" and
+          "AI module off" in driver.find_element(By.ID,"ai-module-status").text)
+    blocked_model=message({"type":"AI_STATUS"})
+    check("disabled AI module blocks direct provider status requests",
+          isinstance(blocked_model,dict) and blocked_model.get("ok") is False and
+          "enable ayarime ai" in blocked_model.get("error","").lower())
+    blocked_stream=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      const port=browser.runtime.connect({name:"elfshell.openai.trace.v1"});
+      let completed=false;
+      port.onMessage.addListener(msg=>{
+        if(completed || msg.kind!=="terminal")return;
+        completed=true;
+        done({status:msg.status,message:msg.message||""});
+        port.disconnect();
+      });
+      port.onDisconnect.addListener(()=>{
+        if(!completed){completed=true;done({status:"disconnect"});}
+      });
+      port.postMessage({type:"start",text:"Do not send this to a provider",
+        effort:"medium",webSearch:false,maxOutputTokens:768,
+        includeHistory:false,historyLimit:0});
+    """)
+    check("disabled AI module rejects streaming before any provider request",
+          isinstance(blocked_stream,dict) and
+          blocked_stream.get("status")=="failed" and
+          "enable ayarime ai" in blocked_stream.get("message","").lower())
+
+    # Seed representative existing ELF//SHELL per-field settings, plus an
+    # unrelated local key. The AI toggle must not overwrite any of them.
+    stored=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.local.set({
+        "elfshell-workspace-v3:field:note":"Existing local archive note",
+        "elfshell-workspace-v3:field:focus":"Existing focus line",
+        "thirdparty.unchanged.v1":{"value":31}
+      }).then(()=>browser.storage.local.get([
+        "elfshell-workspace-v3:field:note",
+        "elfshell-workspace-v3:field:focus",
+        "thirdparty.unchanged.v1"
+      ])).then(done,error=>done({error:String(error)}));
+    """)
+    check("existing ELF//SHELL fields can be staged without changing AI state",
+          stored.get("elfshell-workspace-v3:field:note")=="Existing local archive note")
+    driver.find_element(By.CSS_SELECTOR,"#station-menu summary").click()
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
+    check("explicit Station click enables AI independently of tab permissions",
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
+    saved=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.storage.local.get([
+        "elfshell.unified.aiEnabled.v1",
+        "elfshell-workspace-v3:field:note",
+        "elfshell-workspace-v3:field:focus",
+        "thirdparty.unchanged.v1"
+      ]).then(done,error=>done({error:String(error)}));
+    """)
+    check("module preference preserves existing field keys and unrelated storage",
+          saved.get("elfshell.unified.aiEnabled.v1") is True and
+          all(saved.get(k)==v for k,v in stored.items()))
+    check("AI enabled does not grant Firefox tab permissions",
+          driver.execute_async_script("""
+            const done=arguments[arguments.length-1];
+            browser.permissions.contains({permissions:["tabs"]}).then(done);
+          """) is False)
+
     permissions=driver.execute_async_script("""
       const done=arguments[arguments.length-1];
       Promise.all(["tabs","tabGroups"].map(async name=>
@@ -116,7 +187,9 @@ try:
       return browser.permissions.request===deny;
     """)
     check("QA can simulate a declined permission without touching browser grants",stubbed)
-    driver.find_element(By.CSS_SELECTOR,"#station-menu summary").click()
+    station=driver.find_element(By.ID,"station-menu")
+    if not station.get_property("open"):
+        station.find_element(By.CSS_SELECTOR,"summary").click()
     driver.find_element(By.ID,"ask-ayarime-toggle").click()
     WebDriverWait(driver,10).until(lambda d:
         "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())

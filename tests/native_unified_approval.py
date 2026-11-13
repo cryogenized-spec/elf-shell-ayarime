@@ -131,6 +131,30 @@ try:
         lambda d:len(d.find_elements(By.ID,"ask-ayarime-toggle"))==1)
     check("initially no tabs permission",
           lambda:require(granted("tabs") is False,"Unexpected tab access already granted"))
+    WebDriverWait(driver,8).until(
+        lambda d:d.find_element(By.ID,"ai-module-toggle").is_enabled())
+    before_optin=window_tabs()
+    require(isinstance(before_optin,list),"Could not inspect tabs before AI opt-in")
+    launch_from_station()
+    WebDriverWait(driver,8).until(lambda d:
+        "enable ayarime ai" in
+        d.find_element(By.ID,"workspace-bridge-status").text.lower())
+    check("AI disabled by default without opening a Firefox prompt",
+          lambda:require(
+            granted("tabs") is False and
+            {tab["id"] for tab in window_tabs()}==
+              {tab["id"] for tab in before_optin},
+            "Disabled AI unexpectedly created a Hub or requested browser access"))
+    menu=driver.find_element(By.ID,"station-menu")
+    if not menu.get_property("open"):
+        menu.find_element(By.CSS_SELECTOR,"summary").click()
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
+    check("AI module needs a separate explicit Station opt-in",
+          lambda:require(granted("tabs") is False,
+                         "AI opt-in silently granted tabs"))
+
     before=window_tabs()
     require(isinstance(before,list),"Unable to inspect initial browser tabs")
     hub_url=driver.execute_script('return browser.runtime.getURL("hub.html")')
@@ -179,6 +203,32 @@ try:
           lambda:require(
              {tab["id"] for tab in window_tabs()}==initial_ids,
              "Repeat Ask Ayarime created duplicate tabs"))
+
+    # Switching the AI module off does not revoke unrelated browser
+    # permissions or alter existing tabs, but it must block any *new* AI launch.
+    driver.switch_to.window(dashboard)
+    menu=driver.find_element(By.ID,"station-menu")
+    if not menu.get_property("open"):
+        menu.find_element(By.CSS_SELECTOR,"summary").click()
+    driver.find_element(By.ID,"ai-module-toggle").click()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
+    no_new_ai=ext_call("""
+      const done=arguments[arguments.length-1];
+      browser.runtime.sendMessage({
+        type:"UNIFIED_OPEN_ASSISTANT",
+        kind:"elfshell.workspace.bridge",version:1
+      }).then(done,error=>done({ok:false,error:String(error)}));
+    """)
+    check("disabling AI blocks new assistant launches despite prior tab grant",
+          lambda:require(isinstance(no_new_ai,dict) and
+            no_new_ai.get("ok") is False and
+            "enable ayarime ai" in no_new_ai.get("error","").lower(),
+            "Disabling AI did not enforce the background guard"))
+    check("turning AI off leaves Firefox permission and existing Hub untouched",
+          lambda:require(granted("tabs") is True and
+            {tab["id"] for tab in window_tabs()}==initial_ids,
+            "Disabling AI unexpectedly revoked tabs or destroyed the Hub"))
 
     results["status"]="PASS"
     driver.save_screenshot(str(REPORTS/"approval-flow.png"))

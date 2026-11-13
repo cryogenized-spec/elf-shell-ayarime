@@ -6,7 +6,7 @@
 
 The public **ELF//SHELL — Ayarime** project retains its existing Firefox add-on identity, new-tab interface, themes, icons, local memory and RSS permissions. The independent **Workspace AI** repository remains the development source of AI, Google REST, profiles, Hub, sidebar, tool activity, reasoning UI and the Rose Seal loader.
 
-The new Python assembler copies two **explicit source whitelists**, pins the companion at commit `3c678bda35a64fe185135eb1b937e2d5eb26d810` and produces:
+The new Python assembler copies two **explicit source whitelists**, pins the companion at commit `3a586bcce19a6e66bf924521d54fefc732faffb3` and produces:
 
 - `dist/unified-preview/`: unpacked, testable Firefox extension source
 - `dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi`: a separate deterministic, unsigned archive
