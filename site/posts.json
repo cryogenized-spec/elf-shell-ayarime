@@ -25,6 +25,14 @@
       "category": "From the Workshop",
       "summary": "An illustrated eight-sliver dossier accompanies ClickUp Serviteur MCP v0.3.0-beta.1, first released as a public GitHub source prerelease on 7 November 2026. The article now includes a separately dated field guide to 80 current named MCP tools and an evidence-linked comparison with ClickUp MCP alternatives researched on Glama. It explains Serviteur's independent, self-hosted per-user OAuth approach, server-enforced resource scopes, distinct named operations and practical workflows, while acknowledging competitors' broader API coverage and specialist strengths. This remains an independent source beta, not a hosted service or an endorsement by ClickUp.",
       "page": "dispatches/clickup-serviteur-v0.3.0-beta.1.html"
+    },
+    {
+      "id": "clipmint-twin-archive-joint-launch",
+      "title": "Transmission 004 — The Twin Archive: ClipMint on two desktops",
+      "published": "2026-11-13T17:36:00Z",
+      "category": "From the Workshop",
+      "summary": "Ayarime's Twin Archive is an illustrated story and design journal for a planned coordinated release of ClipMint on Linux Mint and Windows x64. Both editions have independent codebases and local history; they do not synchronise data. Linux Mint already has preview builds, while Windows x64 has a complete development-signed alpha with a verified GitHub build. Neither is being announced here as a finished public beta: physical desktop testing, Linux illustration-rights review, and permanent two-platform release packages remain prerequisites. The two doors will open together only after both pass their release gates.",
+      "page": "dispatches/clipmint-twin-archive.html"
     }
   ]
 }
