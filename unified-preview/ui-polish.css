@@ -64,3 +64,16 @@ body[data-view="sidebar"] .unified-provider-settings .quiet {overflow-wrap: anyw
     overflow-wrap: anywhere;
   }
 }
+
+/* Grid auto-minimums must not inherit the intrinsic width of long provider
+   choices and labels in Firefox's compact native sidebar. */
+body[data-view="sidebar"] .ai-console,
+body[data-view="sidebar"] :is(.trace-options,.ai-context-panel,.offer-panel,.conversation-panel) {
+  grid-template-columns: minmax(0, 1fr);
+}
+body[data-view="sidebar"] .ai-console > *,
+body[data-view="sidebar"] :is(.trace-options,.ai-context-panel) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+body[data-view="sidebar"] select {min-width: 0;}
