@@ -23,9 +23,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Validate both independent source suites
+      - name: Validate both independent source suites and AI opt-in failure states
         run: |
           npm test
+          node --test tests/unified_module.test.cjs
           (cd workspace-ai && npm test)
       - uses: actions/setup-python@v5
         with:
