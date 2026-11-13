@@ -160,11 +160,22 @@ try:
     WebDriverWait(driver, 10).until(
         lambda d: d.execute_script(
             "return matchMedia('(prefers-reduced-motion: reduce)').matches"))
-    reduced = run_js("""return {
+    reduced_script = """return {
       tile:getComputedStyle(document.querySelector('.rose-tile--right')).animationName,
       spirit:getComputedStyle(document.querySelector('.rose-spirit')).animationName,
       spark:getComputedStyle(document.querySelector('.rose-spark')).animationName
-    }""")
+    }"""
+    # Firefox updates matchMedia and computed animation styles asynchronously.
+    # Inspect the actual styles after propagation, not just the media-query flag.
+    try:
+        WebDriverWait(driver, 10, poll_frequency=.1).until(
+            lambda d: all(value == "none" for value in
+                          d.execute_script(reduced_script).values()))
+    except Exception:
+        print("REDUCED_MOTION_DIAGNOSTIC:",
+              json.dumps(run_js(reduced_script)), flush=True)
+        raise
+    reduced = run_js(reduced_script)
     verify("Firefox reduced-motion stops tiles, spirit and sparks",
            all(v == "none" for v in reduced.values()))
 
