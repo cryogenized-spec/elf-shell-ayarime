@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from package import sources as core_sources  # reviewed release inventory, not a recursive scan
 
-COMPANION_COMMIT = "c8e03ad8b626b25cefc72db499edff4acc197002"
+COMPANION_COMMIT = "596b31314cab68c4f43ab9ef2b48ee6638b33cd5"
 KIND = "elfshell.workspace.bridge"
 BRIDGE_COMMAND = "elfshell:unified:bridge:v1"
 OUTPUT = ROOT / "dist" / "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
