@@ -48,6 +48,8 @@ jobs:
           node --check dist/unified-preview/workspace/bridge.js
           node --check dist/unified-preview/ui.js
           node --check dist/unified-preview/ui-trace.js
+      - name: Enforce Stage 5/6 model cancellation and inert Google Master packaging
+        run: python3 -m unittest discover -s tests -p 'stage5_6_preview_test.py' -v
       - name: Validate permissions, identity, packaging and router isolation
         run: python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
       - name: Mozilla extension lint
