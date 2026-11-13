@@ -56,7 +56,12 @@ def stable_page(page):
 def no_horizontal_overflow(page, width, height):
     # Selenium's outer window includes Firefox chrome. Calibrate against the
     # actual content viewport rather than mistakenly testing 155px at 390px.
-    outer = width
+    # The Firefox runner currently has 345px of effective outer-vs-content
+    # width. Starting directly at 320px can enter the headless minimum-window
+    # clamp and make iterative corrections oscillate. Measure at a safe size.
+    driver.set_window_size(1000, 900)
+    chrome_width = max(0, run_js("return outerWidth - innerWidth"))
+    outer = width + chrome_width
     metrics = None
     last_inner = None
     for _ in range(4):
