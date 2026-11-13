@@ -379,24 +379,46 @@
     } catch(error){status("Feed refresh or cache save failed: "+error.message);console.error("RSS refresh failed",error);}
     finally {fetching=false;$("feed-refresh").removeAttribute("aria-busy");$("feed-refresh").disabled=false;}
   }
-  function prepareOfficialFeed() {
-    if (prefs.feeds.some(feed=>feed.url===officialFeed.url)) {
-      status("ELF//SHELL transmissions are already in your subscriptions.");
+  let officialRequestPending=false;
+  function subscribeOfficialFeed() {
+    if(officialRequestPending)return; // prevent two permission prompts or duplicate writes
+    if(prefs.feeds.some(feed=>feed.url===officialFeed.url)){
+      status("ELF//SHELL transmissions are already listed. If you have not approved them yet, use ALLOW HOST in MY SUBSCRIPTIONS.");
       return;
     }
-    const url=$("feed-url"), label=$("feed-label"), group=$("feed-group");
-    // Do not erase a partly written personal publication by clicking the suggestion.
-    if ([url.value,label.value,group.value].some(value=>value.trim()) &&
-        (url.value!==officialFeed.url || label.value!==officialFeed.title || group.value!==officialFeed.group)) {
-      status("Your subscription draft is not empty. Finish it or clear the fields before loading the official feed.");
-      url.focus();
-      return;
+    if(prefs.feeds.length>=maxFeeds){status("Subscription limit reached (32 feeds).");return;}
+    if(typeof browser==="undefined"||!browser.permissions){
+      status("RSS subscriptions require Firefox extension mode.");return;
     }
-    url.value=officialFeed.url;
-    label.value=officialFeed.title;
-    group.value=officialFeed.group;
-    url.focus();
-    status("Official feed details prepared. Choose + SUBSCRIBE to grant Firefox permission. If GitHub Pages is not yet published, the first fetch may fail.");
+    const feed={...officialFeed,enabled:true};
+    const button=$("feed-official-subscribe");
+    // The first Firefox permission request must run directly inside the click gesture.
+    // Do not await storage reads, state updates, or fetches before requesting.
+    let permission;
+    try{permission=requestHost(feed.url);}
+    catch(error){status("Unable to request RSS permission: "+error.message);return;}
+    officialRequestPending=true;
+    button.disabled=true;
+    button.setAttribute("aria-busy","true");
+    void completeSubscription(feed,permission,false).finally(()=>{
+      officialRequestPending=false;
+      button.disabled=false;
+      button.removeAttribute("aria-busy");
+    });
+  }
+  async function completeSubscription(feed,permission,clearDraft){
+    try{
+      const accepted=await permission;
+      if(!accepted){status("Host access declined. Nothing was subscribed.");return;}
+      if(bgMode())await mutateFeeds("add",{feed});
+      else{prefs.feeds.push(feed);await mutateFeeds("preview");}
+      // The featured source must not overwrite the user's unfinished custom feed.
+      if(clearDraft){$("feed-url").value="";$("feed-label").value="";}
+      status("Subscription saved. Fetching the publication feed…");await renderFeeds();
+      const result=await fetchOne(feed,true);await saveCache();rebuildHeadlines();await renderFeeds();
+      status(result.error?"Subscription saved, but could not fetch: "+result.error:
+        "Subscription saved. "+(result.count||0)+" headlines retrieved.");
+    }catch(error){status("Unable to subscribe: "+error.message);}
   }
   async function addFeed(event) {
     event.preventDefault();
@@ -409,16 +431,10 @@
     const feed={url,title,group,enabled:true};
     if (typeof browser === "undefined" || !browser.permissions){status("RSS fetching requires Firefox extension mode. Feed settings preview only.");return;}
     // Request access immediately from form submit. Do NOT await ahead of this request.
-    const permission=requestHost(url);
-    try {
-      const accepted=await permission;
-      if (!accepted){status("Host access declined. Nothing was subscribed.");return;}
-      if(bgMode())await mutateFeeds("add",{feed});else{prefs.feeds.push(feed);await mutateFeeds("preview");}
-      $("feed-url").value="";$("feed-label").value="";
-      status("Subscription saved. Fetching the publication feed…");await renderFeeds();
-      const result=await fetchOne(feed,true);await saveCache();rebuildHeadlines();await renderFeeds();
-      status(result.error?"Subscription saved, but could not fetch: "+result.error:"Subscription saved. "+(result.count||0)+" headlines retrieved.");
-    } catch(error){status("Unable to subscribe: "+error.message);}
+    let permission;
+    try{permission=requestHost(url);}
+    catch(error){status("Unable to request RSS permission: "+error.message);return;}
+    await completeSubscription(feed,permission,true);
   }
   async function importOpml(file) {
     try {
@@ -489,7 +505,7 @@
   $("feeds-toggle").addEventListener("click",show);
   $("feed-manage").addEventListener("click",show);
   $("feed-add-form").addEventListener("submit",addFeed);
-  $("feed-official-prefill").addEventListener("click",prepareOfficialFeed);
+  $("feed-official-subscribe").addEventListener("click",subscribeOfficialFeed);
   $("feed-close").addEventListener("click",()=>$("feeds-dialog").close());
   $("feed-refresh").addEventListener("click",()=>refreshFeeds(true));
   $("feed-enabled").addEventListener("change",async e=>{try{if(bgMode())await mutateFeeds("config",{enabled:e.target.checked});else{prefs.enabled=e.target.checked;await mutateFeeds("preview");}renderTicker();if(prefs.enabled)refreshFeeds(false);}catch(error){status("Ticker setting not saved: "+error.message);$("feed-enabled").checked=prefs.enabled;}});
