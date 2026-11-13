@@ -54,12 +54,27 @@ def stable_page(page):
 
 
 def no_horizontal_overflow(page, width, height):
-    driver.set_window_size(width, height)
-    metrics = run_js("""return {
-      inner: innerWidth,
-      content: document.documentElement.scrollWidth,
-      client: document.documentElement.clientWidth
-    }""")
+    # Selenium's outer window includes Firefox chrome. Calibrate against the
+    # actual content viewport rather than mistakenly testing 155px at 390px.
+    outer = width
+    metrics = None
+    last_inner = None
+    for _ in range(4):
+        driver.set_window_size(outer, height)
+        metrics = run_js("""return {
+          inner: innerWidth,
+          content: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth
+        }""")
+        if abs(metrics["inner"] - width) <= 5:
+            break
+        if last_inner == metrics["inner"]:
+            break  # headless desktop screen may cap a wide outer window
+        last_inner = metrics["inner"]
+        outer += width - metrics["inner"]
+    if width <= 390:
+        verify(page + " calibrated actual mobile viewport " + str(width) + "px",
+               abs(metrics["inner"] - width) <= 12)
     verify(page + " no horizontal overflow at " + str(metrics["inner"]) + "px viewport",
            metrics["content"] <= metrics["client"] + 2)
     driver.save_screenshot(str(OUT / (page + "-" + str(width) + ".png")))
