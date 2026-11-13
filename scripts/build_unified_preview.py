@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from package import sources as core_sources  # reviewed release inventory, not a recursive scan
 
-COMPANION_COMMIT = "3a586bcce19a6e66bf924521d54fefc732faffb3"
+COMPANION_COMMIT = "c8e03ad8b626b25cefc72db499edff4acc197002"
 KIND = "elfshell.workspace.bridge"
 BRIDGE_COMMAND = "elfshell:unified:bridge:v1"
 OUTPUT = ROOT / "dist" / "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
@@ -184,7 +184,7 @@ def adapt_background(source: str) -> str:
         'in this unsigned unified preview."});\n'
         '  if (message.type==="UNIFIED_OPEN_ASSISTANT" || '
         '(message.type.startsWith("AI_") && '
-        '!["AI_CLEAR_SESSION_KEY","AI_CONVERSATION_CLEAR"].includes(message.type)))\n'
+        '!["AI_CLEAR_SESSION_KEY","AI_CONVERSATION_CLEAR","AI_CANCEL_REQUEST"].includes(message.type)))\n'
         '    return unifiedAiEnabled().then(allowed=>allowed ? handle(message) '
         ': {ok:false,error:"Enable Ayarime AI in the Station before using the assistant"});\n'
         '  return handle(message);\n'
