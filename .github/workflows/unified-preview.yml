@@ -17,21 +17,26 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: cryogenized-spec/elf-shell-workspace-ai
-          ref: 3c678bda35a64fe185135eb1b937e2d5eb26d810
+          ref: 3a586bcce19a6e66bf924521d54fefc732faffb3
           path: workspace-ai
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Validate both independent source suites
+      - name: Validate both independent source suites and AI opt-in failure states
         run: |
           npm test
+          node --test tests/unified_module.test.cjs
           (cd workspace-ai && npm test)
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Assemble a separate unsigned developer-only XPI
         run: python3 scripts/build_unified_preview.py --companion workspace-ai
+      - name: Package the pre-fusion core-only extension separately
+        run: |
+          python3 scripts/package.py
+          cp dist/ELF-SHELL-Ayarime-v0.5.6-AMO.zip dist/ELF-SHELL-Ayarime-core-before-upgrade-UNSIGNED.xpi
       - name: Verify inert Google Master Worker typed contract
         run: |
           node --test tests/google_worker_contract.test.cjs
@@ -54,6 +59,10 @@ jobs:
           firefox-version: latest
       - name: Install Selenium
         run: python -m pip install 'selenium>=4.52,<5'
+      - name: Validate original core RSS host permission Deny, Allow and Revoke in native Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_firefox_permissions.py
       - name: Test the unified XPI in real headless Firefox
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
@@ -62,6 +71,37 @@ jobs:
         env:
           FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
         run: python3 tests/native_unified_approval.py
+      - name: Accept core-to-unified same-ID upgrade and original v5 backup in Firefox
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+        run: python3 tests/native_unified_upgrade.py
+      - name: Download published signed AMO v0.5.5 baseline and verify immutable version and identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 10 --max-time 90 \
+            --output dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi \
+            'https://addons.mozilla.org/firefox/downloads/latest/7e0cfe2376c04bda9f5c/latest.xpi'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from zipfile import ZipFile
+          p=Path('dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi')
+          assert 100_000 < p.stat().st_size < 30*1024*1024, 'Unexpected signed XPI size'
+          with ZipFile(p) as archive:
+              assert archive.testzip() is None, 'Corrupt AMO download'
+              m=json.loads(archive.read('manifest.json'))
+              assert m['version']=='0.5.5', 'Public version changed: do not infer a v0.5.5 migration'
+              assert m['browser_specific_settings']['gecko']['id']=='elf-shell-ayarime@local.theme'
+          print('Published AMO v0.5.5 baseline manifest verified')
+          PY
+      - name: Test published AMO signed baseline with isolated Firefox migration and rollback
+        env:
+          FIREFOX_BINARY: ${{ steps.firefox.outputs.firefox-path }}
+          ELFSHELL_UPGRADE_BASELINE_XPI: dist/ELF-SHELL-Ayarime-AMO-signed-v0.5.5.xpi
+          ELFSHELL_UPGRADE_BASELINE_VERSION: '0.5.5'
+          ELFSHELL_UPGRADE_REPORT_SUBDIR: upgrade-acceptance-amo-baseline
+        run: python3 tests/native_unified_upgrade.py
       - name: Upload developer package and Firefox evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,4 +111,7 @@ jobs:
             dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
             dist/unified-firefox/
             dist/native-approval/
+            dist/upgrade-acceptance/
+            dist/upgrade-acceptance-amo-baseline/
+            dist/firefox-permission-qa/
           if-no-files-found: warn
