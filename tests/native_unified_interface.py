@@ -91,6 +91,20 @@ def no_horizontal_overflow(page, width, height):
             checks.append(page + " 320px responsive manual acceptance remains")
         else:
             verify(page + " calibrated actual mobile viewport " + str(width) + "px", False)
+    if metrics["content"] > metrics["client"] + 2:
+        offenders = run_js("""return [...document.querySelectorAll('*')]
+          .filter(el => {
+            const r=el.getBoundingClientRect();
+            return r.width>0 && (r.right>document.documentElement.clientWidth+2 ||
+                                 r.left< -2);
+          })
+          .map(el=>({tag:el.tagName.toLowerCase(),id:el.id,
+            cls:String(el.className||'').slice(0,70),
+            width:Math.round(el.getBoundingClientRect().width),
+            left:Math.round(el.getBoundingClientRect().left),
+            right:Math.round(el.getBoundingClientRect().right)}))
+          .sort((a,b)=>b.right-a.right).slice(0,18);""")
+        print("VIEWPORT_OFFENDERS:", json.dumps(offenders), flush=True)
     verify(page + " no horizontal overflow at " + str(metrics["inner"]) + "px viewport",
            metrics["content"] <= metrics["client"] + 2)
     driver.save_screenshot(str(OUT / (page + "-" + str(width) + ".png")))
