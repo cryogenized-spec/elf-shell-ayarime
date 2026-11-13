@@ -145,7 +145,7 @@ class FeedTests(unittest.TestCase):
             self.assertIn("32 passing", article)
             self.assertIn("43473029848", article)
             self.assertIn("Windows SmartScreen", article)
-            self.assertIn("physical Windows", article.lower())
+            self.assertIn("physical windows", article.lower())
             self.assertNotIn("<script", article)
             self.assertNotIn("@import", css.read_text(encoding="utf-8"))
             self.assertNotIn("url(http", css.read_text(encoding="utf-8"))
