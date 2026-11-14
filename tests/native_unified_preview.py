@@ -66,6 +66,29 @@ try:
     check("Ask Ayarime entry is present in the unified Station",
           len(driver.find_elements(By.ID,"ask-ayarime-toggle"))==1)
 
+    # The Station should be visible without digging through the old menu.
+    opener=driver.find_element(By.ID,"station-drawer-open")
+    check("Station control is visible directly on the new tab",
+          opener.is_displayed())
+    opener.click()
+    WebDriverWait(driver,5).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    check("Station drawer opens from the left without a new page",
+          len(driver.window_handles)==len(existing_handles)+1 and
+          driver.find_element(By.ID,"station-drawer").is_displayed())
+    driver.find_element(By.ID,"sd-tab-mcp").click()
+    check("MCP tab recommends official Google endpoints by default",
+          driver.find_element(By.ID,"sd-provider").get_attribute("value")=="official" and
+          "gmailmcp.googleapis.com" in
+          driver.find_element(By.ID,"sd-google-url").get_attribute("value"))
+    driver.find_element(By.ID,"sd-tab-ayarime").click()
+    check("AI controls are directly accessible from the drawer",
+          driver.find_element(By.ID,"sd-ai-toggle").is_displayed())
+    driver.find_element(By.ID,"station-drawer-close").click()
+    check("Station drawer closes and preserves the dashboard",
+          not driver.find_element(By.ID,"station-drawer").is_displayed() and
+          driver.title=="ELF//SHELL — Ayarime")
+
     reply=message({"type":"UNIFIED_HELLO",
                    "kind":"elfshell.workspace.bridge","version":1})
     state_probe=message({"type":"GET_STATE"})
