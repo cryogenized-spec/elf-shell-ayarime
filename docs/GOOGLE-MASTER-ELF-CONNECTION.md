@@ -65,7 +65,11 @@ notes and public AMO artifacts are not modified.
    Add-on**, then choose `manifest.json` from a directory where you extracted
    the engineering XPI (XPI is a ZIP archive). The temporary add-on disappears
    when that Firefox session ends.
-2. Open the integrated Workspace Hub → Google Master panel.
+2. From the **ELF//SHELL Station** menu, choose **GOOGLE MASTER / MCP**.
+   This is a navigation link into the same extension's integrated Workspace
+   Hub; it is NOT another installed add-on, standalone program or remote page.
+   The option is available only in the opt-in engineering build. The ordinary
+   unified release continues to leave Google Master disabled.
 3. Click **Allow private Worker host** to ask Firefox for both exact hosts and
    relevant optional data access. Denial has no network/account effects.
 4. Click **Connect read-only OAuth**. The existing companion client fetches
