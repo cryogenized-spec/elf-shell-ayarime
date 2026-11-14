@@ -40,7 +40,9 @@ jobs:
         run: |
           npm test
           (cd assistant && npm test)
-      - name: Build exact unified unsigned candidate and BOTH reviewer source trees
+      - name: Assert one source repository and integrated assistant security boundaries
+        run: python3 -m unittest discover -s tests -p 'monorepo_contract_test.py' -v
+      - name: Build exact unified unsigned candidate and reviewer source tree
         run: python3 scripts/package_unified_rc.py
       - name: Verify RC manifest, privacy, source equivalence and deferred Google integration
         run: python3 -m unittest discover -s tests -p 'rc_package_test.py' -v
