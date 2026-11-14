@@ -25,14 +25,25 @@ Pinned remote addresses:
 The normal v0.5.6 unified preview and its signed/published release boundaries
 remain unchanged: Google OAuth is intentionally disabled there.
 
-For a **separate, unsigned engineering XPI** with the existing companion
-Stage 6.1 OAuth and the remote MCP discovery control, run:
+For a **separate, unsigned engineering XPI** containing the integrated
+`assistant/` Stage 6.1 OAuth client and the remote MCP discovery control, use
+the **ELF-SHELL-Ayarime-unified-UNSIGNED-preview** artifact attached to the
+successful **Unified Ayarime preview — one Firefox extension** GitHub Actions
+workflow for the latest `feature/unified-stages-5-6-preview` head. Extract
+the workflow artifact ZIP and select the nested
+`ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi` (not the ordinary unsigned
+unified XPI). GitHub Actions artifact access may require signing in.
+
+Or build from the **single canonical repository**:
 
 ```bash
-git clone https://github.com/cryogenized-spec/elf-shell-workspace-ai.git workspace-ai
-git -C workspace-ai checkout 885157e3d7bfeba3d1a344068448c1f4782d3be0
-python3 scripts/build_unified_preview.py --companion workspace-ai --enable-google-master
+git clone --branch feature/unified-stages-5-6-preview --single-branch \
+  https://github.com/cryogenized-spec/elf-shell-ayarime.git
+cd elf-shell-ayarime
+python3 scripts/build_unified_preview.py --enable-google-master
 ```
+
+No companion repository checkout or `--companion` flag is needed.
 
 Output: `dist/ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi`
 with contents in `dist/unified-google-master-preview/`. The normal
@@ -49,7 +60,11 @@ notes and public AMO artifacts are not modified.
 ## User-initiated connection flow
 
 1. Install the opt-in unsigned build in an isolated Firefox development profile;
-   never replace the publicly signed version for this experiment.
+   never replace the publicly signed version for this experiment. One supported
+   route is Firefox `about:debugging` → **This Firefox** → **Load Temporary
+   Add-on**, then choose `manifest.json` from a directory where you extracted
+   the engineering XPI (XPI is a ZIP archive). The temporary add-on disappears
+   when that Firefox session ends.
 2. Open the integrated Workspace Hub → Google Master panel.
 3. Click **Allow private Worker host** to ask Firefox for both exact hosts and
    relevant optional data access. Denial has no network/account effects.
