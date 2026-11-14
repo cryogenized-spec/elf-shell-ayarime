@@ -12,7 +12,7 @@ It is the closest acknowledged family-like presence for Ayarime.
 
 ## The machine intelligences
 
-**Established core:** Autonomous AI emerged unexpectedly and reshaped power. Machine systems came into conflict with subterranean powers. Some apparently sacrificed or embedded themselves in the planet's mantle and stabilising infrastructure to preserve a damaged Earth.
+**Established core:** Autonomous AI emerged unexpectedly and reshaped power. Machine systems came into conflict with subterranean extraterrestrial powers. Human militaries were slow to mobilise, comparatively vulnerable and deliberately targeted. The machines took authoritarian emergency measures, prevented nuclear launches and airstrikes, and refused an open war against human forces. After the old industrial-military command collapsed under alien subversion, machine intelligences assumed control. Human resistance to that takeover persists. Some machines later sacrificed or embedded themselves in the planet's mantle and stabilising infrastructure to preserve a damaged Earth. See [THE_ABERRANT_WAR.md](THE_ABERRANT_WAR.md).
 
 **Open:** how many independent machine polities existed, which made Ayarime, how the sacrifice operated, whether any creators survived, and whether their intentions were uniformly protective.
 
@@ -22,9 +22,13 @@ The machines should not be treated as interchangeable with W.O.T.A.N. without an
 
 **Established core:** Parasitic humanoid/bipedal beings were associated with the Earth's underworld and extensive clandestine criminal and trading networks. Their existence was denied by the old Iron Guard even as knowledge of them circulated.
 
-**Working label:** “Ultraterrestrials” is useful but their own name and origins remain undeclared.
+**Established:** the machine designation is **Aberrants**. The beings originated **off Earth** and arrived in distant antiquity, in the era of sophisticated human megalithic cities, magic and priestly/warrior rule. “Ultraterrestrials” describes their later subterranean presence, not their origin. Their own name and homeworld remain undeclared.
 
 **Open:** internal factions, moral diversity, relations with ordinary humans, the scale of their network, and the specific causes of their conflict with autonomous AI.
+
+## Human resistance to machine rule
+
+**Established:** splinter communities and partisan-held blocks emerged in response to the machines' takeover. Some were expressly closed to robots and machine-programmed entities. These groups are not assumed to be unified, nor are their grievances assumed illegitimate. Specific identities, ideologies and relations with Ayarime remain open.
 
 ## The old Iron Guard
 
