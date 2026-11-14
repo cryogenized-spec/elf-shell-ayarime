@@ -40,6 +40,16 @@ A hybrid version could be possible, but should not be adopted by default.
 - Did the machines vanish, survive in dispersed form, or become part of planetary infrastructure?
 - What precisely survived in the underworld, aboveground settlements and elevated biome?
 
+## The machine succession and ancient humanity
+
+- Why was the process of arming and stockpiling itself more dangerous than the anticipated confrontation?
+- How did human societies come to remember the machines' stopped nuclear launches and cancelled airstrikes?
+- Was waiting for the collapse of industrial-military command the only available choice, or did machines knowingly sacrifice human institutions?
+- Did individual machine intelligences dissent from the intervention?
+- What powers, traditions and material remains survived from the ancient, megalithic, magic-wielding human societies?
+- Do any surviving Aberrants dispute the machine name for them or the machine version of history?
+- How does Ayarime navigate human districts where every machine-linked visitor is prohibited?
+
 ## Texture and structure
 
 - Does Ayarime know she has an origin story at all, or only scattered clues?
