@@ -1,118 +1,36 @@
-# ELF//SHELL unified Ayarime → Google Master MCP
-**Engineering preparation: optional unsigned build only. Not an AMO release.**
+# ELF//SHELL — user-owned Google Workspace / MCP
 
-## No local tunnel or Git directory needed to operate
+**Current developer-preview architecture (November 2026).** The old instructions for connecting directly to the developer's private `cryogenized.workers.dev` deployment are superseded. Do not publish a connector that defaults to the developer's Cloudflare resources or shares developer OAuth credentials.
 
-Our existing protected Cloudflare deployment **is** the remote endpoint. The
-Firefox WebExtension runs on the laptop (or a compatible Firefox client); its
-background script calls the secure Cloudflare API over HTTPS. It does not
-launch `cloudflared`, bind a local port, require the source repository on the
-device, or forward access tokens to an AI provider.
+## Open Station
 
-Pinned remote addresses:
-- MCP Streamable HTTP resource: `https://google-master-mcp.cryogenized.workers.dev/mcp`
-- Resource's typed HTTPS façade: `https://google-master-mcp.cryogenized.workers.dev/v1/capabilities` and `/v1/operations/{name}`
-- OAuth issuer: `https://google-master-auth.cryogenized.workers.dev`
-- Issuer discovery: `/.well-known/oauth-authorization-server`
-- OAuth public client DCR: `/oauth/register`
-- OAuth code/PKCE login: `/authorize`
-- OAuth token exchange/revoke: `/oauth/token`, `/oauth/revoke`
-- Google Workspace linking/secret vault stays in the independently protected
-  `google-master-workspace-setup` Worker, not in the extension.
+In the unsigned integrated ELF//SHELL build, open a new tab and select the visible **STATION / SETTINGS** control beneath the ELF//SHELL heading. The panel slides in from the left. Use the **Station**, **Ayarime**, **MCP**, and **Settings** tabs. There is no second extension and no need to manually enter a `moz-extension://` URI or visit a separate scrolling setup page.
 
-## Exact opt-in development build
+The Ayarime tab exposes the existing AI enable switch. The Settings tab provides short routes to browser permissions, appearance, RSS, and saved workspaces.
 
-The normal v0.5.6 unified preview and its signed/published release boundaries
-remain unchanged: Google OAuth is intentionally disabled there.
+## Recommended: Google's official Workspace MCP
 
-For a **separate, unsigned engineering XPI** containing the integrated
-`assistant/` Stage 6.1 OAuth client and the remote MCP discovery control, use
-the **ELF-SHELL-Ayarime-unified-UNSIGNED-preview** artifact attached to the
-successful **Unified Ayarime preview — one Firefox extension** GitHub Actions
-workflow for the latest `feature/unified-stages-5-6-preview` head. Extract
-the workflow artifact ZIP and select the nested
-`ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi` (not the ordinary unsigned
-unified XPI). GitHub Actions artifact access may require signing in.
+The MCP tab defaults to the official Google Workspace MCP directory. Google currently offers separate remotely hosted MCP servers for Gmail, Drive, Docs, Sheets, Calendar, etc. Google Workspace MCP is **Developer Preview**, not universally available. Users need their own Google Cloud project, OAuth client, and preview eligibility.
 
-Or build from the **single canonical repository**:
+Google's authoritative setup guide: https://developers.google.com/workspace/guides/configure-mcp-servers
 
-```bash
-git clone --branch feature/unified-stages-5-6-preview --single-branch \
-  https://github.com/cryogenized-spec/elf-shell-ayarime.git
-cd elf-shell-ayarime
-python3 scripts/build_unified_preview.py --enable-google-master
-```
+Selecting a service displays Google's documented MCP URL; it does **not** connect automatically or ask for a personal Google token.
 
-No companion repository checkout or `--companion` flag is needed.
+## Advanced: deploy your own Google Master
 
-Output: `dist/ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi`
-with contents in `dist/unified-google-master-preview/`. The normal
-`dist/unified-preview/` is kept separately.
+Open-source infrastructure template: https://github.com/cryogenized-spec/Google-master-worker-MCP
 
-The opt-in engineering manifest adds the **required** Firefox `identity`
-permission because `browser.identity.launchWebAuthFlow` cannot be used
-without it. It retains core extension ID and existing CSP, and asks for the
-**exact two Worker hosts** and optional Firefox data-sharing permissions only
-on the owner's *Allow private Worker host* click. No blanket install-time
-Google host grant or Google API OAuth secret is added. User preference,
-notes and public AMO artifacts are not modified.
+Deploy your own Cloudflare Worker, OAuth issuer and Google Workspace integration using your own Cloudflare and Google accounts. Then open Station → MCP → **Self-hosted Google Master** and enter:
 
-## User-initiated connection flow
+- Your exact `https://YOUR-MCP-HOST/mcp` resource
+- Your `https://YOUR-OAUTH-HOST` issuer origin
 
-1. Install the opt-in unsigned build in an isolated Firefox development profile;
-   never replace the publicly signed version for this experiment. One supported
-   route is Firefox `about:debugging` → **This Firefox** → **Load Temporary
-   Add-on**, then choose `manifest.json` from a directory where you extracted
-   the engineering XPI (XPI is a ZIP archive). The temporary add-on disappears
-   when that Firefox session ends.
-2. From the **ELF//SHELL Station** menu, choose **GOOGLE MASTER / MCP**.
-   This is a navigation link into the same extension's integrated Workspace
-   Hub; it is NOT another installed add-on, standalone program or remote page.
-   The option is available only in the opt-in engineering build. The ordinary
-   unified release continues to leave Google Master disabled.
-3. Click **Allow private Worker host** to ask Firefox for both exact hosts and
-   relevant optional data access. Denial has no network/account effects.
-4. Click **Connect read-only OAuth**. The existing companion client fetches
-   pinned OAuth discovery, dynamically registers a *public* client, creates a
-   state and PKCE S256 challenge, runs interactive Firefox identity login, then
-   stores the short-lived MCP resource token in `browser.storage.session`.
-   No copied ChatGPT token and no Google refresh token enters ELF.
-5. Google Master M26's consent screen may also offer optional `mcp:write`.
-   **Leave it unchecked in this engineering preview**: the Stage 6.1 Firefox
-   client intentionally rejects unexpected write scope.
-6. Use **Verify available read operations** to exercise the existing bounded
-   `/v1/capabilities` adapter, which filters to 24 known read-only operations.
-7. Use **Check protected remote MCP endpoint** to issue precisely one
-   `tools/list` request over the real `/mcp` HTTPS transport. It reads only
-   tool names/security metadata and reports read/write counts; no tools are
-   called and no Google account content is fetched.
-8. Click **Disconnect and forget session** to clear local OAuth state and
-   request best-effort remote token revocation.
+Press **Save my endpoints locally**. This only saves non-secret URLs in Firefox local extension storage; it makes no HTTP request and cannot authorize Google access. The old developer-owned OAuth and MCP transport modules are explicitly absent from the new opt-in engineering XPI and background MASTER routes remain denied.
 
-## Boundaries and acceptance still outstanding
+**Not yet implemented:** Generic OAuth discovery/client registration, live authentication and `tools/list` against arbitrary user-owned servers. This is the next acceptance milestone. Do not treat saved settings or an official directory link as a connected account.
 
-The current engineering build is **read-only** and **manual**. This change
-does not yet let Ayarime's AI model issue Google Tasks, Gmail or other
-tool actions. Future tool execution requires reviewed per-tool allowlists,
-explicit user intent, bounded tool parameters, and separate authenticated
-write scope handling; the current AI/background model cannot bypass them.
+## Privacy and release gates
 
-Real native Firefox OAuth/DCR, token-exchange CORS, the exact Firefox
-installation origin, and protected Cloudflare Worker host behavior still
-need acceptance in a disposable profile. If a browser-origin allowlist is
-necessary for the HTTP façade, add ONLY that profile's exact
-`moz-extension://<uuid>` via a reviewed Worker configuration change; never
-use `*` or a permissive proxy. No deployment or provider mutation is
-performed by the engineering build.
+No shared Cloudflare traffic, no shared Google data vault, no developer-managed OAuth keys for public users. Any later live connector must use a user-controlled OAuth client, per-origin Firefox permission, user-initiated read-only access, session-only tokens and explicit tool authorization. Write actions require their own approval. The published Firefox extension and existing private Cloudflare Worker are unchanged by the current engineering build.
 
-Google Master is already exposed over HTTPS. **Do not create a new public
-Cloudflare tunnel**, run a local unauthenticated bridge, or embed the Google
-vault's access/refresh tokens in the Firefox extension.
-
-## Validation
-
-CI builds both default-off and opt-in engineering packages, checks the
-original release invariants, runs synthetic OAuth and remote transport
-regressions, confirms source/ZIP parity and applies Firefox extension lint.
-The opt-in XPI is distributed only as a private developer artifact until a
-real Firefox smoke check and further user approval.
+See [MCP-USER-OWNED.md](MCP-USER-OWNED.md) for the architecture and acceptance requirements.
