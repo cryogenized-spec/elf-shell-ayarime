@@ -3,7 +3,7 @@
 
 Never signs, submits to Mozilla, touches an installed Firefox profile, or
 activates Google accounts. Builds exclusively from current tracked core files
-plus one reviewed, pinned companion checkout.
+including its locally maintained assistant/ subtree.
 """
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ def archive(out: Path, entries: dict[str, bytes]) -> None:
 
 
 def release(companion: Path) -> None:
-    # This also verifies the companion commit and both packaging whitelists.
+    # This verifies the local assistant import and both runtime whitelists.
     unified.build(companion)
     check(unified.STAGING.is_dir(), "Missing integrated source stage")
     check(unified.OUTPUT.is_file(), "Missing integrated development XPI")
@@ -155,34 +155,36 @@ def release(companion: Path) -> None:
     check(sha(XPI.read_bytes()) == sha(ZIP.read_bytes()),
           "XPI and AMO ZIP differ")
 
-    # Include BOTH source repositories, not just their synthesized runtime.
-    # Mozilla can review the exact pinned original code and the fusion script.
+    # One repo, one source archive. assistant/ is regular tracked source,
+    # included exactly once alongside ELF//SHELL and the fusion script.
     core_head = subprocess.check_output(
         ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
-    other_head = subprocess.check_output(
-        ["git", "-C", str(companion), "rev-parse", "HEAD"], text=True).strip()
-    check(other_head == unified.COMPANION_COMMIT, "Companion pin moved")
+    upstream_import = unified.COMPANION_COMMIT  # historical provenance only
     source_files = {}
-    for prefix, folder in (("core", ROOT), ("workspace-ai", companion)):
-        for name in tracked(folder):
-            source_files[prefix + "/" + name] = (folder / name).read_bytes()
+    for name in tracked(ROOT):
+        source_files["core/" + name] = (ROOT / name).read_bytes()
+    check("core/assistant/ai/providers.js" in source_files and
+          "core/assistant/google/master-oauth.js" in source_files and
+          "core/assistant/SOURCE_LOCK.json" in source_files,
+          "Reviewer source ZIP is missing integrated assistant sources")
     build_guide = (
-        "Ayarime unified v0.5.6 reviewer source — unsigned release candidate\n"
-        "Core git commit: " + core_head + "\n"
-        "Workspace AI pinned git commit: " + other_head + "\n\n"
-        "From clean Git checkouts at the commits above, run:\n"
-        "  python3 core/scripts/build_unified_preview.py --companion workspace-ai\n"
-        "  python3 core/scripts/package_unified_rc.py --companion workspace-ai\n"
-        "The source archives contain both public repositories, including original "
-        "unminified JS and audited transformations.\n"
+        "Ayarime unified v0.5.6 reviewer source — unsigned release candidate\\n"
+        "Single source Git commit: " + core_head + "\\n"
+        "Historical Ayarime import commit: " + upstream_import + "\\n\\n"
+        "From ONE Git checkout at the commit above, run:\\n"
+        "  python3 core/scripts/build_unified_preview.py\\n"
+        "  python3 core/scripts/package_unified_rc.py\\n"
+        "The one repository contains both original unminified components in\\n"
+        "core/ and core/assistant/ and all audited build transformations.\\n"
         "The runtime ZIP is deterministic (UTC 2026-11-13 ZIP timestamp). "
-        "No AMO upload, signing or live BYOK inference is performed.\n"
+        "No AMO upload, signing or live BYOK inference is performed.\\n"
     )
     source_files["RC-BUILD-INSTRUCTIONS.txt"] = build_guide.encode("utf-8")
     archive(SOURCE, source_files)
     REPORT.write_text(json.dumps({
         "version": VERSION, "status": "UNSIGNED_RC_ONLY",
-        "core_commit": core_head, "companion_commit": other_head,
+        "core_commit": core_head, "companion_commit": upstream_import,
+         "source_layout": "single-repository-assistant-subtree",
         "firefox_id": m["browser_specific_settings"]["gecko"]["id"],
         "required_permissions": m["permissions"],
         "optional_data_collection": dc["optional"],
@@ -204,11 +206,10 @@ def release(companion: Path) -> None:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--companion", type=Path, required=True,
-                   help="Local checkout of the exact pinned Workspace AI commit")
+    # Reviewed assistant source is inside this repository.
     args = p.parse_args()
     try:
-        release(args.companion.resolve())
+        release(ROOT / "assistant")
     except (ValueError, OSError, subprocess.CalledProcessError) as e:
         print("RC PACKAGING BLOCKED:", e, file=sys.stderr)
         raise SystemExit(1)
