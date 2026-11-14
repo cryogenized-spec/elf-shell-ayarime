@@ -4,10 +4,12 @@ _Status: sequence of known beats, **not** a dated history. Some ordering remains
 
 | Sequence | Event | Confidence / qualification |
 | --- | --- | --- |
-| Deep past | Ancient alien biological material or artefacts exist; subterranean beings and networks become part of Earth's hidden history. | **Established core**; exact age and origins **open** |
+| Deep past | Non-Earth beings later called **Aberrants** arrive in distant antiquity, when humans maintain megalithic cities, sophisticated societies, magic and priestly/warrior political orders. | **Established**; original world and exact chronology **open** |
 | Before the collapse | A military/high-clearance establishment accumulates unusual biological specimens and genetic materials. | **Established core**; precise institution and dates **open** |
 | Before/during conflict | Autonomous AI emerges and radically shifts the balance of power. | **Established**; exact chronology versus the military specimen programme **open** |
-| Escalation | Machine intelligences and subterranean/infrastructure-linked powers enter increasingly severe conflict. | **Established core**; motives, campaigns and parties **open** |
+| Escalation | Machine intelligences and the Aberrants enter increasingly severe conflict; human regular armies are slow to mobilise, vulnerable and targeted. Arming and stockpiling for the looming conflict becomes a central crisis. | **Established core**; exact reasons the build-up is dangerous **open** |
+| Machine intervention | Machines prevent nuclear launches and airstrikes, refuse open combat with human forces, and endure losses as the old industrial-military order is undermined from within and collapses. They assume control in a rapid transition. | **Established**; exact decisions and chronology **open** |
+| Human response | Resistance factions and splinter communities form, including partisan-occupied no-go city blocks for robots and machine-programmed beings. | **Established**; variations between communities **open** |
 | Catastrophe | Planetary crisis unfolds. Some machine intelligences sacrifice or embed themselves in stabilising Earth/mantle systems. The catastrophe is mitigated but not wholly prevented. | **Established core**; mechanism, sequence and scope **open** |
 | Creation / survival | Ayarime is engineered as a pod-child to endure the cataclysm and help protect, preserve and care for human and animal survivors. | **Established purpose**; **birth/awakening relative to the machine sacrifice is open** |
 | Fragmented world | Survivors live among broken institutions, damaged infrastructure, forgotten records and enclaves. Ayarime maintains an elevated biome's grid and communications responsibilities. | **Established setting** |
