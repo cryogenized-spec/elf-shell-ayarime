@@ -45,6 +45,14 @@ class StageFiveSixPreview(unittest.TestCase):
         self.assertNotIn("GOOGLE_MASTER_READ",self.background)
         self.assertNotIn("GOOGLE_MASTER_CONNECT",self.background)
         self.assertIn("Google OAuth and update checks are disabled",self.background)
+        self.assertIn('message.type.startsWith("MASTER_")',self.background)
+        hub=(STAGE/"hub.html").read_text()
+        self.assertIn('class="frame master-panel" hidden aria-hidden="true"',hub)
+        self.assertNotIn('<script defer src="google/master-ui.js"></script>',hub)
+        self.assertIn("body[data-view=\"hub\"] .master-panel[hidden]",
+                      (STAGE/"unified/ui-polish.css").read_text())
+        self.assertIn("google/master-oauth.js",self.manifest["background"]["scripts"])
+        self.assertNotIn("identity",self.manifest["permissions"])
         self.assertNotIn('google/master-read-client.js', (STAGE/"hub.html").read_text())
         self.assertNotIn('google/master-read-client.js', (STAGE/"sidebar.html").read_text())
 
