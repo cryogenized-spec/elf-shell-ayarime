@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Assert one canonical Git checkout and assistant source inventory
+        run: python3 -m unittest discover -s tests -p 'monorepo_contract_test.py' -v
       - name: Assemble a separate unsigned developer-only XPI
         run: python3 scripts/build_unified_preview.py
       - name: Package the pre-fusion core-only extension separately
