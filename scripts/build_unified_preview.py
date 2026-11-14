@@ -135,17 +135,17 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         marker = '      case "MASTER_STATUS":'
         check(source.count(marker) == 1, "Master OAuth handler changed")
         probe_case = (
-            '      case "MASTER_MCP_PING": {\\n'
-            '        const conn=await globalThis.WorkspaceMasterOAuth.status(browser);\\n'
-            '        if(!conn.connected)throw Error("MASTER_NOT_CONNECTED");\\n'
-            '        return {ok:true,probe:await globalThis.AyarimeGoogleMasterTunnel.probe({\\n'
-            '          getAccessToken:()=>globalThis.WorkspaceMasterOAuth.accessToken(browser),\\n'
-            '          hasHostPermission:origin=>browser.permissions.contains({origins:[origin+"/*"]}),\\n'
-            '          fetchImpl:fetch\\n'
-            '        })};\\n'
-            '      }\\n'
+            '      case "MASTER_MCP_PING": {\n'
+            '        const conn=await globalThis.WorkspaceMasterOAuth.status(browser);\n'
+            '        if(!conn.connected)throw Error("MASTER_NOT_CONNECTED");\n'
+            '        return {ok:true,probe:await globalThis.AyarimeGoogleMasterTunnel.probe({\n'
+            '          getAccessToken:()=>globalThis.WorkspaceMasterOAuth.accessToken(browser),\n'
+            '          hasHostPermission:origin=>browser.permissions.contains({origins:[origin+"/*"]}),\n'
+            '          fetchImpl:fetch\n'
+            '        })};\n'
+            '      }\n'
         )
-        source = source.replace(marker, probe_case.replace("\\\\n", "\\n") + marker, 1)
+        source = source.replace(marker, probe_case.replace("\\\n", "\n") + marker, 1)
     # Use the SAME switch and listener that already handle GET_STATE. This avoids
     # competing Firefox runtime.onMessage listeners for the unified bridge.
     anchor = '      case "GET_STATE":'
@@ -347,20 +347,20 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     # companion; this extra MCP probe is a separate, manual click.
                     html = html.replace(master_script,
                         master_script +
-                        '\\n<script defer src="unified/google-master-tunnel-ui.js"></script>',1)
+                        '\n<script defer src="unified/google-master-tunnel-ui.js"></script>',1)
                     probe_button = ('<button id="master-probe" class="mini" type="button">'
                                     'Verify available read operations</button>')
                     check(html.count(probe_button) == 1,
                           "Google Master Hub probe control changed")
                     html = html.replace(probe_button, probe_button +
-                        '\\n<button id="master-mcp-ping" class="mini" type="button">'
+                        '\n<button id="master-mcp-ping" class="mini" type="button">'
                         'Check protected remote MCP endpoint</button>',1)
                     probe_result = '<p id="master-probe-result"'
                     check(html.count(probe_result) == 1,
                           "Google Master Hub result element changed")
                     html = html.replace(probe_result,
                         '<p id="master-mcp-ping-result" class="quiet" role="status" '
-                        'aria-live="polite">MCP endpoint check not requested.</p>\\n' +
+                        'aria-live="polite">MCP endpoint check not requested.</p>\n' +
                         probe_result,1)
                     master_title = '<h2>Google Master · Private connection</h2>'
                     check(html.count(master_title) == 1, "Google Master heading changed")
