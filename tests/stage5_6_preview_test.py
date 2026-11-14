@@ -14,7 +14,7 @@ class StageFiveSixPreview(unittest.TestCase):
         assert STAGE.is_dir(), "Build unsigned unified preview first"
         cls.manifest=json.loads((STAGE/"manifest.json").read_text())
         cls.background=(STAGE/"workspace-ai-background.js").read_text()
-        cls.master=(STAGE/"google/master-read-client.js").read_text()
+        cls.contract=(STAGE/"unified/google-worker-contract.js").read_text()
         cls.source=(ROOT/"scripts/build_unified_preview.py").read_text()
 
     def test_one_extension_and_no_install_time_permission_escalation(self):
@@ -36,33 +36,29 @@ class StageFiveSixPreview(unittest.TestCase):
         self.assertIn('type:"AI_CANCEL_REQUEST"',ui)
         self.assertIn("Stop request",ui)
 
-    def test_google_master_client_is_present_but_not_connected_to_ui(self):
-        self.assertIn("google/master-read-client.js",self.manifest["background"]["scripts"])
-        self.assertIn('const RESOURCE="https://google-master-mcp.cryogenized.workers.dev/mcp"',self.master)
-        self.assertIn("USER_CONSENT_REQUIRED",self.master)
-        self.assertIn("FIREFOX_HOST_PERMISSION_REQUIRED",self.master)
-        self.assertIn("UNKNOWN_OPERATION",self.master)
-        self.assertNotIn("GOOGLE_MASTER_READ",self.background)
-        self.assertNotIn("GOOGLE_MASTER_CONNECT",self.background)
+    def test_legacy_private_master_connection_is_not_packaged_or_reachable(self):
+        scripts=self.manifest["background"]["scripts"]
+        self.assertNotIn("google/master-read-client.js",scripts)
+        self.assertNotIn("google/master-oauth.js",scripts)
+        self.assertFalse((STAGE/"google/master-read-client.js").exists())
+        self.assertFalse((STAGE/"google/master-oauth.js").exists())
+        self.assertFalse((STAGE/"google/master-ui.js").exists())
+        self.assertNotIn("cryogenized.workers.dev",json.dumps(self.manifest))
         self.assertIn("Google OAuth and update checks are disabled",self.background)
         self.assertIn('message.type.startsWith("MASTER_")',self.background)
         hub=(STAGE/"hub.html").read_text()
         self.assertIn('class="frame master-panel" hidden aria-hidden="true"',hub)
         self.assertNotIn('<script defer src="google/master-ui.js"></script>',hub)
-        self.assertIn("body[data-view=\"hub\"] .master-panel[hidden]",
-                      (STAGE/"unified/ui-polish.css").read_text())
-        self.assertIn("google/master-oauth.js",self.manifest["background"]["scripts"])
         self.assertNotIn("identity",self.manifest["permissions"])
-        self.assertNotIn('google/master-read-client.js', (STAGE/"hub.html").read_text())
-        self.assertNotIn('google/master-read-client.js', (STAGE/"sidebar.html").read_text())
 
-    def test_no_mutation_operation_names_in_client_allowlist(self):
-        names=self.master.split("const READS=Object.freeze([",1)[1].split("]);",1)[0]
+    def test_read_only_contract_is_inert_without_owner_worker(self):
+        self.assertIn("executionEnabled:false",self.contract)
+        self.assertIn("tasks_list_tasklists",self.contract)
         for bad in ["tasks_create_task","gmail_send_message","drive_delete_file",
                     "write_prepare_action","script_update_sources"]:
-            self.assertNotIn(bad,names)
-        self.assertIn("gmail_list_messages",names)
-        self.assertIn("tasks_list_tasklists",names)
+            self.assertNotIn(bad,self.contract)
+        self.assertIn('id="station-drawer-open"',(STAGE/"newtab.html").read_text())
+        self.assertIn('option value="official"',(STAGE/"newtab.html").read_text())
 
 
 if __name__=="__main__":

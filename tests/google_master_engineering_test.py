@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Opt-in, UNSIGNED Google Master engineering assembly (no live credentials)."""
+"""User-owned MCP engineering build: no shared Cloudflare service by default."""
 import json
 from pathlib import Path
 import unittest
@@ -9,104 +9,85 @@ ROOT = Path(__file__).resolve().parents[1]
 STAGE = ROOT / "dist/unified-google-master-preview"
 PACKAGE = ROOT / "dist/ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi"
 DEFAULT = ROOT / "dist/unified-preview"
+PRIVATE = "cryogenized.workers.dev"
+OLD = ("google/master-oauth.js", "google/master-read-client.js",
+       "google/master-ui.js", "unified/google-master-tunnel.js",
+       "unified/google-master-tunnel-ui.js")
 
-
-class GoogleMasterEngineering(unittest.TestCase):
+class PrivateMcpOptIn(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        assert STAGE.is_dir() and PACKAGE.is_file(), (
-            "Build with --enable-google-master using the exact pinned companion"
-        )
+        assert STAGE.is_dir() and PACKAGE.is_file(), "Build --enable-google-master first"
         cls.manifest = json.loads((STAGE / "manifest.json").read_text())
         cls.core = json.loads((ROOT / "manifest.json").read_text())
 
-    def test_integration_is_isolated_from_core_and_default_preview(self):
-        self.assertEqual(self.core["permissions"], ["theme", "search", "storage"])
-        self.assertEqual(self.manifest["permissions"],
-                         ["theme", "search", "storage", "identity"])
-        self.assertNotIn("identity", self.manifest["optional_permissions"])
+    def test_one_extension_identity_and_privacy_gate(self):
         self.assertEqual(self.manifest["browser_specific_settings"]["gecko"]["id"],
                          "elf-shell-ayarime@local.theme")
+        self.assertEqual(self.manifest["permissions"],
+                         ["theme", "search", "storage", "identity"])
         self.assertEqual(self.manifest["content_security_policy"],
                          self.core["content_security_policy"])
-        self.assertNotIn("externally_connectable", self.manifest)
-        self.assertTrue((DEFAULT / "manifest.json").is_file())
-        self.assertNotIn("identity", json.loads(
-            (DEFAULT / "manifest.json").read_text())["permissions"])
+        self.assertTrue((DEFAULT / "manifest.json").exists())
+        self.assertNotIn("identity", json.loads((DEFAULT / "manifest.json")
+                                                .read_text())["permissions"])
 
-    def test_explicit_worker_permissions_and_manual_firefox_login(self):
-        origins = self.manifest["optional_host_permissions"]
-        for host in ["google-master-auth", "google-master-mcp"]:
-            self.assertIn(
-                f"https://{host}.cryogenized.workers.dev/*", origins
-            )
-        self.assertIn("personalCommunications", self.manifest
-                      ["browser_specific_settings"]["gecko"]
-                      ["data_collection_permissions"]["optional"])
-        self.assertIn("google/master-oauth.js",
-                      self.manifest["background"]["scripts"])
-        self.assertIn("unified/google-master-tunnel.js",
-                      self.manifest["background"]["scripts"])
-        self.assertLess(self.manifest["background"]["scripts"].index(
-            "unified/google-master-tunnel.js"),
-            self.manifest["background"]["scripts"].index(
-                "workspace-ai-background.js"))
+    def test_no_owner_cloudflare_or_legacy_master_network_in_xpi(self):
+        scripts = self.manifest["background"]["scripts"]
+        for path in OLD:
+            self.assertNotIn(path, scripts)
+            self.assertFalse((STAGE / path).exists(), path)
+        self.assertNotIn(PRIVATE, json.dumps(self.manifest))
+        compiled = (STAGE / "workspace-ai-background.js").read_text()
+        self.assertIn('message.type.startsWith("MASTER_")', compiled)
+        self.assertNotIn('case "MASTER_MCP_PING":', compiled)
+        with ZipFile(PACKAGE) as z:
+            self.assertFalse(any(path in z.namelist() for path in OLD))
+            self.assertFalse(any(
+                b"https://google-master-mcp.cryogenized.workers.dev" in
+                z.read(path) for path in z.namelist()
+                if path.endswith((".js", ".json", ".html"))
+            ))
 
-    def test_manual_hub_controls_and_background_router(self):
-        hub = (STAGE / "hub.html").read_text()
-        background = (STAGE / "workspace-ai-background.js").read_text()
-        self.assertIn('<script defer src="google/master-ui.js"></script>', hub)
-        self.assertIn('<script defer src="unified/google-master-tunnel-ui.js"></script>', hub)
-        self.assertIn('id="master-mcp-ping"', hub)
-        self.assertIn('id="master-mcp-ping-result"', hub)
-        self.assertIn("Leave it UNCHECKED", hub)
-        self.assertIn('id="google-master" class="frame master-panel"', hub)
-        self.assertNotIn('class="frame master-panel" hidden', hub)
+    def test_station_is_always_visible_and_tabbed(self):
         station = (STAGE / "newtab.html").read_text()
-        ordinary_station = (DEFAULT / "newtab.html").read_text()
-        self.assertIn('id="google-master-toggle"', station)
-        self.assertIn('href="hub.html#google-master"', station)
-        self.assertIn('11 TOOLS · CTRL+K', station)
-        self.assertNotIn('id="google-master-toggle"', ordinary_station)
-        self.assertNotIn('11 TOOLS · CTRL+K', ordinary_station)
-        self.assertEqual(station.count('id="google-master-toggle"'), 1)
-        self.assertEqual(hub.count('id="google-master"'), 1)
-        self.assertIn('case "MASTER_CONNECT":', background)
-        self.assertIn('case "MASTER_DISCONNECT":', background)
-        self.assertIn('case "MASTER_MCP_PING":', background)
-        self.assertIn('AyarimeGoogleMasterTunnel.probe', background)
-        # Standalone Google Desktop OAuth and update checks remain blocked.
-        self.assertIn('message.type.startsWith("GOOGLE_")', background)
-        self.assertIn('Google OAuth and update checks', (
-            DEFAULT / "workspace-ai-background.js").read_text())
-        self.assertIn('case "MASTER_MCP_PING":',
-                      background)
-        self.assertNotIn('message.type.startsWith("MASTER_") ||',
-                         background)
+        for needle in (
+            'id="station-drawer-open"', 'id="station-drawer"',
+            'role="tablist"', 'id="sd-tab-station"',
+            'id="sd-tab-ayarime"', 'id="sd-tab-mcp"',
+            'id="sd-tab-settings"', 'id="sd-ai-toggle"',
+            'id="sd-provider"', 'id="sd-mcp-resource"',
+            'id="sd-mcp-issuer"', 'id="google-master-toggle"'
+        ):
+            self.assertIn(needle, station)
+        self.assertIn('src="unified/station-drawer.js"', station)
+        self.assertIn('href="unified/station-drawer.css"', station)
+        self.assertNotIn('href="hub.html#google-master"', station)
 
-    def test_no_local_proxy_or_user_secrets_are_bundled(self):
-        transport = (STAGE / "unified/google-master-tunnel.js").read_text()
-        assert 'const RESOURCE="https://google-master-mcp.cryogenized.workers.dev/mcp"' in transport
-        self.assertIn('method:"tools/list"', transport)
-        self.assertNotIn('method:"tools/call"', transport)
-        self.assertIn('credentials:"omit"', transport)
-        self.assertIn('redirect:"error"', transport)
-        self.assertNotIn("localhost", transport)
-        self.assertNotIn("127.0.0.1", transport)
-        self.assertNotIn("Cloudflare tunnel token", transport)
+    def test_official_default_and_byo_no_auto_network(self):
+        drawer=(STAGE / "unified/station-drawer.js").read_text()
+        station=(STAGE / "newtab.html").read_text()
+        hub=(STAGE / "hub.html").read_text()
+        self.assertIn('option value="official"', station)
+        self.assertIn("https://gmailmcp.googleapis.com/mcp/v1", drawer)
+        self.assertIn("https://calendarmcp.googleapis.com/mcp/v1", drawer)
+        self.assertIn("elfshell.mcp.userProfile.v1", drawer)
+        self.assertIn("browser.storage.local.set", drawer)
+        self.assertNotIn("fetch(", drawer)
+        self.assertNotIn("launchWebAuthFlow", drawer)
+        self.assertNotIn("google/master-ui.js", hub)
+        self.assertIn('class="frame master-panel" hidden', hub)
 
-    def test_xpi_is_exactly_staged_package(self):
-        with ZipFile(PACKAGE) as archive:
-            self.assertIsNone(archive.testzip())
-            names = archive.namelist()
-            self.assertEqual(len(names), len(set(names)))
-            self.assertEqual(set(names), {
-                p.relative_to(STAGE).as_posix()
-                for p in STAGE.rglob("*") if p.is_file()
+    def test_archive_matches_exact_staged_files(self):
+        with ZipFile(PACKAGE) as z:
+            self.assertIsNone(z.testzip())
+            listed=z.namelist()
+            self.assertEqual(len(listed),len(set(listed)))
+            self.assertEqual(set(listed), {
+                p.relative_to(STAGE).as_posix() for p in STAGE.rglob("*") if p.is_file()
             })
-            for name in names:
-                self.assertEqual(archive.read(name), (STAGE / name).read_bytes())
-
+            for path in listed:
+                self.assertEqual(z.read(path),(STAGE/path).read_bytes())
 
 if __name__ == "__main__":
     unittest.main()

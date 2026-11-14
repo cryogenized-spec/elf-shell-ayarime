@@ -135,22 +135,6 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
     check(source.count(original) == 1,
           "Companion background listener changed: manual review required")
 
-    if enable_google_master:
-        # Dedicated manual MCP transport check: no Google API operation executes.
-        marker = '      case "MASTER_STATUS":'
-        check(source.count(marker) == 1, "Master OAuth handler changed")
-        probe_case = (
-            '      case "MASTER_MCP_PING": {\n'
-            '        const conn=await globalThis.WorkspaceMasterOAuth.status(browser);\n'
-            '        if(!conn.connected)throw Error("MASTER_NOT_CONNECTED");\n'
-            '        return {ok:true,probe:await globalThis.AyarimeGoogleMasterTunnel.probe({\n'
-            '          getAccessToken:()=>globalThis.WorkspaceMasterOAuth.accessToken(browser),\n'
-            '          hasHostPermission:origin=>browser.permissions.contains({origins:[origin+"/*"]}),\n'
-            '          fetchImpl:fetch\n'
-            '        })};\n'
-            '      }\n'
-        )
-        source = source.replace(marker, probe_case + marker, 1)
     # Use the SAME switch and listener that already handle GET_STATE. This avoids
     # competing Firefox runtime.onMessage listeners for the unified bridge.
     anchor = '      case "GET_STATE":'
@@ -216,8 +200,6 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
     # Keep the default build byte-for-byte safe. Only the explicitly selected
     # engineering package lifts the Master-only command block; desktop Google
     # REST OAuth, update checks and all other unrelated routes remain blocked.
-    if enable_google_master:
-        guarded = guarded.replace('message.type.startsWith("MASTER_") || ', '', 1)
     source = source.replace(original, guarded)
     action = (
         '  serialise(launchWorkspace).catch(error => '
@@ -300,10 +282,16 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     core_manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     companion_manifest = json.loads((companion_dir / "manifest.json").read_text(encoding="utf-8"))
     manifest = combine_manifest(core_manifest, companion_manifest, enable_google_master)
-    if enable_google_master:
-        # This source loads only in the unsigned, explicitly opted-in build,
-        # before the unified message router. No hidden background transport.
-        manifest["background"]["scripts"].insert(-1, "unified/google-master-tunnel.js")
+    # Neither the default preview nor the opt-in engineering build may
+    # bundle the owner's pinned Cloudflare transport or its host grants.
+    private = {"google/master-read-client.js", "google/master-oauth.js"}
+    manifest["background"]["scripts"] = [
+        p for p in manifest["background"]["scripts"] if p not in private
+    ]
+    manifest["optional_host_permissions"] = [
+        p for p in manifest["optional_host_permissions"]
+        if "cryogenized.workers.dev" not in p
+    ]
     # Never overwrite or mutate the separately reviewed default-off RC package.
     staging = ROOT / "dist" / ("unified-google-master-preview" if enable_google_master else "unified-preview")
     output = ROOT / "dist" / ("ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi" if enable_google_master else "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi")
@@ -316,6 +304,11 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         inventory[rel] = source.read_bytes()
     for rel in files:
         if rel in ("manifest.json", "background.js"):
+            continue
+        if rel in {
+            "google/master-read-client.js", "google/master-oauth.js",
+            "google/master-ui.js"
+        }:
             continue
         check(rel not in inventory, "Unreviewed runtime filename collision: " + rel)
         data = (companion_dir / rel).read_bytes()
@@ -340,49 +333,15 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                       + '</div>')
             html = html.replace(container, container + "\n" + banner, 1)
             if rel == "hub.html":
-                # Stage 6.1 is a reviewed *companion-only* OAuth pilot. The
-                # current unified v0.5.6 manifest has no identity grant and
-                # must not expose a nonfunctional login or start OAuth.
+                # Historical pinned Cloudflare panel is never active in the
+                # new public-facing user-owned engineering configuration.
                 master_script = '<script defer src="google/master-ui.js"></script>'
                 master_panel = '<section class="frame master-panel"'
                 check(html.count(master_script) == html.count(master_panel) == 1,
-                      "Google Master preview UI structure changed")
-                if not enable_google_master:
-                    html = html.replace(master_script, "")
-                    html = html.replace(master_panel,
-                        '<section class="frame master-panel" hidden aria-hidden="true"', 1)
-                else:
-                    # Keep the private Google Master controls as a native route
-                    # inside this SAME ELF//SHELL extension. The Station menu
-                    # anchors directly to the existing Hub section.
-                    html = html.replace(master_panel,
-                        '<section id="google-master" class="frame master-panel"', 1)
-                    # Background OAuth/client code is from the pinned reviewed
-                    # companion; this extra MCP probe is a separate, manual click.
-                    html = html.replace(master_script,
-                        master_script +
-                        '\n<script defer src="unified/google-master-tunnel-ui.js"></script>',1)
-                    probe_button = ('<button id="master-probe" class="mini" type="button">'
-                                    'Verify available read operations</button>')
-                    check(html.count(probe_button) == 1,
-                          "Google Master Hub probe control changed")
-                    html = html.replace(probe_button, probe_button +
-                        '\n<button id="master-mcp-ping" class="mini" type="button">'
-                        'Check protected remote MCP endpoint</button>',1)
-                    probe_result = '<p id="master-probe-result"'
-                    check(html.count(probe_result) == 1,
-                          "Google Master Hub result element changed")
-                    html = html.replace(probe_result,
-                        '<p id="master-mcp-ping-result" class="quiet" role="status" '
-                        'aria-live="polite">MCP endpoint check not requested.</p>\n' +
-                        probe_result,1)
-                    master_title = '<h2>Google Master · Private connection</h2>'
-                    check(html.count(master_title) == 1, "Google Master heading changed")
-                    html = html.replace(master_title,master_title +
-                        '<p class="quiet">Engineering read-only OAuth: the server '
-                        'also offers optional mcp:write. Leave it UNCHECKED for '
-                        'this build; write operations remain disabled in Ayarime.'
-                        '</p>',1)
+                      "Private Master panel structure changed")
+                html = html.replace(master_script, "")
+                html = html.replace(master_panel,
+                    '<section class="frame master-panel" hidden aria-hidden="true"', 1)
             if rel == "sidebar.html":
                 # Settings are shared with the Hub; keep all existing inputs and
                 # handlers available but give the narrow sidebar a chat-first view.
@@ -411,7 +370,10 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
-        '<script defer src="unified/module.js"></script>\n' + script_tag)
+        '<link rel="stylesheet" href="unified/station-drawer.css">\n'
+        '<script defer src="unified/module.js"></script>\n'
+        '<script defer src="unified/station-drawer.js"></script>\n'
+        + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
     toggle_html = (
@@ -426,9 +388,9 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         # moz-extension:// URL or requesting unrelated tab permissions.
         station_link = (
             '<a id="google-master-toggle" class="settings-toggle station-story-launch" '
-            'href="hub.html#google-master" '
+            'type="button" '
             'aria-label="Google Master MCP private connection">'
-            '✧ GOOGLE MASTER / MCP</a>\\n'
+            '✧ GOOGLE MASTER / MCP</button>\\n'
         )
         check(station_html.count(tool_button) == 1,
               "Station Google Master navigation insertion point changed")
@@ -446,15 +408,14 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    inventory["unified/station-drawer.js"] = (
+        ROOT / "unified-preview" / "station-drawer.js").read_bytes()
+    inventory["unified/station-drawer.css"] = (
+        ROOT / "unified-preview" / "station-drawer.css").read_bytes()
     # Inert by design: bundled for contract review and tests, NOT injected into
     # the page or background until OAuth scopes and host allowlists are accepted.
     inventory["unified/google-worker-contract.js"] = (
         ROOT / "unified-preview" / "google-worker-contract.js").read_bytes()
-    if enable_google_master:
-        inventory["unified/google-master-tunnel.js"] = (
-            ROOT / "unified-preview" / "google-master-tunnel.js").read_bytes()
-        inventory["unified/google-master-tunnel-ui.js"] = (
-            ROOT / "unified-preview" / "google-master-tunnel-ui.js").read_bytes()
     copy = {
         "Restore Google workspace using optional companion":
             "Open your integrated Ayarime Workspace Hub",
@@ -475,6 +436,9 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         check(station_js.count(before) == 1,
               "Core Station command copy changed: " + before)
         station_js = station_js.replace(before, after)
+    drawer = (ROOT / "unified-preview" / "station-drawer.html").read_text(encoding="utf-8")
+    check(station_html.count("<body>") == 1, "ELF Station body markup changed")
+    station_html = station_html.replace("<body>", "<body>\n" + drawer, 1)
     inventory["newtab.html"] = station_html.encode("utf-8")
     inventory["newtab.js"] = station_js.encode("utf-8")
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
