@@ -17,6 +17,7 @@ The particularly consequential questions — whether Ayarime remembers her creat
 | File | Purpose |
 | --- | --- |
 | [WORLD_BIBLE.md](WORLD_BIBLE.md) | Setting, history, atmosphere, disaster and world rules |
+| [THE_ABERRANT_WAR.md](THE_ABERRANT_WAR.md) | The machine intervention, human resistance and ancient extraterrestrial presence |
 | [AYARIME.md](AYARIME.md) | Her origins, role, abilities, contradictions and character direction |
 | [FACTIONS.md](FACTIONS.md) | W.O.T.A.N., machine intelligences, ultraterrestrials, survivors and the Seven Sages |
 | [TIMELINE.md](TIMELINE.md) | Relative chronology without invented calendar dates |
