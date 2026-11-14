@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from package import sources as core_sources  # reviewed release inventory, not a recursive scan
 
-COMPANION_COMMIT = "596b31314cab68c4f43ab9ef2b48ee6638b33cd5"
+COMPANION_COMMIT = "6015727565ff30fdc42fa79d48c122cfdb9c37cb"
 KIND = "elfshell.workspace.bridge"
 BRIDGE_COMMAND = "elfshell:unified:bridge:v1"
 OUTPUT = ROOT / "dist" / "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
@@ -177,7 +177,7 @@ def adapt_background(source: str) -> str:
         '!["type","kind","version"].includes(key)))\n'
         '      return Promise.resolve({ok:false,error:"Unsupported unified dashboard command"});\n'
         '  }\n'
-        '  if (message.type.startsWith("GOOGLE_") || '
+        '  if (message.type.startsWith("GOOGLE_") || message.type.startsWith("MASTER_") || '
         'message.type==="MORNING_COFFEE_PREPARE" || '
         'message.type.startsWith("UPDATE_"))\n'
         '    return Promise.resolve({ok:false,error:"Google OAuth and update checks are disabled '
@@ -298,6 +298,17 @@ def build(companion_dir: Path) -> None:
                       'and automatic update checks are disabled until separately reviewed.'
                       '</div>')
             html = html.replace(container, container + "\n" + banner, 1)
+            if rel == "hub.html":
+                # Stage 6.1 is a reviewed *companion-only* OAuth pilot. The
+                # current unified v0.5.6 manifest has no identity grant and
+                # must not expose a nonfunctional login or start OAuth.
+                master_script = '<script defer src="google/master-ui.js"></script>'
+                master_panel = '<section class="frame master-panel"'
+                check(html.count(master_script) == html.count(master_panel) == 1,
+                      "Google Master preview UI structure changed")
+                html = html.replace(master_script, "")
+                html = html.replace(master_panel,
+                    '<section class="frame master-panel" hidden aria-hidden="true"', 1)
             if rel == "sidebar.html":
                 # Settings are shared with the Hub; keep all existing inputs and
                 # handlers available but give the narrow sidebar a chat-first view.
