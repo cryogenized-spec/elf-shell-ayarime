@@ -145,7 +145,7 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
             '        })};\n'
             '      }\n'
         )
-        source = source.replace(marker, probe_case.replace("\\\n", "\n") + marker, 1)
+        source = source.replace(marker, probe_case + marker, 1)
     # Use the SAME switch and listener that already handle GET_STATE. This avoids
     # competing Firefox runtime.onMessage listeners for the unified bridge.
     anchor = '      case "GET_STATE":'
