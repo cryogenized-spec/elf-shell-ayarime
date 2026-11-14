@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build a separate, unsigned one-extension engineering preview.
+"""Build an unsigned one-extension preview from this ONE repository.
 
-This script never changes manifest.json, AMO package inventory, or installed add-ons.
-It assembles *two pinned, reviewed source trees* into dist/unified-preview/.
+The Ayarime assistant lives in assistant/. No second GitHub checkout,
+remote network, GitHub token or separate version pin is required.
+The existing public AMO manifest and installed add-ons are never modified.
 """
 from __future__ import annotations
 
@@ -35,13 +36,17 @@ def check(condition: bool, message: str) -> None:
 
 
 def checked_companion(folder: Path) -> None:
-    check(folder.is_dir(), "Companion checkout missing")
-    head = subprocess.check_output(
-        ["git", "-C", str(folder), "rev-parse", "HEAD"],
-        text=True, stderr=subprocess.DEVNULL,
-    ).strip()
-    check(head == COMPANION_COMMIT,
-          "Companion checkout mismatch: use the reviewed exact commit (not a moving branch)")
+    # The original import is recorded for history, NOT frozen forever. Future
+    # feature edits change assistant/ directly in the same repository.
+    check(folder.resolve() == (ROOT / "assistant").resolve(),
+          "Use only the vendored assistant/ folder in this repository")
+    check(folder.is_dir(), "Integrated assistant/ source missing")
+    provenance = json.loads((folder / "SOURCE_LOCK.json").read_text(encoding="utf-8"))
+    check(provenance.get("source_repository") ==
+          "cryogenized-spec/elf-shell-workspace-ai" and
+          provenance.get("source_commit") == COMPANION_COMMIT and
+          provenance.get("import_path") == "assistant",
+          "Assistant import provenance has changed: review required")
 
 
 def companion_inventory(folder: Path) -> list[str]:
@@ -475,19 +480,18 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         check(archive.testzip() is None, "Preview ZIP CRC mismatch")
     print("UNSIGNED, development only:", output)
     print("Core identity:", manifest["browser_specific_settings"]["gecko"]["id"])
-    print("Companion pinned commit:", COMPANION_COMMIT)
+    print("Historical assistant import commit:", COMPANION_COMMIT)
     print("Runtime files:", len(inventory))
     print("SHA256:", hashlib.sha256(output.read_bytes()).hexdigest())
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--companion", required=True, type=Path,
-                        help="Exact, separately checked-out Workspace AI source tree")
+    # Source-of-truth is always the local assistant/ directory.
     parser.add_argument("--enable-google-master", action="store_true",
                         help="Prepare separate unsigned Firefox build with explicit identity permission, manual Google Master OAuth and capability probe (NEVER an AMO build)")
     args = parser.parse_args()
     try:
-        build(args.companion.resolve(), enable_google_master=args.enable_google_master)
+        build(ROOT / "assistant", enable_google_master=args.enable_google_master)
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         raise SystemExit("Unified preview build refused: " + str(error))
