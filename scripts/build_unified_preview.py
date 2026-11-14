@@ -301,9 +301,15 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     companion_manifest = json.loads((companion_dir / "manifest.json").read_text(encoding="utf-8"))
     manifest = combine_manifest(core_manifest, companion_manifest, enable_google_master)
     if enable_google_master:
-        # This source loads only in the unsigned, explicitly opted-in build,
-        # before the unified message router. No hidden background transport.
-        manifest["background"]["scripts"].insert(-1, "unified/google-master-tunnel.js")
+        # Never ship the owner's private Google Master transport as a default.
+        private = {"google/master-read-client.js", "google/master-oauth.js"}
+        manifest["background"]["scripts"] = [
+            p for p in manifest["background"]["scripts"] if p not in private
+        ]
+        manifest["optional_host_permissions"] = [
+            p for p in manifest["optional_host_permissions"]
+            if "cryogenized.workers.dev" not in p
+        ]
     # Never overwrite or mutate the separately reviewed default-off RC package.
     staging = ROOT / "dist" / ("unified-google-master-preview" if enable_google_master else "unified-preview")
     output = ROOT / "dist" / ("ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi" if enable_google_master else "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi")
@@ -316,6 +322,11 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         inventory[rel] = source.read_bytes()
     for rel in files:
         if rel in ("manifest.json", "background.js"):
+            continue
+        if enable_google_master and rel in {
+            "google/master-read-client.js", "google/master-oauth.js",
+            "google/master-ui.js"
+        }:
             continue
         check(rel not in inventory, "Unreviewed runtime filename collision: " + rel)
         data = (companion_dir / rel).read_bytes()
@@ -411,7 +422,10 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
-        '<script defer src="unified/module.js"></script>\n' + script_tag)
+        '<link rel="stylesheet" href="unified/station-drawer.css">\n'
+        '<script defer src="unified/module.js"></script>\n'
+        '<script defer src="unified/station-drawer.js"></script>\n'
+        + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
     toggle_html = (
@@ -446,6 +460,10 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    inventory["unified/station-drawer.js"] = (
+        ROOT / "unified-preview" / "station-drawer.js").read_bytes()
+    inventory["unified/station-drawer.css"] = (
+        ROOT / "unified-preview" / "station-drawer.css").read_bytes()
     # Inert by design: bundled for contract review and tests, NOT injected into
     # the page or background until OAuth scopes and host allowlists are accepted.
     inventory["unified/google-worker-contract.js"] = (
@@ -475,6 +493,9 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         check(station_js.count(before) == 1,
               "Core Station command copy changed: " + before)
         station_js = station_js.replace(before, after)
+    drawer = (ROOT / "unified-preview" / "station-drawer.html").read_text(encoding="utf-8")
+    check(station_html.count("<body>") == 1, "ELF Station body markup changed")
+    station_html = station_html.replace("<body>", "<body>\n" + drawer, 1)
     inventory["newtab.html"] = station_html.encode("utf-8")
     inventory["newtab.js"] = station_js.encode("utf-8")
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
