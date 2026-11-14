@@ -7,6 +7,7 @@ on:
       - '.github/workflows/unified-rc.yml'
       - 'scripts/build_unified_preview.py'
       - 'scripts/package_unified_rc.py'
+      - 'assistant/**'
       - 'tests/rc_package_test.py'
       - 'tests/native_unified_preview.py'
       - 'tests/native_unified_provider_consent.py'
@@ -29,25 +30,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Checkout exact reviewed Workspace AI source
-        uses: actions/checkout@v4
-        with:
-          repository: cryogenized-spec/elf-shell-workspace-ai
-          ref: 885157e3d7bfeba3d1a344068448c1f4782d3be0
-          path: workspace-ai
-          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Run both repository regression suites
+      - name: Run unified repository regression suites
         run: |
           npm test
-          (cd workspace-ai && npm test)
+          (cd assistant && npm test)
       - name: Build exact unified unsigned candidate and BOTH reviewer source trees
-        run: python3 scripts/package_unified_rc.py --companion workspace-ai
+        run: python3 scripts/package_unified_rc.py
       - name: Verify RC manifest, privacy, source equivalence and deferred Google integration
         run: python3 -m unittest discover -s tests -p 'rc_package_test.py' -v
       - name: Verify compiled scripts and preview compatibility
@@ -66,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           before="$(sha256sum dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.zip dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-source.zip)"
-          python3 scripts/package_unified_rc.py --companion workspace-ai
+          python3 scripts/package_unified_rc.py
           after="$(sha256sum dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-UNSIGNED.zip dist/ELF-SHELL-Ayarime-v0.5.6-unified-RC-source.zip)"
           test "$before" = "$after"
           printf 'Both ZIP archives reproduced byte for byte.\n%s\n' "$after"
