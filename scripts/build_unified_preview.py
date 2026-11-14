@@ -282,16 +282,16 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     core_manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     companion_manifest = json.loads((companion_dir / "manifest.json").read_text(encoding="utf-8"))
     manifest = combine_manifest(core_manifest, companion_manifest, enable_google_master)
-    if enable_google_master:
-        # Never ship the owner's private Google Master transport as a default.
-        private = {"google/master-read-client.js", "google/master-oauth.js"}
-        manifest["background"]["scripts"] = [
-            p for p in manifest["background"]["scripts"] if p not in private
-        ]
-        manifest["optional_host_permissions"] = [
-            p for p in manifest["optional_host_permissions"]
-            if "cryogenized.workers.dev" not in p
-        ]
+    # Neither the default preview nor the opt-in engineering build may
+    # bundle the owner's pinned Cloudflare transport or its host grants.
+    private = {"google/master-read-client.js", "google/master-oauth.js"}
+    manifest["background"]["scripts"] = [
+        p for p in manifest["background"]["scripts"] if p not in private
+    ]
+    manifest["optional_host_permissions"] = [
+        p for p in manifest["optional_host_permissions"]
+        if "cryogenized.workers.dev" not in p
+    ]
     # Never overwrite or mutate the separately reviewed default-off RC package.
     staging = ROOT / "dist" / ("unified-google-master-preview" if enable_google_master else "unified-preview")
     output = ROOT / "dist" / ("ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi" if enable_google_master else "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi")
@@ -305,7 +305,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     for rel in files:
         if rel in ("manifest.json", "background.js"):
             continue
-        if enable_google_master and rel in {
+        if rel in {
             "google/master-read-client.js", "google/master-oauth.js",
             "google/master-ui.js"
         }:
