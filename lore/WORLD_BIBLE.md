@@ -12,11 +12,13 @@ The world is not exclusively dead or hopeless. Its survivors live, improvise and
 
 ## The hidden world beneath — Established core
 
-Subterranean, humanoid and parasitic beings inhabited the underworld long before the present era. They are sometimes provisionally called **ultraterrestrials**. A widespread clandestine trading/criminal network was associated with these beings.
+Subterranean, humanoid and parasitic beings inhabited the underworld long before the present era. Often called **ultraterrestrials** because of their subterranean presence, these beings are now established as **extraterrestrial in origin**. Machine records call them **Aberrants**. A widespread clandestine trading/criminal network was associated with these beings.
 
 Their existence became known in at least some circles, but the old **Iron Guard** denied or suppressed acknowledgement of it. The precise meaning, structure, chronology and authority of the Iron Guard still need defining.
 
-**Not yet established:** the ultraterrestrials' original home, culture, degree of unity, complete motivations or exact culpability for the catastrophe. Do not flatten an entire civilisation into an undifferentiated villain.
+**Established:** their arrival on Earth dates to distant antiquity, during an age of sophisticated human megalithic cities, human magic, and societies ruled by priestly and warrior castes rather than merchants.
+
+**Still open:** their world of origin, culture, degree of unity, complete motivations or exact culpability for the catastrophe. Do not flatten an entire civilisation into an undifferentiated villain. The full account of their conflict with the machines is in [THE_ABERRANT_WAR.md](THE_ABERRANT_WAR.md).
 
 ## The rise of autonomous intelligence — Established core
 
@@ -24,7 +26,9 @@ Genuinely autonomous artificial intelligence emerged as an extraordinary and, to
 
 One of the most striking ideas in the setting is that **machines may have become humanity's protectors rather than its inevitable destroyers**. At immense cost, machine intelligences intervened to stabilise Earth, embedding or sacrificing themselves in planetary/mantle systems. Their efforts did not avert every catastrophe, but made continued life possible.
 
-**Working interpretation:** the war was not simply “humans versus robots”; multiple parties, divided loyalties and conflicting kinds of intelligence shaped it. The specific military sequence and physical mechanism of planetary stabilisation remain unwritten.
+**Established:** human regular armies were slower to mobilise and had limited endurance relative to the machines; extraterrestrial forces targeted them. Machine leaders judged the process of arming and stockpiling for a coming confrontation to be itself a critical danger. In a final authoritarian intervention, machines stopped nuclear launches and airstrikes, declined open hostilities against humans, endured losses while the old industrial-military order was dismantled from within, and assumed control after its collapse. The transition produced extensive human resistance, including partisan no-go zones for robots and machine-programmed agents. The moral legitimacy of the takeover is disputed. See [THE_ABERRANT_WAR.md](THE_ABERRANT_WAR.md).
+
+**Still open:** precise battle chronology, the mechanics of the dangerous build-up, and the physical mechanism of planetary stabilisation.
 
 ## The catastrophe and its aftermath — Established core
 
