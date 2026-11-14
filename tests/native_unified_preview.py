@@ -115,6 +115,21 @@ try:
           blocked_stream.get("status")=="failed" and
           "enable ayarime ai" in blocked_stream.get("message","").lower())
 
+    # Stage 6.1 is intentionally companion-only: even a same-extension
+    # script cannot use an unreviewed Master OAuth route from this RC.
+    # These are real Firefox background messages, not static string checks.
+    blocked_master=[message({"type":kind}) for kind in (
+        "MASTER_STATUS","MASTER_CONNECT","MASTER_PROBE","MASTER_DISCONNECT")]
+    check("unified v0.5.6 blocks every experimental Google Master OAuth route",
+          all(isinstance(reply,dict) and reply.get("ok") is False and
+              "disabled" in reply.get("error","").lower()
+              for reply in blocked_master))
+    master_login=driver.execute_script("""
+      const hub=document.querySelector(".master-panel");
+      return hub===null;
+    """)
+    check("core new-tab does not expose a Master OAuth login",master_login is True)
+
     # Seed representative existing ELF//SHELL per-field settings, plus an
     # unrelated local key. The AI toggle must not overwrite any of them.
     stored=driver.execute_async_script("""
