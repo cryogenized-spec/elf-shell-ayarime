@@ -54,6 +54,17 @@ jobs:
         run: python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
       - name: Mozilla extension lint
         run: npx --yes web-ext@10.8.0 lint --source-dir dist/unified-preview --warnings-as-errors
+      - name: Validate fixed Cloudflare remote MCP probe in synthetic Node tests
+        run: node --test tests/google_master_tunnel.test.cjs
+      - name: Build isolated unsigned Google Master MCP engineering XPI
+        run: python3 scripts/build_unified_preview.py --companion workspace-ai --enable-google-master
+      - name: Check manually enabled Google Master OAuth and remote tools/list transport
+        run: |
+          node --check dist/unified-google-master-preview/workspace-ai-background.js
+          node --check dist/unified-google-master-preview/unified/google-master-tunnel.js
+          node --check dist/unified-google-master-preview/unified/google-master-tunnel-ui.js
+          python3 -m unittest discover -s tests -p 'google_master_engineering_test.py' -v
+          npx --yes web-ext@10.8.0 lint --source-dir dist/unified-google-master-preview --warnings-as-errors
       - name: Install real Firefox
         id: firefox
         uses: browser-actions/setup-firefox@v1
@@ -115,6 +126,7 @@ jobs:
           name: ELF-SHELL-Ayarime-unified-UNSIGNED-preview
           path: |
             dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
+            dist/ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi
             dist/unified-firefox/
             dist/unified-interface/
             dist/native-approval/
