@@ -66,6 +66,36 @@ try:
     check("Ask Ayarime entry is present in the unified Station",
           len(driver.find_elements(By.ID,"ask-ayarime-toggle"))==1)
 
+    # The Station should be visible without digging through the old menu.
+    opener=driver.find_element(By.ID,"station-drawer-open")
+    check("Station control is visible directly on the new tab",
+          opener.is_displayed())
+    opener.click()
+    WebDriverWait(driver,5).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    check("Station drawer opens from the left without a new page",
+          len(driver.window_handles)==len(existing_handles)+1 and
+          driver.find_element(By.ID,"station-drawer").is_displayed())
+    # The drawer deliberately animates in from outside the viewport.
+    # Wait for the real tab to reach the screen before Selenium clicks it.
+    WebDriverWait(driver,5,poll_frequency=.05).until(
+        lambda d:d.execute_script("""
+          const r=document.getElementById('station-drawer').getBoundingClientRect();
+          return r.left>=-2 && r.right>100;
+        """))
+    driver.find_element(By.ID,"sd-tab-mcp").click()
+    check("MCP tab recommends official Google endpoints by default",
+          driver.find_element(By.ID,"sd-provider").get_attribute("value")=="official" and
+          "gmailmcp.googleapis.com" in
+          driver.find_element(By.ID,"sd-google-url").get_attribute("value"))
+    driver.find_element(By.ID,"sd-tab-ayarime").click()
+    check("AI controls are directly accessible from the drawer",
+          driver.find_element(By.ID,"sd-ai-toggle").is_displayed())
+    driver.find_element(By.ID,"station-drawer-close").click()
+    check("Station drawer closes and preserves the dashboard",
+          not driver.find_element(By.ID,"station-drawer").is_displayed() and
+          driver.title=="ELF//SHELL — Ayarime")
+
     reply=message({"type":"UNIFIED_HELLO",
                    "kind":"elfshell.workspace.bridge","version":1})
     state_probe=message({"type":"GET_STATE"})
@@ -114,6 +144,21 @@ try:
           isinstance(blocked_stream,dict) and
           blocked_stream.get("status")=="failed" and
           "enable ayarime ai" in blocked_stream.get("message","").lower())
+
+    # Stage 6.1 is intentionally companion-only: even a same-extension
+    # script cannot use an unreviewed Master OAuth route from this RC.
+    # These are real Firefox background messages, not static string checks.
+    blocked_master=[message({"type":kind}) for kind in (
+        "MASTER_STATUS","MASTER_CONNECT","MASTER_PROBE","MASTER_DISCONNECT")]
+    check("unified v0.5.6 blocks every experimental Google Master OAuth route",
+          all(isinstance(reply,dict) and reply.get("ok") is False and
+              "disabled" in reply.get("error","").lower()
+              for reply in blocked_master))
+    master_login=driver.execute_script("""
+      const hub=document.querySelector(".master-panel");
+      return hub===null;
+    """)
+    check("core new-tab does not expose a Master OAuth login",master_login is True)
 
     # Seed representative existing ELF//SHELL per-field settings, plus an
     # unrelated local key. The AI toggle must not overwrite any of them.

@@ -115,3 +115,10 @@ body[data-view="sidebar"] .ai-context-optin > span {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* Stage 6.1 requires a separately reviewed Firefox identity permission.
+   Keep the new companion-only Master OAuth pilot inaccessible and absent
+   from the v0.5.6 unified preview's visual and keyboard navigation. */
+body[data-view="hub"] .master-panel[hidden] {
+  display: none !important;
+}

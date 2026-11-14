@@ -1,0 +1,44 @@
+<button id="station-drawer-open" type="button" aria-controls="station-drawer" aria-expanded="false">✧ STATION / SETTINGS</button>
+<div id="station-scrim" hidden></div>
+<aside id="station-drawer" role="dialog" aria-modal="true" aria-label="ELF SHELL Station controls" hidden>
+<header><div><strong>ELF//SHELL</strong><small style="display:block;color:#aac2cb;font:11px monospace">AYARIME · STATION CONTROL</small></div><button class="sd-close" id="station-drawer-close" type="button">✕ CLOSE</button></header>
+<nav class="sd-tabs" role="tablist" aria-label="Station sections">
+<button type="button" role="tab" data-tab="station" id="sd-tab-station" aria-controls="sd-pane-station" aria-selected="true">STATION</button>
+<button type="button" role="tab" data-tab="ayarime" id="sd-tab-ayarime" aria-controls="sd-pane-ayarime" aria-selected="false">AYARIME</button>
+<button type="button" role="tab" data-tab="mcp" id="sd-tab-mcp" aria-controls="sd-pane-mcp" aria-selected="false">MCP</button>
+<button type="button" role="tab" data-tab="settings" id="sd-tab-settings" aria-controls="sd-pane-settings" aria-selected="false">SETTINGS</button></nav>
+<section role="tabpanel" aria-labelledby="sd-tab-station" class="sd-pane" id="sd-pane-station"><h2>Your station</h2>
+<p>One workspace, one browser extension. Ayarime and connections live here.</p>
+<button class="sd-action" type="button" id="sd-workspace">✧ Restore my workspace tabs</button>
+<p class="sd-note">Nothing in Station automatically reads Google data or sends it to an AI provider.</p></section>
+<section role="tabpanel" aria-labelledby="sd-tab-ayarime" class="sd-pane" id="sd-pane-ayarime" hidden><h2>Ayarime</h2>
+<p>Turn on your assistant here. Model/provider permissions remain a separate choice.</p>
+<button class="sd-action" type="button" id="sd-ai-toggle">✧ ENABLE AYARIME AI</button>
+<button class="sd-action" type="button" id="sd-chat">✧ Open Ayarime in Firefox sidebar</button>
+<p id="sd-chat-status" role="status"></p></section>
+<section role="tabpanel" aria-labelledby="sd-tab-mcp" class="sd-pane" id="sd-pane-mcp" hidden><h2>MCP connections</h2>
+<p>Use your own credentials and infrastructure. ELF//SHELL provides no shared Cloudflare tenant or Google account.</p>
+<label for="sd-provider">Connection type</label><select id="sd-provider">
+<option value="official">Google Workspace · official (recommended)</option>
+<option value="self">Self-hosted Google Master · advanced</option></select>
+<div id="sd-official"><p class="sd-note">Google's official Workspace MCP servers are in Developer Preview. Your own Google Cloud project, OAuth client and preview access are required.</p>
+<label for="sd-google-service">Google service</label><select id="sd-google-service">
+<option value="gmail">Gmail</option><option value="drive">Drive</option><option value="docs">Docs</option><option value="sheets">Sheets</option><option value="calendar">Calendar</option></select>
+<label for="sd-google-url">Official Google MCP endpoint</label><input id="sd-google-url" readonly>
+<p><a href="https://developers.google.com/workspace/guides/configure-mcp-servers" target="_blank" rel="noopener noreferrer">Official Google Workspace MCP setup guide ↗</a></p>
+<p>These recommendations do not authenticate or contact Google automatically.</p></div>
+<div id="sd-self" hidden><h3>Your own Google Master</h3>
+<p>Deploy the open-source Worker in your account. Your Google data and Cloudflare usage remain under your control.</p>
+<label for="sd-mcp-resource">Your MCP resource URL</label><input id="sd-mcp-resource" type="url" placeholder="https://my-worker.workers.dev/mcp" autocomplete="off" spellcheck="false">
+<label for="sd-mcp-issuer">Your OAuth issuer origin</label><input id="sd-mcp-issuer" type="url" placeholder="https://my-auth.workers.dev" autocomplete="off" spellcheck="false">
+<button class="sd-action" type="button" id="sd-save-endpoints">Save my endpoints locally</button>
+<p class="sd-note">Configuration only. Generic OAuth connection remains disabled pending review. No owner's endpoints are contacted.</p></div>
+<p id="sd-mcp-status" class="sd-status" role="status" aria-live="polite"></p></section>
+<section role="tabpanel" aria-labelledby="sd-tab-settings" class="sd-pane" id="sd-pane-settings" hidden><h2>Settings</h2>
+<p>Open the exact setting you need; no long configuration page.</p>
+<button class="sd-action" type="button" id="sd-settings">✧ Appearance and quick links</button>
+<button class="sd-action" type="button" id="sd-access">◇ Browser permissions</button>
+<button class="sd-action" type="button" id="sd-sessions">▣ Saved workspaces</button>
+<button class="sd-action" type="button" id="sd-rss">⌁ RSS subscriptions</button>
+<p class="sd-note">Preferences are local and never grant Google access by themselves.</p></section>
+</aside>

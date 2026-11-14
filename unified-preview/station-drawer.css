@@ -1,0 +1,26 @@
+/* One-extension ELF//SHELL left drawer. */
+#station-drawer-open{position:fixed;z-index:800;top:106px;left:clamp(10px,3vw,54px);padding:11px 16px;border:1px solid #79b5bd;border-radius:4px;background:#0f1a2bf2;color:#f6e8f0;font:600 12px monospace;letter-spacing:.12em;cursor:pointer}
+#station-drawer[hidden],#station-scrim[hidden]{display:none!important}
+#station-scrim{position:fixed;inset:0;z-index:900;background:#030711c9}
+#station-drawer{position:fixed;inset:0 auto 0 0;z-index:901;width:min(450px,100vw);height:100dvh;background:#101b2a;color:#e4edf2;border-right:1px solid #80b4b9;box-shadow:12px 0 30px #000a;display:flex;flex-direction:column;animation:station-slide .2s ease-out both;font-family:system-ui,sans-serif}
+@keyframes station-slide{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+#station-drawer *{box-sizing:border-box}
+#station-drawer header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #42596b}
+#station-drawer header strong{font:500 21px Georgia,serif}
+#station-drawer .sd-close,#station-drawer .sd-action{border:1px solid #608498;background:#192d42;color:#f6f7fa;padding:10px 13px;border-radius:3px;cursor:pointer}
+#station-drawer .sd-action{display:block;width:100%;margin:8px 0;text-align:left;font:12px system-ui,sans-serif}
+#station-drawer .sd-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:8px;background:#152337}
+#station-drawer .sd-tabs button{background:none;color:#b8c8d9;border:0;border-bottom:2px solid transparent;padding:11px 2px;font:11px monospace;cursor:pointer}
+#station-drawer .sd-tabs button[aria-selected=true]{color:#ffcada;border-bottom-color:#f6abc5;background:#29364c}
+#station-drawer .sd-pane{overflow-y:auto;padding:20px;overscroll-behavior:contain;flex:1}
+#station-drawer .sd-pane[hidden]{display:none!important}
+#station-drawer h2{font:500 24px Georgia,serif;color:#f5d5e3;margin:0 0 10px}
+#station-drawer h3{font:600 13px monospace;color:#abd6d6;margin:18px 0 6px}
+#station-drawer p{font:13px/1.55 system-ui,sans-serif;color:#c7d7e2;margin:6px 0 14px}
+#station-drawer label{display:block;font:12px monospace;margin:12px 0 5px}
+#station-drawer input,#station-drawer select{display:block;width:100%;padding:11px;background:#111e30;color:#fff;border:1px solid #688b9d;border-radius:3px}
+#station-drawer .sd-note{background:#172a3c;border-left:2px solid #7ab6b7;padding:12px}
+#station-drawer a{color:#9fe5e3}
+#station-drawer .sd-status{font:12px/1.5 monospace;overflow-wrap:anywhere}
+#station-drawer button:focus-visible,#station-drawer a:focus-visible,#station-drawer input:focus-visible,#station-drawer select:focus-visible{outline:2px solid #ffb6ce;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){#station-drawer{animation:none}}

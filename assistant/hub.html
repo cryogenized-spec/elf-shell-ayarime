@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ELF//SHELL — Workspace Hub</title><link rel="stylesheet" href="ui.css">
+<script defer src="google/master-ui.js"></script><script defer src="ai/openai-complimentary.js"></script><script defer src="ui-trace.js"></script><script defer src="google/login-ui.js"></script><script defer src="ui-conversation.js"></script><script defer src="ui.js"></script></head>
+<body data-view="hub">
+<div class="backdrop" aria-hidden="true"></div>
+<main class="shell">
+<header class="masthead">
+  <div class="slashes" aria-hidden="true">///</div>
+  <div><h1>ELF<span>//</span>SHELL</h1><p>AYARIME / WORKSPACE CONTROL MODULE · ALPHA 0.14</p></div>
+  <a class="assistant-quick-link" href="#assistant" aria-label="Jump to Ayarime AI conversation">✧ ASK AYARIME</a>
+  <div class="status-pill">LOCAL / READY</div>
+</header>
+<section class="frame profile-manager" aria-label="Workspace profiles">
+  <div class="profile-selector">
+    <label for="profile-select" class="eyebrow">// ACTIVE WORKSPACE PROFILE</label>
+    <select id="profile-select" aria-label="Choose Workspace profile"></select>
+  </div>
+  <form id="profile-form" class="profile-create">
+    <label for="profile-name">Profile name</label>
+    <input id="profile-name" maxlength="45" placeholder="Work / Personal / Research" required>
+    <div class="profile-actions">
+      <button id="profile-create" type="submit" class="secondary">+ New profile</button>
+      <button id="profile-rename" type="button" class="mini">Rename selected</button>
+      <button id="profile-delete" type="button" class="mini danger">Delete selected</button>
+    </div>
+  </form>
+  <p class="quiet">Profiles change which resources Ayarime restores; switching does not close or move open tabs.</p>
+</section>
+<div class="columns">
+<section class="frame hero">
+  <p class="eyebrow">// 01 · COMMAND CONSOLE</p>
+  <h2>Workspace<br><em>initialization.</em></h2>
+  <p class="lead">One command restores your pinned Super Tab and groups the Google applications you choose. Existing tabs are reused whenever possible.</p>
+  <button id="launch" class="primary" type="button">✧ Ayarime, please bring up my workspace</button>
+  <p id="status" class="status" role="status" aria-live="polite">Awaiting instruction.</p>
+  <div class="divider"></div>
+  <p class="eyebrow">// 02 · MORNING COFFEE</p>
+  <p class="quiet">Daily intelligence briefing, Google OAuth, BYOK models and MCP clients are planned. No account data is read in this alpha.</p>
+</section>
+<section class="frame resources">
+  <div class="section-head"><div><p class="eyebrow">// 03 · SUBORDINATE TABS</p><h2>Google Workspace</h2></div><span id="count" class="counter">—</span></div>
+  <div id="resource-list" class="resource-list" aria-live="polite"></div>
+  <form id="resource-form" class="add-form">
+    <label for="name">Resource name</label><input id="name" maxlength="90" required placeholder="Workshop Stock Register">
+    <label for="url">Google Workspace HTTPS URL</label><input id="url" type="url" required placeholder="https://docs.google.com/spreadsheets/d/…">
+    <button type="submit" class="secondary">+ Add Google resource</button>
+  </form>
+</section>
+</div>
+<section class="frame persona-section" aria-label="Ayarime personality">
+  <div class="section-head"><div><p class="eyebrow">// 04 · PERSONALITY SETTINGS</p><h2>Ayarime / Presence</h2></div></div>
+  <p class="quiet">Ayarime has a default character, but you control her communication style. This does not change permissions or enable Google account access.</p>
+  <form id="persona-form" class="persona-form">
+    <label for="persona-mode">Personality</label>
+    <select id="persona-mode">
+      <option value="ayarime">Ayarime — Original</option>
+      <option value="professional">Professional — Neutral</option>
+      <option value="custom">Custom personality</option>
+    </select>
+    <label for="persona-custom">Custom instructions (communication style only)</label>
+    <textarea id="persona-custom" maxlength="6000" rows="5" placeholder="Describe the assistant personality you would like…"></textarea>
+    <div class="persona-actions">
+      <button class="secondary" type="submit">Save personality</button>
+      <button class="mini" id="persona-reset" type="button">Reset to Ayarime</button>
+    </div>
+    <p class="quiet">These instructions are stored locally without encryption. Do not include API keys, passwords or private correspondence.</p>
+  </form>
+</section>
+<section class="frame google-section" aria-label="Google account connection">
+  <div class="section-head"><div>
+    <p class="eyebrow">// 05 · GOOGLE WORKSPACE / DEVELOPER PREVIEW</p>
+    <h2>Account Access</h2>
+  </div></div>
+  <p class="quiet">Optional Google OAuth authorization, separate from your AI API key. This preview uses a Google OAuth <strong>Desktop app client ID</strong> from your own Google Cloud project. No Google account connection is active until you consent.</p>
+  <form id="google-config-form" class="google-form">
+    <label for="google-client-id">Google OAuth Desktop client ID (public identifier, never a client secret)</label>
+    <input id="google-client-id" type="text" maxlength="180" spellcheck="false" autocomplete="off" placeholder="123456789-xxxx.apps.googleusercontent.com" />
+    <div class="google-oauth-client-help">
+      <a id="google-create-client-link" href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener noreferrer">Create or find a Desktop OAuth client ID in Google Cloud</a>
+      <p class="quiet">Choose your Google Cloud project, then <strong>Create client → Desktop app</strong>. Complete Google Auth setup first if prompted. Copy the <strong>Client ID</strong> ending in <code>.apps.googleusercontent.com</code> into the field above. The separately generated <strong>Desktop client secret</strong> belongs in the session-only field below, never in the Client ID field.</p>
+    </div>
+    <div class="google-secret-controls">
+      <label for="google-client-secret">Google Desktop OAuth client secret · this Firefox session only</label>
+      <input id="google-client-secret" type="password" maxlength="512" spellcheck="false" autocomplete="off" aria-describedby="google-secret-help" placeholder="Paste only inside your local Firefox extension" />
+      <div class="google-secret-buttons">
+        <button id="google-secret-save" type="button" class="mini">Use secret for this session</button>
+        <button id="google-secret-clear" type="button" class="mini danger" disabled>Forget session secret</button>
+      </div>
+      <p id="google-secret-status" class="quiet" role="status" aria-live="polite">No Desktop OAuth client secret stored.</p>
+      <p id="google-secret-help" class="quiet">Google's Desktop client may require its client_secret alongside PKCE when exchanging an authorization code. Find the secret in that same Google Cloud Desktop OAuth client. Ayarime stores it in Firefox session storage, not in GitHub or saved settings; it is sent only to Google's token endpoint. Do not share it in chat or screenshots. Session storage is not encrypted.</p>
+    </div>
+    <fieldset>
+      <legend>Request these read-only scopes</legend>
+      <label><input type="checkbox" id="google-scope-calendar" checked /> Calendar events — read only</label>
+      <label><input type="checkbox" id="google-scope-tasks" /> Google Tasks — read only</label>
+      <label><input type="checkbox" id="google-scope-docs" /> Google Docs — read only (sensitive scope)</label>
+      <label><input type="checkbox" id="google-scope-sheets" /> Google Sheets — read only (sensitive scope)</label>
+      <label><input type="checkbox" id="google-scope-drive" /> Google Drive — file metadata only (restricted scope)</label>
+      <label><input type="checkbox" id="google-scope-gmail" /> Gmail — inbox headers only (restricted scope)</label>
+    </fieldset>
+    <button type="submit" class="secondary">Save OAuth configuration</button>
+  </form>
+  <div class="google-controls">
+    <button type="button" id="google-grant" class="mini">1 · Allow Google connection and data sharing</button>
+    <button type="button" id="google-prepare" class="mini">2 · Prepare sign-in</button>
+    <button type="button" id="google-connect" class="secondary" disabled>3 · Connect Google</button>
+    <button type="button" id="google-reset" class="mini danger" disabled>Reset stuck sign-in</button>
+    <button type="button" id="google-read" class="mini" disabled>Read today's Calendar / Tasks</button>
+    <button type="button" id="google-check" class="mini" disabled>Verify Calendar / Tasks API access</button>
+    <button type="button" id="google-disconnect" class="mini danger" disabled>Disconnect</button>
+  </div>
+  <p id="google-auth-status" class="status" role="status" aria-live="polite">Google is not connected.</p>
+  <p class="quiet google-auth-help">For the first connection, use Calendar and Tasks read-only scopes; leave Docs and Sheets unchecked. If Google keeps loading after consent, use <strong>Reset stuck sign-in</strong> and close the old sign-in window. This does not revoke any completed Google session.</p>
+  <p id="google-check-result" class="quiet" role="status" aria-live="polite">Google access verification not run. It checks selected Calendar/Tasks API access without displaying item contents.</p>
+  <div id="google-results" class="google-results" aria-live="polite"></div>
+  <section class="google-metadata-panel" aria-label="Optional Gmail and Drive metadata">
+    <p class="eyebrow">// 06 · WORKSPACE METADATA / EXPLICIT READ</p>
+    <h3>Drive & Gmail · metadata preview</h3>
+    <p class="quiet">These two OAuth scopes are <strong>restricted</strong> under Google policy. Only authorize them if you want to preview file names and inbox headers in Ayarime. Enabling APIs in Google Cloud does not grant these scopes; changing the scope selection requires a fresh Google connection. No contents are sent to an AI model.</p>
+    <div class="google-metadata-buttons">
+      <button id="google-drive-read" type="button" class="mini" disabled>Read 20 recent Drive file names</button>
+      <button id="google-gmail-read" type="button" class="mini" disabled>Read 8 Gmail inbox headers</button>
+    </div>
+    <p id="google-metadata-status" class="quiet" role="status" aria-live="polite">Metadata previews have not been requested.</p>
+    <div id="google-metadata-results" class="google-results" aria-live="polite"></div>
+    <p class="quiet">Gmail returns From, Subject, Date and unread flag only—no body, attachment or email actions. Drive returns file names, modification times, formats and verified Google file links only. Results remain on this page and disappear when it closes.</p>
+  </section>
+
+  <div class="google-file-preview">
+    <p class="eyebrow">// 06 · SAVED FILE PREVIEW</p>
+    <p class="quiet">Use “Read preview” beside a specifically saved Google Doc or spreadsheet above. Sheets previews use a bounded A1 range and respect the saved link's sheet ID (gid). Google Drive-wide discovery and editing are not enabled.</p>
+    <label for="google-sheet-range">Sheet range (maximum 100 rows × 26 columns)</label>
+    <input id="google-sheet-range" value="A1:Z50" placeholder="A1:Z50" maxlength="24" />
+    <div id="google-file-results" class="google-results" aria-live="polite"></div>
+  </div>
+  <p class="quiet">This prototype discards refresh tokens and stores only a temporary access token in Firefox session storage. It does not persist account contents. Sign-in may require Google OAuth app verification and is not yet validated against a live Google account.</p>
+</section>
+<section class="frame master-panel" aria-label="Google Master Worker private connection">
+  <p class="eyebrow">// 09 · PRIVATE GOOGLE MASTER / READ-ONLY MCP</p>
+  <h2>Google Master · Private connection</h2>
+  <p class="quiet">This is separate from the Google Desktop OAuth controls above. The protected Google Master Worker already has its own account authorization; Ayarime requests a distinct <code>mcp:read</code> client session. No Google access token or private Workspace content is sent to an AI provider.</p>
+  <p class="quiet">Connection is manual. Approve the exact Worker host and optional Firefox data-sharing permission, then use the browser's interactive OAuth window. No background sync, automatic reads or write capabilities are enabled.</p>
+  <div class="google-controls">
+    <button id="master-grant" class="mini" type="button">1 · Allow private Worker host</button>
+    <button id="master-connect" class="secondary" type="button">2 · Connect read-only OAuth</button>
+    <button id="master-probe" class="mini" type="button">Verify available read operations</button>
+    <button id="master-disconnect" class="mini danger" type="button">Disconnect and forget session</button>
+  </div>
+  <p id="master-status" class="status" role="status" aria-live="polite">Not connected. No Google Master requests have been made.</p>
+  <p id="master-probe-result" class="quiet" role="status" aria-live="polite">Capability check not requested.</p>
+  <details>
+    <summary>Firefox origin, OAuth permissions and connection requirements</summary>
+    <p id="master-origin" class="quiet">Only an installed extension's exact origin can be allowlisted by the protected Worker. Temporary installs may have a different origin.</p>
+    <p class="quiet">You must configure <code>GMW_ALLOWED_BROWSER_ORIGINS</code> for the installed <code>moz-extension://…</code> origin separately. Do not use a wildcard. The server and extension will refuse to operate without the required OAuth and browser permission boundaries.</p>
+    <p class="quiet">The bearer is stored only in Firefox session storage, not your notes, project configuration or local export. Disconnect removes the local session and attempts remote token revocation where available. Model chat and Gmail/Drive data are not included in any request automatically.</p>
+  </details>
+</section>
+<section class="frame coffee-panel" aria-label="Morning Coffee daily briefing">
+  <p class="eyebrow">// 08 · AYARIME / MORNING COFFEE</p>
+  <h2>Morning Coffee <span aria-hidden="true">☕</span></h2>
+  <p class="quiet">A source-linked briefing prepared only when you ask. Select which authorized Google sources to read. No Gmail access, no AI model submission and no changes to your account.</p>
+  <div class="coffee-sources" role="group" aria-label="Briefing sources">
+    <label><input id="coffee-calendar" type="checkbox" checked /> Calendar · today's events</label>
+    <label><input id="coffee-tasks" type="checkbox" checked /> Google Tasks · incomplete tasks</label>
+  </div>
+  <button id="coffee-run" class="secondary" type="button">✧ Ayarime, prepare my Morning Coffee</button>
+  <p id="coffee-status" class="status" role="status" aria-live="polite">Not prepared. Connect authorized Calendar/Tasks sources first.</p>
+  <div id="coffee-results" class="coffee-results" aria-live="polite"></div>
+  <p class="quiet">Google Tasks scheduled dates do not necessarily mean deadlines. Results are limited to today's primary calendar and the first few incomplete task lists; any incomplete coverage is labelled.</p>
+</section>
+<section id="ai-console" class="frame ai-console" aria-label="Ayarime BYOK text assistant">
+  <div class="section-head"><div><p class="eyebrow">// 07 · AYARIME / BYOK</p><h2>AI Console</h2></div></div>
+  <div class="ai-sidebar-actions">
+    <button id="ai-open-sidebar" class="mini ai-sidebar-button" type="button">✧ CONTINUE IN FIREFOX SIDEBAR</button>
+    <span id="ai-sidebar-status" class="quiet" role="status" aria-live="polite"></span>
+  </div>
+  <p class="quiet">Choose your own AI provider and model. The API key lasts only for this Firefox session. ChatGPT and Claude app subscriptions are not interchangeable with API access.</p>
+  <form id="ai-settings-form" class="ai-form">
+    <label for="ai-provider">Provider</label>
+    <select id="ai-provider">
+      <option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic / Claude</option>
+      <option value="gemini">Google Gemini</option>
+    </select>
+    <label for="ai-model">Model ID</label>
+    <input id="ai-model" type="text" maxlength="90" spellcheck="false" required placeholder="Choose a supported model ID" />
+    <datalist id="openai-model-presets">
+      <option value="gpt-6-luna">GPT-6 Luna · efficient</option>
+      <option value="gpt-6.1-terra">GPT-6.1 Terra</option>
+      <option value="gpt-6.1-sol">GPT-6.1 Sol</option>
+      <option value="gpt-6-astra">GPT-6 Astra · highest cost</option>
+    </datalist>
+
+    <div id="ai-offer-selector" class="offer-selector">
+      <label for="ai-model-choice">OpenAI model catalog · select or enter custom ID</label>
+      <select id="ai-model-choice" aria-label="Choose an OpenAI model from the daily complimentary-token offer">
+        <option value="">Custom / existing model ID</option>
+      </select>
+      <p id="ai-model-offer-note" class="quiet" role="status">Choose an offer model to see its daily group and current availability.</p>
+    </div>
+    <button type="submit" class="mini">Save provider and model</button>
+  </form>
+  <div class="ai-key-controls">
+    <button id="ai-grant" type="button" class="mini">Allow provider and data sharing</button>
+    <label for="ai-key">API key · Firefox session only</label>
+    <input id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your own provider API key" />
+    <button id="ai-set-key" type="button" class="mini">Use key this session</button>
+    <button id="ai-clear-key" type="button" class="mini danger">Forget session key</button>
+  </div>
+
+  <section id="ai-offer-panel" class="offer-panel" aria-label="OpenAI daily complimentary-token offer">
+    <h3>OpenAI · complimentary token offer</h3>
+    <p class="quiet">Your screenshot shows eligibility, not confirmed enrollment. Sharing must be enabled in OpenAI's own organization/project settings. This extension never changes that setting.</p>
+    <label class="offer-confirm"><input id="ai-offer-enrolled" type="checkbox" /> I've independently confirmed “enrolled for complimentary daily tokens” in OpenAI's dashboard.</label>
+    <p id="ai-offer-enrollment-status" class="quiet" aria-live="polite">Enrollment is not confirmed in this extension.</p>
+    <div class="offer-meters">
+      <div class="offer-meter">
+        <div class="offer-meter-head"><strong>Standard models</strong><span>250,000 / day</span></div>
+        <meter id="ai-offer-standard-meter" min="0" max="250000" value="0"></meter>
+        <p id="ai-offer-standard-count" class="quiet">0 locally observed tokens</p>
+      </div>
+      <div class="offer-meter">
+        <div class="offer-meter-head"><strong>Mini / nano models</strong><span>2,500,000 / day</span></div>
+        <meter id="ai-offer-small-meter" min="0" max="2500000" value="0"></meter>
+        <p id="ai-offer-small-count" class="quiet">0 locally observed tokens</p>
+      </div>
+    </div>
+    <p id="ai-offer-day" class="quiet">Counters are for this extension/profile only and reset at 00:00 UTC.</p>
+    <p class="quiet">Not a free-balance guarantee. Other projects or apps share the same allowance. OpenAI may bill an entire request that exceeds the quota; tool calls are excluded. Actual eligibility, use and costs are confirmed in OpenAI's dashboard.</p>
+    <p class="offer-links"><a href="https://platform.openai.com/settings/organization/data-controls/sharing" target="_blank" rel="noopener noreferrer">OpenAI data-sharing settings</a> · <a href="https://platform.openai.com/usage/chat-completions" target="_blank" rel="noopener noreferrer">Usage / service tier</a></p>
+  </section>
+    <section class="conversation-panel" aria-label="Session conversation history">
+    <div class="conversation-toolbar">
+      <div><span class="eyebrow">// CONVERSATION / LOCAL SESSION</span><small id="ai-conversation-count">0 / 10 exchanges</small></div>
+      <button id="ai-conversation-clear" class="mini" type="button" disabled>Clear conversation</button>
+    </div>
+    <div id="ai-conversation-list" class="conversation-list" role="log" aria-live="polite" aria-relevant="additions text">
+      <p class="conversation-empty">No replies in this Firefox session. Ask Ayarime to begin.</p>
+    </div>
+    <p class="quiet conversation-privacy">Your prompts and replies are kept in Firefox session storage (not encrypted) and cleared when the session ends or you choose Clear. Previous exchanges <strong>are not sent as context unless you opt in for that request</strong>.</p>
+    <p id="ai-conversation-status" class="quiet" role="status" aria-live="polite"></p>
+  </section>
+  <label for="ai-prompt" class="eyebrow">SEND AN EXPLICIT PROMPT</label>
+  <textarea id="ai-prompt" rows="4" maxlength="6000" placeholder="Ayarime, help me organize my work…"></textarea>
+  <div id="ai-stream-options" class="trace-options">
+    <label for="ai-effort">OpenAI reasoning effort</label>
+    <select id="ai-effort" aria-label="OpenAI reasoning effort">
+      <option value="none">None · no summary request</option>
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium · recommended</option>
+      <option value="high">High</option>
+      <option value="xhigh">Extra high</option>
+      <option value="max">Maximum · more tokens and potential cost</option>
+    </select>
+    <label class="trace-budget" for="ai-output-budget">Maximum output tokens (includes internal reasoning)
+      <select id="ai-output-budget" aria-label="Maximum output tokens for this request">
+        <option value="768" selected>768 · economical / default</option>
+        <option value="2048">2,048 · longer thinking / more cost</option>
+        <option value="4096">4,096 · extended / higher cost</option>
+      </select>
+    </label>
+    <label class="trace-check" for="ai-web-search"><input id="ai-web-search" type="checkbox" /> Allow OpenAI hosted web search for this request (additional charges may apply)</label>
+    <p class="quiet">Responses API streaming with provider-exposed reasoning summaries. Raw private chain-of-thought is not available. Tool steps appear only when the provider actually emits them.</p>
+  </div>
+  <fieldset class="ai-context-panel" aria-label="Previous conversation context">
+    <legend>// CONTEXT / PER-REQUEST OPT-IN</legend>
+    <label class="ai-context-optin" for="ai-context-enable">
+      <input id="ai-context-enable" type="checkbox" />
+      <span>Include recent conversation in <strong>this request only</strong></span>
+    </label>
+    <label for="ai-context-limit">Previous completed exchanges to include
+      <select id="ai-context-limit" aria-label="Number of previous exchanges">
+        <option value="1">1 exchange</option>
+        <option value="2" selected>2 exchanges</option>
+        <option value="3">3 exchanges</option>
+      </select>
+    </label>
+    <p id="ai-context-preview" class="quiet" role="status" aria-live="polite">Context OFF. Only your new prompt and persona are sent.</p>
+    <p class="quiet">History must match the current provider and model, up to 12,000 characters in total. More context can increase tokens, cost and latency. The checkbox resets after each send. Previous messages are never sent unless you opt in.</p>
+  </fieldset>
+  <p class="quiet prompt-shortcut">Ctrl+Enter sends the current prompt · Enter adds a line</p>
+  <button id="ai-send" type="button" class="secondary">Ask Ayarime ↗</button>
+  <button id="ai-cancel" type="button" class="mini danger" hidden>Stop OpenAI generation</button>
+  <section id="ai-trace" class="trace-board" aria-label="Provider reasoning summary and activity" data-stage="idle" hidden>
+    <div class="trace-head" aria-live="polite">
+      <span class="trace-head-title">
+        <span class="ayarime-rose-loader" aria-hidden="true">
+          <span class="rose-seal-grid">
+            <span class="rose-tile rose-tile--right"></span>
+            <span class="rose-tile rose-tile--down"></span>
+            <span class="rose-tile rose-tile--left"></span>
+            <span class="rose-tile rose-tile--up"></span>
+            <span class="rose-spirit"></span>
+          </span>
+          <span class="rose-spark rose-spark--cyan"></span>
+          <span class="rose-spark rose-spark--pink"></span>
+          <span class="rose-spark rose-spark--violet"></span>
+          <span class="rose-spark rose-spark--gold"></span>
+        </span>
+        <strong id="ai-reasoning-label">Thinking…</strong>
+      </span>
+      <span id="ai-elapsed" class="trace-clock" aria-label="Total elapsed time">0.0s</span>
+    </div>
+    <details id="ai-summary-details" class="trace-summary" open>
+      <summary><span>Provider reasoning summary</span><span id="ai-summary-hint" class="trace-summary-hint">LIVE</span></summary>
+      <p id="ai-summary-status" class="quiet">Waiting for a provider-exposed summary.</p>
+      <div id="ai-summary-text" class="trace-summary-body"></div>
+    </details>
+    <details id="ai-activity-details" class="trace-activity">
+      <summary>Model activity <span id="ai-activity-count">0 events</span></summary>
+      <div id="ai-trace-steps" class="trace-steps" aria-live="off"></div>
+    </details>
+    <div class="trace-footer">
+      <small id="ai-reasoning-source" class="quiet">Provider summary only — not private internal reasoning.</small>
+      <small id="ai-trace-usage" class="quiet">Usage appears when the provider reports it.</small>
+    </div>
+  </section>
+
+  <button id="ai-check-model" type="button" class="mini" disabled>Verify model access · no generation</button>
+  <p class="quiet" id="ai-check-result" role="status" aria-live="polite">Model verification not run. This uses a provider metadata GET, not an inference request.</p>
+  <p id="ai-status" class="status" role="status" aria-live="polite">AI not configured.</p>
+  <div id="ai-output" class="ai-output" aria-live="polite"></div>
+  <p class="quiet">Only the prompt, persona and any explicitly selected prior exchanges go to your chosen provider after Firefox consent. API usage may incur charges. No Google account contents are forwarded automatically.</p>
+</section>
+<section class="frame updater-panel" aria-label="Extension release notifications">
+  <p class="eyebrow">// 09 · SOFTWARE RELEASES</p>
+  <h2>Update Watch</h2>
+  <p class="quiet">Get a toolbar badge and a notice when a newer published GitHub Release appears. No automatic downloads or installations. Firefox handles signed extension updates.</p>
+  <label for="update-channel">Release channel</label>
+  <select id="update-channel">
+    <option value="stable">Stable releases only</option>
+    <option value="preview">Include development previews</option>
+  </select>
+  <div class="updater-actions">
+    <button id="update-toggle" class="secondary" type="button">Enable daily release alerts</button>
+    <button id="update-check" class="mini" type="button">Check releases now</button>
+    <button id="update-dismiss" class="mini" type="button" hidden>Dismiss this notice</button>
+  </div>
+  <p id="update-status" class="status" aria-live="polite" role="status">Release checks are not enabled.</p>
+  <div id="update-available" class="update-available" hidden>
+    <strong id="update-title">New release available</strong>
+    <p id="update-notes" class="quiet"></p>
+    <a id="update-release-link" href="#" target="_blank" rel="noopener noreferrer">View verified GitHub release notes ↗</a>
+  </div>
+  <p class="quiet">The release check downloads only small JSON metadata. Firefox code updates still require a complete, Mozilla-signed XPI. There is no unsupported hot-patching or remote code execution.</p>
+</section>
+<footer><span>あやりめ · THE STATION REMAINS ONLINE</span><span>FIREFOX DESKTOP · NO AI KEY REQUIRED</span></footer>
+</main></body></html>

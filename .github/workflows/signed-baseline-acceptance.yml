@@ -13,18 +13,11 @@ jobs:
     steps:
       - name: Checkout merged preview development source
         uses: actions/checkout@v4
-      - name: Checkout pinned Workspace AI source
-        uses: actions/checkout@v4
-        with:
-          repository: cryogenized-spec/elf-shell-workspace-ai
-          ref: 3a586bcce19a6e66bf924521d54fefc732faffb3
-          path: workspace-ai
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Build unsigned unified test XPI only
-        run: python3 scripts/build_unified_preview.py --companion workspace-ai
+        run: python3 scripts/build_unified_preview.py
       - name: Retrieve publicly signed AMO version 0.5.5
         shell: bash
         run: |
