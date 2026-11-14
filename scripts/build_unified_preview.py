@@ -195,9 +195,8 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         '!["type","kind","version"].includes(key)))\n'
         '      return Promise.resolve({ok:false,error:"Unsupported unified dashboard command"});\n'
         '  }\n'
-        ('  if (message.type.startsWith("GOOGLE_") || ' +
-         ('message.type.startsWith("MASTER_") || ' if not enable_google_master else '') +
-         'message.type==="MORNING_COFFEE_PREPARE" || ')
+        '  if (message.type.startsWith("GOOGLE_") || message.type.startsWith("MASTER_") || '
+        'message.type==="MORNING_COFFEE_PREPARE" || '
         'message.type.startsWith("UPDATE_"))\n'
         '    return Promise.resolve({ok:false,error:"Google OAuth and update checks are disabled '
         'in this unsigned unified preview."});\n'
@@ -209,6 +208,11 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         '  return handle(message);\n'
         '});'
     )
+    # Keep the default build byte-for-byte safe. Only the explicitly selected
+    # engineering package lifts the Master-only command block; desktop Google
+    # REST OAuth, update checks and all other unrelated routes remain blocked.
+    if enable_google_master:
+        guarded = guarded.replace('message.type.startsWith("MASTER_") || ', '', 1)
     source = source.replace(original, guarded)
     action = (
         '  serialise(launchWorkspace).catch(error => '
