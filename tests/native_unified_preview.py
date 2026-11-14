@@ -76,6 +76,13 @@ try:
     check("Station drawer opens from the left without a new page",
           len(driver.window_handles)==len(existing_handles)+1 and
           driver.find_element(By.ID,"station-drawer").is_displayed())
+    # The drawer deliberately animates in from outside the viewport.
+    # Wait for the real tab to reach the screen before Selenium clicks it.
+    WebDriverWait(driver,5,poll_frequency=.05).until(
+        lambda d:d.execute_script("""
+          const r=document.getElementById('station-drawer').getBoundingClientRect();
+          return r.left>=-2 && r.right>100;
+        """))
     driver.find_element(By.ID,"sd-tab-mcp").click()
     check("MCP tab recommends official Google endpoints by default",
           driver.find_element(By.ID,"sd-provider").get_attribute("value")=="official" and
