@@ -352,6 +352,11 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     html = html.replace(master_panel,
                         '<section class="frame master-panel" hidden aria-hidden="true"', 1)
                 else:
+                    # Keep the private Google Master controls as a native route
+                    # inside this SAME ELF//SHELL extension. The Station menu
+                    # anchors directly to the existing Hub section.
+                    html = html.replace(master_panel,
+                        '<section id="google-master" class="frame master-panel"', 1)
                     # Background OAuth/client code is from the pinned reviewed
                     # companion; this extra MCP probe is a separate, manual click.
                     html = html.replace(master_script,
@@ -414,6 +419,24 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         'aria-pressed="false" disabled>✧ ENABLE AYARIME AI</button>\n'
     )
     station_html = station_html.replace(tool_button, toggle_html + '          ' + tool_button)
+    if enable_google_master:
+        # Integrated Station navigation only in the opt-in engineering build;
+        # no new extension, no separate credential store and no auto-connection.
+        # Navigate within the SAME extension instead of requiring an opaque
+        # moz-extension:// URL or requesting unrelated tab permissions.
+        station_link = (
+            '<a id="google-master-toggle" class="settings-toggle station-story-launch" '
+            'href="hub.html#google-master" '
+            'aria-label="Google Master MCP private connection">'
+            '✧ GOOGLE MASTER / MCP</a>\\n'
+        )
+        check(station_html.count(tool_button) == 1,
+              "Station Google Master navigation insertion point changed")
+        station_html = station_html.replace(tool_button, station_link + '          ' + tool_button)
+        station_label = '10 TOOLS · CTRL+K'
+        check(station_html.count(station_label) == 1,
+              "Station tool count label changed")
+        station_html = station_html.replace(station_label, '11 TOOLS · CTRL+K', 1)
     label = '<p id="workspace-bridge-status"'
     check(station_html.count(label) == 1, "Core bridge status element changed")
     station_html = station_html.replace(label,
