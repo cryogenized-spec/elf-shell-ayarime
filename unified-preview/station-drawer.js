@@ -16,6 +16,21 @@
   });
   tabs.forEach((t,i)=>{t.addEventListener("click",()=>select(t.dataset.tab,false));t.addEventListener("keydown",e=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?tabs.length-1:(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;select(tabs[j].dataset.tab);});});
   $("google-master-toggle")?.addEventListener("click",e=>{e.preventDefault();show("mcp");});
+  // Mirror the existing persisted AI switch; a single underlying setting
+  // remains authoritative, regardless of whether the old menu is open.
+  const aiToggle=$("ai-module-toggle"),quickAi=$("sd-ai-toggle");
+  function syncAi(){
+    if(!aiToggle||!quickAi)return;
+    const active=aiToggle.getAttribute("aria-pressed")==="true";
+    quickAi.textContent=active?"✧ DISABLE AYARIME AI":"✧ ENABLE AYARIME AI";
+    quickAi.setAttribute("aria-pressed",String(active));
+    quickAi.disabled=aiToggle.disabled;
+  }
+  if(aiToggle&&quickAi){
+    quickAi.addEventListener("click",()=>{aiToggle.click();});
+    new MutationObserver(syncAi).observe(aiToggle,{attributes:true,attributeFilter:["disabled","aria-pressed"]});
+    syncAi();
+  }
   $("sd-workspace")?.addEventListener("click",()=>{close();void window.AyarimeWorkspaceBridge?.openWorkspace();});
   $("sd-chat")?.addEventListener("click",async()=>{try{if(!browser.sidebarAction?.open)throw Error("unsupported");await browser.sidebarAction.open();}catch{$("sd-chat-status").textContent="Use Firefox's sidebar selector to open Ayarime."; }});
   [["sd-settings","settings-toggle"],["sd-access","permissions-toggle"],["sd-sessions","sessions-toggle"],["sd-rss","feeds-toggle"]].forEach(([a,b])=>$(a)?.addEventListener("click",()=>{close();$(b)?.click();}));
