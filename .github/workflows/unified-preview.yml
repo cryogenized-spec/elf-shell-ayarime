@@ -13,26 +13,19 @@ jobs:
     steps:
       - name: Checkout core Ayarime PR
         uses: actions/checkout@v4
-      - name: Checkout pinned Workspace AI source
-        uses: actions/checkout@v4
-        with:
-          repository: cryogenized-spec/elf-shell-workspace-ai
-          ref: 885157e3d7bfeba3d1a344068448c1f4782d3be0
-          path: workspace-ai
-          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Validate both independent source suites and AI opt-in failure states
+      - name: Validate integrated core and assistant suites and AI opt-in failure states
         run: |
           npm test
           node --test tests/unified_module.test.cjs
-          (cd workspace-ai && npm test)
+          (cd assistant && npm test)
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Assemble a separate unsigned developer-only XPI
-        run: python3 scripts/build_unified_preview.py --companion workspace-ai
+        run: python3 scripts/build_unified_preview.py
       - name: Package the pre-fusion core-only extension separately
         run: |
           python3 scripts/package.py
@@ -57,7 +50,7 @@ jobs:
       - name: Validate fixed Cloudflare remote MCP probe in synthetic Node tests
         run: node --test tests/google_master_tunnel.test.cjs
       - name: Build isolated unsigned Google Master MCP engineering XPI
-        run: python3 scripts/build_unified_preview.py --companion workspace-ai --enable-google-master
+        run: python3 scripts/build_unified_preview.py --enable-google-master
       - name: Check manually enabled Google Master OAuth and remote tools/list transport
         run: |
           node --check dist/unified-google-master-preview/workspace-ai-background.js
