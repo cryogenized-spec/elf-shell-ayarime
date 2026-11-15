@@ -31,6 +31,10 @@
     new MutationObserver(syncAi).observe(aiToggle,{attributes:true,attributeFilter:["disabled","aria-pressed"]});
     syncAi();
   }
+  $("sd-open-hub")?.addEventListener("click",()=>{
+    close();
+    void window.AyarimeWorkspaceBridge?.openAssistant();
+  });
   $("sd-workspace")?.addEventListener("click",()=>{close();void window.AyarimeWorkspaceBridge?.openWorkspace();});
   $("sd-chat")?.addEventListener("click",async()=>{try{if(!browser.sidebarAction?.open)throw Error("unsupported");await browser.sidebarAction.open();}catch{$("sd-chat-status").textContent="Use Firefox's sidebar selector to open Ayarime."; }});
   [["sd-settings","settings-toggle"],["sd-access","permissions-toggle"],["sd-sessions","sessions-toggle"],["sd-rss","feeds-toggle"]].forEach(([a,b])=>$(a)?.addEventListener("click",()=>{close();$(b)?.click();}));
