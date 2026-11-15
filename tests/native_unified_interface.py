@@ -253,7 +253,7 @@ try:
            "QA local-only reply" in driver.find_element(
                By.ID, "ai-conversation-list").text and
            not driver.find_element(By.ID, "ai-context-enable").is_selected())
-    driver.get(hub)
+    driver.get(hub+"#assistant")
     WebDriverWait(driver, 15).until(lambda d:
         "1 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
     verify("Hub loads the same Firefox-session exchange",
