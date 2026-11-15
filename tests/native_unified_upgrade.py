@@ -198,8 +198,8 @@ try:
     WebDriverWait(driver,15).until(lambda d:
         len(d.find_elements(By.ID,"ai-module-toggle"))==1 and
         d.find_element(By.ID,"ai-module-toggle").is_enabled())
-    check("upgraded dashboard contains optional AI toggle",
-          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
+    check("upgraded dashboard has ready-by-default AI without model credential",
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
     persisted=snapshot()
     assert_preserved(persisted,baseline,"same-ID upgrade preserved data")
     check("legacy note restored in unified Station UI",
@@ -258,7 +258,7 @@ try:
     WebDriverWait(driver,12).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").is_enabled())
     check("second upgrade still defaults AI to disabled",
-          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
     assert_preserved(snapshot(),after_import,"re-upgrade preserved data")
 
     results={"status":"PASS","checks":checks,
