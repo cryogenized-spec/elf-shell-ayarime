@@ -163,6 +163,12 @@ try:
 
     driver.get(hub + "#assistant")
     stable_page("Hub")
+    hub_tabs = driver.find_elements(By.CSS_SELECTOR, ".unified-hub-tabs [role=tab]")
+    verify("Full Workspace has five subordinate tabs",
+           [t.text for t in hub_tabs]==["Workspace","Assistant","Morning Coffee","Connections","Preferences"])
+    verify("Assistant deeplink foregrounds only the assistant tab",
+           driver.find_element(By.ID,"unified-hub-tab-assistant").get_attribute("aria-selected")=="true"
+           and driver.find_element(By.ID,"unified-hub-pane-overview").get_property("hidden"))
     WebDriverWait(driver, 10).until(
         lambda d: d.execute_script(
             "return document.activeElement?.id === 'ai-prompt'"))
@@ -230,6 +236,9 @@ try:
     verify("Sidebar keyboard composer receives a visible focus ring",
            run_js("""return getComputedStyle(
                document.querySelector('#ai-prompt')).outlineStyle === 'solid'"""))
+    verify("Sidebar provides explicit, reviewable website context and full Hub handoff",
+           len(driver.find_elements(By.ID,"ayarime-read-page"))==1
+           and len(driver.find_elements(By.ID,"ayarime-open-workspace"))==1)
     verify("Sidebar exposes one explicit submit and stop action",
            len(driver.find_elements(By.ID, "ai-send")) == 1
            and len(driver.find_elements(By.ID, "ai-cancel")) == 1)
