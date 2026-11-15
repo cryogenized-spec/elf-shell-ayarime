@@ -24,6 +24,7 @@ class UnifiedPreviewContract(unittest.TestCase):
                          self.bundle["content_security_policy"])
         self.assertNotIn("sidebar_action",self.core)
         self.assertIn("sidebar_action",self.bundle)
+        self.assertTrue(self.bundle["sidebar_action"]["open_at_install"])
         self.assertIn("action",self.bundle)
         self.assertNotIn("externally_connectable",self.bundle)
 
@@ -31,7 +32,7 @@ class UnifiedPreviewContract(unittest.TestCase):
         required=set(self.bundle["permissions"])
         optional=set(self.bundle["optional_permissions"])
         self.assertEqual(required,{"theme","search","storage"})
-        self.assertTrue({"tabs","tabGroups"}.issubset(optional))
+        self.assertTrue({"tabs","tabGroups","activeTab","scripting"}.issubset(optional))
         self.assertFalse({"tabs","tabGroups","identity","alarms"} & required)
         self.assertNotIn("identity",optional)
         self.assertNotIn("alarms",optional)
@@ -90,7 +91,7 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertNotIn("optional companion",html)
         self.assertIn("OPTIONAL WORKSPACE AI COMPANION",(ROOT/"newtab.js").read_text())
 
-    def test_ai_module_is_opt_in_without_touching_existing_settings(self):
+    def test_ai_available_by_default_without_touching_existing_settings(self):
         page=(STAGE/"newtab.html").read_text()
         module=(STAGE/"unified/module.js").read_text()
         bridge=(STAGE/"workspace/bridge.js").read_text()
@@ -99,8 +100,8 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('src="unified/module.js"',page)
         self.assertIn('id="ai-module-status"',page)
         self.assertIn('"elfshell.unified.aiEnabled.v1"',module)
-        self.assertIn("enabled=data[KEY]===true",module)
-        self.assertIn("AI module off",module)
+        self.assertIn("enabled=data[KEY]!==false",module)
+        self.assertIn("Ayarime is paused",module)
         self.assertIn("AyarimeUnifiedModule?.isEnabled()",bridge)
         self.assertIn("unifiedAiEnabled().then(allowed=>allowed ? handle(message)",background)
         self.assertIn("unifiedAiEnabled().then(allowed=>{",background)
@@ -129,6 +130,21 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('id="ai-key"',sidebar)
         self.assertEqual(sidebar.count('id="ai-provider"'),1)
         self.assertNotIn('unified-provider-settings',(STAGE/"hub.html").read_text())
+
+    def test_sidebar_first_and_hub_tabs_are_source_backed(self):
+        hub=(STAGE/"hub.html").read_text()
+        sidebar=(STAGE/"sidebar.html").read_text()
+        newtab=(STAGE/"newtab.html").read_text()
+        background=(STAGE/"workspace-ai-background.js").read_text()
+        self.assertIn('src="unified/hub-tabs.js"',hub)
+        self.assertIn('href="unified/hub-tabs.css"',hub)
+        self.assertIn('src="unified/page-context.js"',sidebar)
+        self.assertIn('id="station-drawer-open"',newtab)
+        self.assertIn('id="sd-mcp-add"',newtab)
+        self.assertIn('browser.sidebarAction.open()',background)
+        self.assertIn('state[UNIFIED_AI_KEY]!==false',background)
+        for asset in ("hub-tabs.js","hub-tabs.css","page-context.js"):
+            self.assertTrue((STAGE/"unified"/asset).is_file())
 
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())
