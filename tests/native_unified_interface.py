@@ -207,15 +207,23 @@ try:
 
     driver.get(sidebar)
     stable_page("Sidebar")
+    tabs = driver.find_elements(By.CSS_SELECTOR, ".ayarime-sidebar-tabs [role=tab]")
+    verify("Native sidebar has Chat / Model / Workspace / Google / More tabs",
+           [t.text for t in tabs] == ["Chat","Model","Workspace","Google","More"])
+    verify("Chat is the initial pane, other sections are not stacked",
+           driver.find_element(By.ID, "ayarime-sidebar-tab-chat").get_attribute("aria-selected") == "true"
+           and driver.find_element(By.ID, "ayarime-sidebar-pane-model").get_property("hidden"))
+    driver.find_element(By.ID, "ayarime-sidebar-tab-model").click()
     disclosure = driver.find_element(By.CSS_SELECTOR, ".unified-provider-settings")
-    verify("Sidebar collapses duplicate provider settings by default",
-           not disclosure.get_property("open"))
-    disclosure.find_element(By.CSS_SELECTOR, "summary").click()
-    verify("Sidebar can reveal and use shared provider settings on demand",
+    verify("Model tab shows the original provider/key settings without extra disclosure",
            disclosure.get_property("open")
            and driver.find_element(By.ID, "ai-provider").is_displayed()
            and driver.find_element(By.ID, "ai-key").is_displayed())
-    disclosure.find_element(By.CSS_SELECTOR, "summary").click()
+    driver.find_element(By.ID, "ayarime-sidebar-tab-google").click()
+    verify("Google tab separates authorization and daily briefing",
+           driver.find_element(By.CLASS_NAME, "coffee-panel").is_displayed()
+           and driver.find_element(By.CLASS_NAME, "companion-link").is_displayed())
+    driver.find_element(By.ID, "ayarime-sidebar-tab-chat").click()
     for width, height in [(390, 844), (320, 700)]:
         no_horizontal_overflow("sidebar", width, height)
     run_js("document.querySelector('#ai-prompt').focus()")

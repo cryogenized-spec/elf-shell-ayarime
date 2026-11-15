@@ -27,3 +27,11 @@ The **advanced alternative** is deploying the open-source Google Master Worker i
 5. Release only after code, privacy, Mozilla permissions, OAuth/CORS and user-consent review. The historical private engineering connection is not a public default.
 
 This architecture makes the source and deployment templates freely available without running any other user's traffic through the project's developer-owned service.
+
+## Three user experience levels (planned, November 2026)
+
+1. **Everyday users — direct Google sign-in (future):** the Firefox extension should connect directly to Google REST APIs using a properly configured and potentially verified application-owned OAuth client. The developer can publish the *client ID* without handling user Google access tokens on a shared backend. Keep tokens client-side, use PKCE and Firefox identity redirect checks, request minimum read-only scopes first, and obtain separate consent before writes. This path needs a security/privacy review and Google's OAuth verification where required. It is not yet implemented.
+2. **Official Google Workspace MCP — Developer Preview:** open the supplied Google Cloud project, API, OAuth consent, client and official documentation links. Google's MCP requires preview eligibility and an OAuth client flagged "Use this client for an AI-powered agent". A saved public client ID is not a working connection; clients must implement the correct redirect, consent and token lifecycle. Never request a Google client secret in the Firefox field. See https://developers.google.com/workspace/guides/configure-mcp-servers .
+3. **Advanced self-hosted Google Master:** users deploy their own Worker and own Google Cloud integration; all private Cloudflare secrets stay in their own Worker, not the XPI. Future UX could offer a guided installer with generated template configs and validation checks, but deployment still requires account ownership and consent. No shared developer Workers or quotas.
+
+This UI-only change does not implement OAuth, read/write tool execution, Google Developer Preview enrollment, or Cloudflare one-click deployment. No production Google accounts, Workers, or AMO signing are touched.

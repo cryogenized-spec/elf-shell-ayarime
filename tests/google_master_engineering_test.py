@@ -49,6 +49,21 @@ class PrivateMcpOptIn(unittest.TestCase):
                 if path.endswith((".js", ".json", ".html"))
             ))
 
+    def test_direct_credential_shortcuts_and_no_automatic_auth(self):
+        drawer=(STAGE / "newtab.html").read_text()
+        for url in ("https://console.cloud.google.com/projectcreate",
+                    "https://console.cloud.google.com/apis/library",
+                    "https://console.cloud.google.com/auth/clients",
+                    "https://dash.cloudflare.com/",
+                    "https://github.com/cryogenized-spec/Google-master-worker-MCP"):
+            self.assertIn(url, drawer)
+        self.assertIn('id="sd-google-client-id"', drawer)
+        self.assertIn('id="sd-save-client-id"', drawer)
+        self.assertIn("Use this client for an AI-powered agent", drawer)
+        sidebar=(STAGE / "sidebar.html").read_text()
+        self.assertIn('src="sidebar-tabs.js"', sidebar)
+        self.assertIn('href="sidebar-tabs.css"', sidebar)
+
     def test_station_is_always_visible_and_tabbed(self):
         station = (STAGE / "newtab.html").read_text()
         for needle in (

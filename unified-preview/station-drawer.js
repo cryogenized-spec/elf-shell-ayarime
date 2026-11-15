@@ -43,6 +43,29 @@
     return u.href.replace(/\/$/,"");
   }
   const KEY="elfshell.mcp.userProfile.v1",status=$("sd-mcp-status");
+  const CLIENT_KEY="elfshell.mcp.publicGoogleClient.v1";
+  const clientInput=$("sd-google-client-id");
+  $("sd-save-client-id")?.addEventListener("click",async()=>{
+    const value=clientInput.value.trim();
+    if(value && !/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i.test(value)){
+      status.textContent="Google client ID must end in .apps.googleusercontent.com. Nothing was stored.";
+      status.dataset.error="true";return;
+    }
+    try {
+      if(value) await browser.storage.local.set({[CLIENT_KEY]:value});
+      else await browser.storage.local.remove(CLIENT_KEY);
+      status.textContent=value ?
+        "Public Google client ID saved locally. No connection, consent or token was created." :
+        "Public Google client ID cleared. No Google connection was active.";
+      status.dataset.error="false";
+    } catch {
+      status.textContent="Could not update local Google client settings.";
+      status.dataset.error="true";
+    }
+  });
+  browser.storage.local.get(CLIENT_KEY).then(x=>{
+    if(clientInput && typeof x[CLIENT_KEY]==="string") clientInput.value=x[CLIENT_KEY];
+  }).catch(()=>{status.textContent="Could not read saved Google client settings.";});
   $("sd-save-endpoints")?.addEventListener("click",async()=>{
     try{const resource=validate($("sd-mcp-resource").value.trim(),true),issuer=validate($("sd-mcp-issuer").value.trim());if(new URL(issuer).pathname!=="/")throw Error("Issuer must be origin");await browser.storage.local.set({[KEY]:{resource,issuer}});await browser.storage.session.remove(["elfshell.master.oauthToken.v1","elfshell.master.oauthPending.v1"]);status.textContent="Your endpoints were saved locally. No connection was made. Read-only OAuth for arbitrary servers is not yet enabled.";status.dataset.error="false";}
     catch{status.textContent="Enter your own HTTPS resource ending in /mcp and OAuth issuer origin. Nothing was saved.";status.dataset.error="true";}

@@ -22,5 +22,9 @@
 #station-drawer .sd-note{background:#172a3c;border-left:2px solid #7ab6b7;padding:12px}
 #station-drawer a{color:#9fe5e3}
 #station-drawer .sd-status{font:12px/1.5 monospace;overflow-wrap:anywhere}
+#station-drawer .sd-guide-links{display:grid;gap:6px;margin:8px 0 16px}
+#station-drawer .sd-guide-links a{display:block;padding:10px 11px;border:1px solid #517989;border-radius:3px;text-decoration:none;background:#182d3e;font:12px/1.4 system-ui,sans-serif}
+#station-drawer .sd-guide-links a:hover,#station-drawer .sd-guide-links a:focus-visible{background:#264158;border-color:#b5d6d5}
+#station-drawer .sd-note strong{color:#eef6f9}
 #station-drawer button:focus-visible,#station-drawer a:focus-visible,#station-drawer input:focus-visible,#station-drawer select:focus-visible{outline:2px solid #ffb6ce;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){#station-drawer{animation:none}}
