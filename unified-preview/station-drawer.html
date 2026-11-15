@@ -1,4 +1,4 @@
-<button id="station-drawer-open" type="button" aria-controls="station-drawer" aria-expanded="false">✧ STATION / SETTINGS</button>
+<button id="station-drawer-open" type="button" aria-controls="station-drawer" aria-expanded="false" aria-label="Open Ayarime Station" title="ELF//SHELL · Station">✧<span class="sr-only">Open Station</span></button>
 <div id="station-scrim" hidden></div>
 <aside id="station-drawer" role="dialog" aria-modal="true" aria-label="ELF SHELL Station controls" hidden>
 <header><div><strong>ELF//SHELL</strong><small style="display:block;color:#aac2cb;font:11px monospace">AYARIME · STATION CONTROL</small></div><button class="sd-close" id="station-drawer-close" type="button">✕ CLOSE</button></header>
@@ -9,11 +9,17 @@
 <button type="button" role="tab" data-tab="settings" id="sd-tab-settings" aria-controls="sd-pane-settings" aria-selected="false">SETTINGS</button></nav>
 <section role="tabpanel" aria-labelledby="sd-tab-station" class="sd-pane" id="sd-pane-station"><h2>Your station</h2>
 <p>One workspace, one browser extension. Ayarime and connections live here.</p>
-<button class="sd-action" type="button" id="sd-workspace">✧ Restore my workspace tabs</button>
+<button class="sd-action" type="button" id="sd-workspace">✧ Open the full Workspace Hub</button>
+<div class="sd-action-grid">
+<button class="sd-action" type="button" id="sd-notes">▤ Quick notes</button>
+<button class="sd-action" type="button" id="sd-recents">↶ Closed tabs</button>
+<button class="sd-action" type="button" id="sd-housekeeping">⌁ Tab tools</button>
+<a class="sd-action" href="stories/archive.html" target="_blank" rel="noopener noreferrer">▣ Illustrated stories</a>
+</div>
 <p class="sd-note">Nothing in Station automatically reads Google data or sends it to an AI provider.</p></section>
 <section role="tabpanel" aria-labelledby="sd-tab-ayarime" class="sd-pane" id="sd-pane-ayarime" hidden><h2>Ayarime</h2>
-<p>Turn on your assistant here. Model/provider permissions remain a separate choice.</p>
-<button class="sd-action" type="button" id="sd-ai-toggle">✧ ENABLE AYARIME AI</button>
+<p>Ayarime is available as soon as the extension opens. Model requests still require a provider and appropriate consent.</p>
+<button class="sd-action" type="button" id="sd-ai-toggle">✧ Pause Ayarime AI</button>
 <button class="sd-action" type="button" id="sd-chat">✧ Open Ayarime in Firefox sidebar</button>
 <p id="sd-chat-status" role="status"></p></section>
 <section role="tabpanel" aria-labelledby="sd-tab-mcp" class="sd-pane" id="sd-pane-mcp" hidden><h2>MCP connections</h2>
@@ -39,6 +45,21 @@
 <label for="sd-google-url">Official Google MCP endpoint</label><input id="sd-google-url" readonly>
 <p><a href="https://developers.google.com/workspace/guides/configure-mcp-servers" target="_blank" rel="noopener noreferrer">Official Google Workspace MCP setup guide ↗</a></p>
 <p class="sd-note">Saving a client ID or viewing a suggested endpoint does not sign in or authorize any tools. A separate consented connection flow is required.</p></div>
+<section class="sd-connection-registry" aria-labelledby="sd-mcp-registry-label">
+<h3 id="sd-mcp-registry-label">Your MCP connection list</h3>
+<p class="sd-note">Add remote HTTPS MCP endpoints by name. Registration is local and does not connect or authorize tools. Unverified OAuth and tool discovery are clearly marked until implemented.</p>
+<form id="sd-mcp-add" class="sd-mcp-form">
+<label for="sd-mcp-name">Connection name</label><input id="sd-mcp-name" maxlength="70" required placeholder="My Notion MCP">
+<label for="sd-mcp-url">HTTPS server endpoint</label><input id="sd-mcp-url" type="url" required maxlength="400" spellcheck="false" autocomplete="off" placeholder="https://example.com/mcp">
+<label for="sd-mcp-auth">Authentication</label><select id="sd-mcp-auth">
+<option value="oauth">OAuth 2.0 · requires sign-in</option>
+<option value="none">No authentication · public server</option>
+</select>
+<button type="submit" class="sd-action">+ Add to my connections</button>
+</form>
+<div id="sd-mcp-list" class="sd-mcp-list" aria-live="polite"></div>
+<p id="sd-mcp-list-status" class="sd-status" role="status"></p>
+</section>
 <div id="sd-self" hidden><h3>Your own Google Master</h3>
 <p>Deploy the open-source Worker in your account. Your Google data and Cloudflare usage remain under your control.</p>
 <div class="sd-guide-links">
@@ -58,5 +79,6 @@
 <button class="sd-action" type="button" id="sd-access">◇ Browser permissions</button>
 <button class="sd-action" type="button" id="sd-sessions">▣ Saved workspaces</button>
 <button class="sd-action" type="button" id="sd-rss">⌁ RSS subscriptions</button>
-<p class="sd-note">Preferences are local and never grant Google access by themselves.</p></section>
+<p class="sd-note">Preferences are local and never grant Google access by themselves.</p>
+<label class="sd-option" for="sd-launcher-visible"><input id="sd-launcher-visible" type="checkbox" checked> Show the neon Station launcher on new tabs</label></section>
 </aside>
