@@ -43,6 +43,7 @@
 <label for="sd-google-service">Google service</label><select id="sd-google-service">
 <option value="gmail">Gmail</option><option value="drive">Drive</option><option value="docs">Docs</option><option value="sheets">Sheets</option><option value="calendar">Calendar</option></select>
 <label for="sd-google-url">Official Google MCP endpoint</label><input id="sd-google-url" readonly>
+<button class="sd-action" type="button" id="sd-use-google">Use this Google endpoint in my MCP list</button>
 <p><a href="https://developers.google.com/workspace/guides/configure-mcp-servers" target="_blank" rel="noopener noreferrer">Official Google Workspace MCP setup guide ↗</a></p>
 <p class="sd-note">Saving a client ID or viewing a suggested endpoint does not sign in or authorize any tools. A separate consented connection flow is required.</p></div>
 <section class="sd-connection-registry" aria-labelledby="sd-mcp-registry-label">
@@ -80,5 +81,5 @@
 <button class="sd-action" type="button" id="sd-sessions">▣ Saved workspaces</button>
 <button class="sd-action" type="button" id="sd-rss">⌁ RSS subscriptions</button>
 <p class="sd-note">Preferences are local and never grant Google access by themselves.</p>
-<label class="sd-option" for="sd-launcher-visible"><input id="sd-launcher-visible" type="checkbox" checked> Show the neon Station launcher on new tabs</label></section>
+<label class="sd-option" for="sd-launcher-visible"><input id="sd-launcher-visible" type="checkbox" checked> Show the neon Station launcher on new tabs</label><p class="sd-note">If hidden, reopen Station by pressing Alt+Shift+A on the new-tab page.</p></section>
 </aside>
