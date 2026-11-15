@@ -257,7 +257,7 @@ try:
     final_handle=open_station()
     WebDriverWait(driver,12).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").is_enabled())
-    check("second upgrade still defaults AI to disabled",
+    check("second upgrade still makes AI available without granting provider access",
           driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
     assert_preserved(snapshot(),after_import,"re-upgrade preserved data")
 
