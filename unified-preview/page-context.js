@@ -20,13 +20,12 @@
     status.textContent="Checking temporary current-tab access…";
     try {
       const required=["activeTab","scripting"];
-      const have=await browser.permissions.contains({permissions:required});
-      if(!have){
-        // This is a Firefox privilege request from a bundled extension page.
-        // Never request <all_urls> just to inspect one user-selected page.
-        const allowed=await browser.permissions.request({permissions:required});
-        if(!allowed)throw Error("Page access was not granted; no content was read.");
-      }
+      // Request *synchronously* inside the click handler. Firefox does not
+      // preserve its user-gesture grant across an earlier await.
+      // This grants no broad host access; users can deny at this point.
+      const permissionAttempt=browser.permissions.request({permissions:required});
+      if(!await permissionAttempt)
+        throw Error("Page access was not granted; no content was read.");
       const tabs=await browser.tabs.query({active:true,currentWindow:true});
       const current=tabs.find(t=>/^https?:\/\//.test(t.url||""));
       if(!current||!Number.isInteger(current.id))
