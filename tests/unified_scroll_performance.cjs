@@ -26,7 +26,7 @@ assert.match(hub, /\.conversation-list\{[^}]*overflow:auto/);
 assert.match(base, /\.ayarime-sidebar-pane\{[^}]*overflow-y:auto/);
 assert.match(base, /\.ayarime-sidebar-pane\[hidden\]\{display:none!important\}/);
 assert.match(station, /\.backdrop\{[^}]*ayarime-background\.webp/);
-assert.match(station, /\.settings-dialog\{[^}]*overflow/);
+assert.match(station, /\.settings-dialog\{max-height:90vh;overflow:auto/);
 assert.match(station, /@media \(max-height:740px\), \(max-width:760px\)/);
 assert.match(station, /\.frame,\.search,\.shortcut,\.station-menu summary,\.settings-dialog::backdrop\s*\{[\s\S]*?backdrop-filter:none/);
 assert.match(source, /<section id="ai-console"/);
