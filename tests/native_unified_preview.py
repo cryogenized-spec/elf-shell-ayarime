@@ -270,10 +270,14 @@ try:
       return browser.permissions.request===deny;
     """)
     check("QA can simulate a declined permission without touching browser grants",stubbed)
-    station=driver.find_element(By.ID,"station-menu")
-    if not station.get_property("open"):
-        station.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    driver.find_element(By.ID,"station-drawer-open").click()
+    WebDriverWait(driver,6).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
+    """))
+    driver.find_element(By.ID,"sd-tab-station").click()
+    driver.find_element(By.ID,"sd-open-hub").click()
     WebDriverWait(driver,10).until(lambda d:
         "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())
     check("Station shows a useful error after declined access",
@@ -289,12 +293,14 @@ try:
       return browser.permissions.request===allow;
     """)
     check("QA can simulate an optimistic page-local grant",simulated)
-    menu=driver.find_element(By.ID,"station-menu")
-    if not menu.get_property("open"):
-        menu.find_element(By.CSS_SELECTOR,"summary").click()
-    WebDriverWait(driver,5).until(lambda d:
-        d.find_element(By.ID,"ask-ayarime-toggle").is_displayed())
-    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    driver.find_element(By.ID,"station-drawer-open").click()
+    WebDriverWait(driver,6).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
+    """))
+    driver.find_element(By.ID,"sd-tab-station").click()
+    driver.find_element(By.ID,"sd-open-hub").click()
     WebDriverWait(driver,10).until(lambda d:
         "tab access must be granted" in
         d.find_element(By.ID,"workspace-bridge-status").text.lower())
