@@ -364,7 +364,8 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
             if rel == "sidebar.html":
                 check(html.count("</head>") == 1, "Sidebar head changed")
                 html = html.replace("</head>",
-                    '<script defer src="unified/page-context.js"></script></head>', 1)
+                    '<script defer src="unified/page-context.js"></script>'
+                    '<script defer src="unified/sidebar-handoff.js"></script></head>', 1)
                 # Settings are shared with the Hub; keep all existing inputs and
                 # handlers available but give the narrow sidebar a chat-first view.
                 start = '<form id="ai-settings-form" class="ai-form">'
@@ -430,7 +431,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
-    for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js"):
+    for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js", "sidebar-handoff.js"):
         inventory["unified/" + name] = (
             ROOT / "unified-preview" / name).read_bytes()
     inventory["unified/station-drawer.js"] = (
