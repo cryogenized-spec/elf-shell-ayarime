@@ -118,6 +118,11 @@ try:
         driver.find_element(By.ID,"station-drawer-open").click()
         WebDriverWait(driver,6).until(lambda d:
             d.find_element(By.ID,"station-drawer").is_displayed())
+        WebDriverWait(driver,6,poll_frequency=.05).until(lambda d:
+            d.execute_script("""
+              const r=document.getElementById('station-drawer').getBoundingClientRect();
+              return r.left>=-2 && r.right>100;
+            """))
         driver.find_element(By.ID,"sd-tab-ayarime").click()
         driver.find_element(By.ID,"sd-ai-toggle").click()
         driver.find_element(By.ID,"station-drawer-close").click()
