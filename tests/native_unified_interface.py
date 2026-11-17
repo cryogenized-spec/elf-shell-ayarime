@@ -220,15 +220,24 @@ try:
            driver.find_element(By.ID, "ayarime-sidebar-tab-chat").get_attribute("aria-selected") == "true"
            and driver.find_element(By.ID, "ayarime-sidebar-pane-model").get_property("hidden"))
     driver.find_element(By.ID, "ayarime-sidebar-tab-model").click()
-    disclosure = driver.find_element(By.CSS_SELECTOR, ".unified-provider-settings")
-    verify("Model tab shows the original provider/key settings without extra disclosure",
-           disclosure.get_property("open")
+    verify("Model tab has a real dropdown and editable custom ID without a second disclosure",
+           not driver.find_elements(By.CSS_SELECTOR, ".unified-provider-settings")
            and driver.find_element(By.ID, "ai-provider").is_displayed()
+           and driver.find_element(By.ID, "ai-model-picker").is_displayed()
+           and driver.find_element(By.ID, "ai-model").is_displayed()
            and driver.find_element(By.ID, "ai-key").is_displayed())
+    verify("OpenAI model choices are provider-specific",
+           driver.find_element(By.ID, "ai-model-picker").get_attribute("value")=="gpt-5.4-mini"
+           and len(driver.find_elements(By.CSS_SELECTOR, "#ai-model-picker option")) >= 4)
     driver.find_element(By.ID, "ayarime-sidebar-tab-google").click()
     verify("Google tab separates authorization and daily briefing",
            driver.find_element(By.CLASS_NAME, "coffee-panel").is_displayed()
-           and driver.find_element(By.CLASS_NAME, "companion-link").is_displayed())
+           and driver.find_element(By.CLASS_NAME, "companion-link").is_displayed()
+           and "Open Morning Coffee" in driver.find_element(By.ID,"coffee-run").text)
+    driver.find_element(By.ID,"ayarime-sidebar-tab-more").click()
+    verify("Ayarime controls are integrated into the existing native sidebar",
+           driver.find_element(By.ID,"unified-ai-pause").is_displayed()
+           and driver.find_element(By.ID,"unified-open-connections").is_displayed())
     driver.find_element(By.ID, "ayarime-sidebar-tab-chat").click()
     for width, height in [(390, 844), (320, 700)]:
         no_horizontal_overflow("sidebar", width, height)
