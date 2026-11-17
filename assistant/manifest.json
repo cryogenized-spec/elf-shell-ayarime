@@ -23,7 +23,6 @@
       "google/master-read-client.js",
       "google/master-oauth.js",
       "ai/providers.js",
-      "ai/openai-complimentary.js",
       "diagnostics/connection.js",
       "ai/session.js",
       "ai/transcript.js",
