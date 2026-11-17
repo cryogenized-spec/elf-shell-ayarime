@@ -40,6 +40,17 @@ A hybrid version could be possible, but should not be adopted by default.
 - Did the machines vanish, survive in dispersed form, or become part of planetary infrastructure?
 - What precisely survived in the underworld, aboveground settlements and elevated biome?
 
+## Emancipation, Mars and the inferred Aberrant factor
+
+- What is the divine seed behind synthetic intelligence: literal metaphysics, inspired design, or a belief that characters dispute?
+- What legal and economic path allowed machines to win emancipation despite sweeping opposition?
+- How was the final Turing test carried out, and why did passing it allow a few machines to avoid persecution?
+- How were human sympathisers organised, and how did their Earth-based transhumanism relate to Mars's earlier technocratic movement?
+- What was the original purpose of the Martian expedition and what were its connections to Earth?
+- Which predictions implied an unknown **Aberrant factor**, and how was an unknown numerical anomaly eventually linked to a concealed alien population?
+- Which appearance best serves the disguised aliens: pale with red mouth/teeth and psychic abilities, reptilian/draconic, or slender bipedal?
+- Why were other alien groups hunting or prosecuting the concealed beings?
+
 ## The machine succession and ancient humanity
 
 - Why was the process of arming and stockpiling itself more dangerous than the anticipated confrontation?
