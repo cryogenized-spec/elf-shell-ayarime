@@ -34,7 +34,11 @@
   <form id="ai-settings-form" class="ai-form">
     <label for="ai-provider">Provider</label>
     <select id="ai-provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic / Claude</option><option value="gemini">Google Gemini</option></select>
-    <label for="ai-model">Model ID</label>
+    <label for="ai-model-picker">Choose model</label>
+    <select id="ai-model-picker" aria-label="Select a model for the chosen provider">
+      <option value="">Choose or enter a custom model…</option>
+    </select>
+    <label for="ai-model">Model ID · editable</label>
     <input id="ai-model" type="text" maxlength="90" spellcheck="false" required placeholder="Model ID" />
     <datalist id="openai-model-presets">
       <option value="gpt-6-luna">GPT-6 Luna · efficient</option>
