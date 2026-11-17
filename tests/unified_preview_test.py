@@ -124,8 +124,8 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertNotIn("unified/ui-polish.css",(ROOT/"newtab.html").read_text())
         self.assertNotIn("unified/ui-polish.css",(ROOT/"manifest.json").read_text())
         sidebar=(STAGE/"sidebar.html").read_text()
-        self.assertEqual(sidebar.count('<details class="unified-provider-settings">'),1)
-        self.assertIn('PROVIDER &amp; API KEY SETTINGS',sidebar)
+        self.assertNotIn('unified-provider-settings',sidebar)
+        self.assertIn('id="ai-model-picker"',sidebar)
         self.assertIn('id="ai-settings-form"',sidebar)
         self.assertIn('id="ai-key"',sidebar)
         self.assertEqual(sidebar.count('id="ai-provider"'),1)
@@ -140,12 +140,22 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('href="unified/hub-tabs.css"',hub)
         self.assertIn('src="unified/page-context.js"',sidebar)
         self.assertIn('src="unified/sidebar-handoff.js"',sidebar)
-        self.assertIn('id="station-drawer-open"',newtab)
-        self.assertIn('id="sd-mcp-add"',newtab)
+        self.assertIn('id="ayarime-sidebar-launcher"',newtab)
+        self.assertIn('id="ayarime-workspace-launcher"',newtab)
+        self.assertNotIn('id="station-drawer"',newtab)
+        self.assertNotIn('station-drawer.js',newtab)
+        self.assertIn('id="ai-model-picker"',sidebar)
+        self.assertIn('id="ai-model-picker"',hub)
+        self.assertIn('src="unified/workspace-settings.js"',hub)
+        self.assertIn('src="unified/coffee-readiness.js"',hub)
         self.assertIn('browser.sidebarAction.open()',background)
         self.assertIn('state[UNIFIED_AI_KEY]!==false',background)
-        for asset in ("hub-tabs.js","hub-tabs.css","page-context.js","sidebar-handoff.js"):
+        for asset in ("hub-tabs.js","hub-tabs.css","page-context.js",
+                      "sidebar-handoff.js","workspace-settings.js",
+                      "workspace-settings.css","coffee-readiness.js",
+                      "station-launcher.js","station-launcher.css"):
             self.assertTrue((STAGE/"unified"/asset).is_file())
+        self.assertFalse((STAGE/"unified/station-drawer.js").exists())
 
     def test_complete_assets_are_bundled_and_exact(self):
         self.assertTrue((STAGE/"icons/ayarime-rose-outline.svg").is_file())
