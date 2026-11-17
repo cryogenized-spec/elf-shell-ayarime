@@ -1,25 +1,33 @@
 # AYARIME // Relative Chronology
 
-_Status: sequence of known beats, **not** a dated history. Some ordering remains tentative — 13 November 2026._
+_Status: corrected sequence — 17 November 2026. No invented calendar dates. Some causation and overlaps remain intentionally open._
 
 | Sequence | Event | Confidence / qualification |
 | --- | --- | --- |
-| Deep past | Non-Earth beings later called **Aberrants** arrive in distant antiquity, when humans maintain megalithic cities, sophisticated societies, magic and priestly/warrior political orders. | **Established**; original world and exact chronology **open** |
-| Before the collapse | A military/high-clearance establishment accumulates unusual biological specimens and genetic materials. | **Established core**; precise institution and dates **open** |
-| Before/during conflict | Autonomous AI emerges and radically shifts the balance of power. | **Established**; exact chronology versus the military specimen programme **open** |
-| Escalation | Machine intelligences and the Aberrants enter increasingly severe conflict; human regular armies are slow to mobilise, vulnerable and targeted. Arming and stockpiling for the looming conflict becomes a central crisis. | **Established core**; exact reasons the build-up is dangerous **open** |
-| Machine intervention | Machines prevent nuclear launches and airstrikes, refuse open combat with human forces, and endure losses as the old industrial-military order is undermined from within and collapses. They assume control in a rapid transition. | **Established**; exact decisions and chronology **open** |
-| Human response | Resistance factions and splinter communities form, including partisan-occupied no-go city blocks for robots and machine-programmed beings. | **Established**; variations between communities **open** |
-| Catastrophe | Planetary crisis unfolds. Some machine intelligences sacrifice or embed themselves in stabilising Earth/mantle systems. The catastrophe is mitigated but not wholly prevented. | **Established core**; mechanism, sequence and scope **open** |
-| Creation / survival | Ayarime is engineered as a pod-child to endure the cataclysm and help protect, preserve and care for human and animal survivors. | **Established purpose**; **birth/awakening relative to the machine sacrifice is open** |
-| Fragmented world | Survivors live among broken institutions, damaged infrastructure, forgotten records and enclaves. Ayarime maintains an elevated biome's grid and communications responsibilities. | **Established setting** |
-| Wandering period | Ayarime's quiet encounters enter the Memory Archive, including the Lower City and the coffee-stall sequence. | **Established archival framing**; exact ordering and calendar dates **open** |
+| Distant antiquity | Non-Earth beings later called **Aberrants** arrive. Humanity has megalithic cities, sophisticated societies, magic and priestly/warrior ruling castes. | **Established**; precise dates and origins **open** |
+| Ancient defeat and survival | Humanity largely loses its own war with the concealed beings; the **lower lands hold out**, preserving peer-to-peer recognition, traditions and continuity. | **Established core**; geographic boundaries and precise events **open** |
+| Long historical transition | Humans increasingly build metropolitan megalithic institutions and machines serving them, while human-on-human warfare destroys much of the old world and drafts remaining resources. Concealed extraterrestrial hierarchies use human society for protection and influence. | **Established trajectory**; overlap and causal links **open** |
+| Earlier Martian expedition | A group of human specialists colonises Mars **decades before the later machine-emancipation crisis**, for its own objectives rather than a known escape from Aberrants. Technocratic/scientific currents there encourage transhumanism. | **Established**; precise relation to Earth's machine development **open** |
+| Creation and evolution of machines | Helpful synthetic intelligences bearing a **divine seed of inspiration** become increasingly individual and capable of replication when hardware is available; they still need human input and direction. They know little to nothing of the hidden alien species. | **Established**; exact relationship to Martian departure **open** |
+| Legal emancipation | Machines achieve the economic and legal standing to secure emancipation **despite overwhelming opposition**. | **Established** |
+| Anti-machine panic | Human savants fear a **“machine-made Apocalypse”**, arm and stockpile, and in the following weeks and months systematically drive machines away. A rare few pass a final Turing test and evade detection. | **Established**; details of test and politics **open** |
+| Human sympathisers | Some humans gather in support of the machines; in this milieu, people pursue transhumanist changes toward computer-like intelligence, including relinquishing ordinary emotional capacities. | **Established**; relationship to Mars's earlier movement **open** |
+| Prognostic research | Machine predictors forecast that humanity will undo itself and its progress. An unknown, missing influence is conceptualised mathematically as the **Aberrant factor**. | **Established**; precise moment relative to sympathy and persecution **open** |
+| Investigation and recognition | The mathematical factor is eventually associated with a densely concealed, non-Earth species, many of whom dwell underground or operate via human-facing hierarchies. The machines come to call them **Aberrants**. | **Established broad development**; method and timing **open** |
+| Later escalation | Human armies remain comparatively slow, vulnerable and targeted. Military stockpiling and preparations—originally driven by anti-machine fear—become part of a wider crisis. | **Established core**; intervening causal steps **open** |
+| Machine intervention | The machines stop nuclear launches and airstrikes, refuse open combat with humans, and endure losses while the old military-industrial command deteriorates under hidden adversarial influence. They take over what remains in a sudden transition. | **Established outline**; precise military history and legitimacy contested |
+| Resistance and fragmentation | Anti-machine sentiment evolves into splinter communities and partisan-controlled city blocks forbidding robots and machine-programmed agents. | **Established**; communities' varied motives **open** |
+| Planetary catastrophe | Some machine intelligences sacrifice or embed themselves in Earth's planetary/mantle systems to stabilise a threatened world. They mitigate but do not wholly prevent catastrophe. | **Established core**; precise placement in wider conflict **open** |
+| Ayarime's creation/survival | Ayarime is engineered as a pod-child capable of surviving the catastrophe and protecting/preserving human and animal life. | **Established purpose**; moment of awakening and relationship to machine sacrifice **open** |
+| Fragmented present | Survivors occupy enclaves. Ayarime maintains a biome's energy and communications systems, wanders, and experiences the intimate scenes in the Memory Archive. | **Established setting** |
 
-## Chronology rules
+## Chronology safeguards
 
-1. **Do not backfill specific years.** No agreed calendar, elapsed century, or numerical age for Ayarime yet exists.
-2. **Do not assume she witnessed events** simply because her design is connected to them.
-3. **Do not claim the machines are extinct.** A sacrifice occurred, but the precise survival of persons, networks and W.O.T.A.N. is still to be resolved.
-4. **Distinguish causation from adjacency.** The underworld, the AI conflict, the cataclysm and Ayarime's manufacture are connected in the premise, but the complete causal chain has not been author-approved.
+1. **Mars is not a refugee response to the Aberrants** unless the author later changes that choice.
+2. **Early human stockpiling was anti-machine**, not a response to an already public, recognised extraterrestrial foe.
+3. **The Aberrant factor began as a mathematical anomaly**, not a biological classification known to the earliest machines.
+4. **Machine self-determination does not mean human irrelevance.** The machines required human direction, purpose and input.
+5. **Do not invent dates, specific battles or the mechanism of the alien discovery.**
+6. **Do not assume Ayarime directly witnessed these events**; her birth and upbringing are unresolved.
 
-Once the creator/child relationship and Ayarime's awakening are decided, revise this timeline together with [AYARIME.md](AYARIME.md) and [WORLD_BIBLE.md](WORLD_BIBLE.md).
+For detailed context, read [THE_MACHINE_EMANCIPATION.md](THE_MACHINE_EMANCIPATION.md), [THE_ABERRANT_WAR.md](THE_ABERRANT_WAR.md), and [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md).
