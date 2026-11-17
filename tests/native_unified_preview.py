@@ -66,6 +66,36 @@ try:
     check("Ask Ayarime entry is present in the unified Station",
           len(driver.find_elements(By.ID,"ask-ayarime-toggle"))==1)
 
+    # The Station should be visible without digging through the old menu.
+    opener=driver.find_element(By.ID,"station-drawer-open")
+    check("Station control is visible directly on the new tab",
+          opener.is_displayed())
+    opener.click()
+    WebDriverWait(driver,5).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    check("Station drawer opens from the left without a new page",
+          len(driver.window_handles)==len(existing_handles)+1 and
+          driver.find_element(By.ID,"station-drawer").is_displayed())
+    # The drawer deliberately animates in from outside the viewport.
+    # Wait for the real tab to reach the screen before Selenium clicks it.
+    WebDriverWait(driver,5,poll_frequency=.05).until(
+        lambda d:d.execute_script("""
+          const r=document.getElementById('station-drawer').getBoundingClientRect();
+          return r.left>=-2 && r.right>100;
+        """))
+    driver.find_element(By.ID,"sd-tab-mcp").click()
+    check("MCP tab recommends official Google endpoints by default",
+          driver.find_element(By.ID,"sd-provider").get_attribute("value")=="official" and
+          "gmailmcp.googleapis.com" in
+          driver.find_element(By.ID,"sd-google-url").get_attribute("value"))
+    driver.find_element(By.ID,"sd-tab-ayarime").click()
+    check("AI controls are directly accessible from the drawer",
+          driver.find_element(By.ID,"sd-ai-toggle").is_displayed())
+    driver.find_element(By.ID,"station-drawer-close").click()
+    check("Station drawer closes and preserves the dashboard",
+          not driver.find_element(By.ID,"station-drawer").is_displayed() and
+          driver.title=="ELF//SHELL — Ayarime")
+
     reply=message({"type":"UNIFIED_HELLO",
                    "kind":"elfshell.workspace.bridge","version":1})
     state_probe=message({"type":"GET_STATE"})
@@ -84,15 +114,32 @@ try:
     check("internal bridge rejects inference commands",
           malformed.get("ok") is False)
 
+    def click_ai_toggle():
+        driver.find_element(By.ID,"station-drawer-open").click()
+        WebDriverWait(driver,6).until(lambda d:
+            d.find_element(By.ID,"station-drawer").is_displayed())
+        WebDriverWait(driver,6,poll_frequency=.05).until(lambda d:
+            d.execute_script("""
+              const r=document.getElementById('station-drawer').getBoundingClientRect();
+              return r.left>=-2 && r.right>100;
+            """))
+        driver.find_element(By.ID,"sd-tab-ayarime").click()
+        driver.find_element(By.ID,"sd-ai-toggle").click()
+        driver.find_element(By.ID,"station-drawer-close").click()
+
     WebDriverWait(driver,8).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").is_enabled())
-    check("new unified installation leaves AI module disabled by default",
-          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false" and
-          "AI module off" in driver.find_element(By.ID,"ai-module-status").text)
+    check("new unified installation has assistant ready but grants no provider access",
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true" and
+          "Ayarime is ready" in driver.find_element(By.ID,"ai-module-status").text)
+    # A user can immediately pause and the background must enforce that choice.
+    click_ai_toggle()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
     blocked_model=message({"type":"AI_STATUS"})
     check("disabled AI module blocks direct provider status requests",
           isinstance(blocked_model,dict) and blocked_model.get("ok") is False and
-          "enable ayarime ai" in blocked_model.get("error","").lower())
+          "ayarime is paused" in blocked_model.get("error","").lower())
     blocked_stream=driver.execute_async_script("""
       const done=arguments[arguments.length-1];
       const port=browser.runtime.connect({name:"elfshell.openai.trace.v1"});
@@ -113,7 +160,22 @@ try:
     check("disabled AI module rejects streaming before any provider request",
           isinstance(blocked_stream,dict) and
           blocked_stream.get("status")=="failed" and
-          "enable ayarime ai" in blocked_stream.get("message","").lower())
+          "ayarime is paused" in blocked_stream.get("message","").lower())
+
+    # Stage 6.1 is intentionally companion-only: even a same-extension
+    # script cannot use an unreviewed Master OAuth route from this RC.
+    # These are real Firefox background messages, not static string checks.
+    blocked_master=[message({"type":kind}) for kind in (
+        "MASTER_STATUS","MASTER_CONNECT","MASTER_PROBE","MASTER_DISCONNECT")]
+    check("unified v0.5.6 blocks every experimental Google Master OAuth route",
+          all(isinstance(reply,dict) and reply.get("ok") is False and
+              "disabled" in reply.get("error","").lower()
+              for reply in blocked_master))
+    master_login=driver.execute_script("""
+      const hub=document.querySelector(".master-panel");
+      return hub===null;
+    """)
+    check("core new-tab does not expose a Master OAuth login",master_login is True)
 
     # Seed representative existing ELF//SHELL per-field settings, plus an
     # unrelated local key. The AI toggle must not overwrite any of them.
@@ -131,8 +193,7 @@ try:
     """)
     check("existing ELF//SHELL fields can be staged without changing AI state",
           stored.get("elfshell-workspace-v3:field:note")=="Existing local archive note")
-    driver.find_element(By.CSS_SELECTOR,"#station-menu summary").click()
-    driver.find_element(By.ID,"ai-module-toggle").click()
+    click_ai_toggle()
     WebDriverWait(driver,8).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
     check("explicit Station click enables AI independently of tab permissions",
@@ -158,10 +219,7 @@ try:
       }).then(()=>done(true),()=>done(false));
     """)
     check("synthetic BYOK key staged only in Firefox session storage",staged_key is True)
-    station=driver.find_element(By.ID,"station-menu")
-    if not station.get_property("open"):
-        station.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ai-module-toggle").click()
+    click_ai_toggle()
     WebDriverWait(driver,10).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
     cleared=driver.execute_async_script("""
@@ -170,10 +228,7 @@ try:
         .then(v=>done(!Object.hasOwn(v,"elfshell.byok.apiKey.v1")),()=>done(false));
     """)
     check("disabling Ayarime AI removes BYOK key without modifying core settings",cleared is True)
-    station=driver.find_element(By.ID,"station-menu")
-    if not station.get_property("open"):
-        station.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ai-module-toggle").click()
+    click_ai_toggle()
     WebDriverWait(driver,10).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
     check("re-enabling AI does not restore a cleared credential",
@@ -220,10 +275,14 @@ try:
       return browser.permissions.request===deny;
     """)
     check("QA can simulate a declined permission without touching browser grants",stubbed)
-    station=driver.find_element(By.ID,"station-menu")
-    if not station.get_property("open"):
-        station.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    driver.find_element(By.ID,"station-drawer-open").click()
+    WebDriverWait(driver,6).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
+    """))
+    driver.find_element(By.ID,"sd-tab-station").click()
+    driver.find_element(By.ID,"sd-open-hub").click()
     WebDriverWait(driver,10).until(lambda d:
         "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())
     check("Station shows a useful error after declined access",
@@ -239,12 +298,14 @@ try:
       return browser.permissions.request===allow;
     """)
     check("QA can simulate an optimistic page-local grant",simulated)
-    menu=driver.find_element(By.ID,"station-menu")
-    if not menu.get_property("open"):
-        menu.find_element(By.CSS_SELECTOR,"summary").click()
-    WebDriverWait(driver,5).until(lambda d:
-        d.find_element(By.ID,"ask-ayarime-toggle").is_displayed())
-    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    driver.find_element(By.ID,"station-drawer-open").click()
+    WebDriverWait(driver,6).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
+    """))
+    driver.find_element(By.ID,"sd-tab-station").click()
+    driver.find_element(By.ID,"sd-open-hub").click()
     WebDriverWait(driver,10).until(lambda d:
         "tab access must be granted" in
         d.find_element(By.ID,"workspace-bridge-status").text.lower())

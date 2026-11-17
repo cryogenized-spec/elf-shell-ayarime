@@ -13,26 +13,21 @@ jobs:
     steps:
       - name: Checkout core Ayarime PR
         uses: actions/checkout@v4
-      - name: Checkout pinned Workspace AI source
-        uses: actions/checkout@v4
-        with:
-          repository: cryogenized-spec/elf-shell-workspace-ai
-          ref: 3a586bcce19a6e66bf924521d54fefc732faffb3
-          path: workspace-ai
-          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Validate both independent source suites and AI opt-in failure states
+      - name: Validate integrated core and assistant suites and AI opt-in failure states
         run: |
           npm test
           node --test tests/unified_module.test.cjs
-          (cd workspace-ai && npm test)
+          (cd assistant && npm test)
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Assert one canonical Git checkout and assistant source inventory
+        run: python3 -m unittest discover -s tests -p 'monorepo_contract_test.py' -v
       - name: Assemble a separate unsigned developer-only XPI
-        run: python3 scripts/build_unified_preview.py --companion workspace-ai
+        run: python3 scripts/build_unified_preview.py
       - name: Package the pre-fusion core-only extension separately
         run: |
           python3 scripts/package.py
@@ -48,10 +43,22 @@ jobs:
           node --check dist/unified-preview/workspace/bridge.js
           node --check dist/unified-preview/ui.js
           node --check dist/unified-preview/ui-trace.js
+      - name: Enforce Stage 5/6 model cancellation and inert Google Master packaging
+        run: python3 -m unittest discover -s tests -p 'stage5_6_preview_test.py' -v
       - name: Validate permissions, identity, packaging and router isolation
         run: python3 -m unittest discover -s tests -p 'unified_preview_test.py' -v
       - name: Mozilla extension lint
         run: npx --yes web-ext@10.8.0 lint --source-dir dist/unified-preview --warnings-as-errors
+      - name: Validate fixed Cloudflare remote MCP probe in synthetic Node tests
+        run: node --test tests/google_master_tunnel.test.cjs
+      - name: Build isolated unsigned Google Master MCP engineering XPI
+        run: python3 scripts/build_unified_preview.py --enable-google-master
+      - name: Check manually enabled Google Master OAuth and remote tools/list transport
+        run: |
+          node --check dist/unified-google-master-preview/workspace-ai-background.js
+          node --check dist/unified-google-master-preview/unified/station-drawer.js
+          python3 -m unittest discover -s tests -p 'google_master_engineering_test.py' -v
+          npx --yes web-ext@10.8.0 lint --source-dir dist/unified-google-master-preview --warnings-as-errors
       - name: Install real Firefox
         id: firefox
         uses: browser-actions/setup-firefox@v1
@@ -113,6 +120,7 @@ jobs:
           name: ELF-SHELL-Ayarime-unified-UNSIGNED-preview
           path: |
             dist/ELF-SHELL-Ayarime-unified-UNSIGNED.xpi
+            dist/ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi
             dist/unified-firefox/
             dist/unified-interface/
             dist/native-approval/

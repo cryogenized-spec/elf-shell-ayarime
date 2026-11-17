@@ -1,5 +1,5 @@
 "use strict";
-/* Unsigned unified-preview AI opt-in. Standalone storage key: core workspace
+/* Unsigned unified-preview AI readiness with explicit OFF switch. Standalone storage key: core workspace
    v2/v3 fields and the backup/export format are never changed by this module. */
 (() => {
   const KEY="elfshell.unified.aiEnabled.v1";
@@ -11,24 +11,24 @@
     const toggle=button(),note=status(),launch=ask();
     if(toggle){
       toggle.setAttribute("aria-pressed",String(enabled));
-      toggle.textContent=enabled?"✧ DISABLE AYARIME AI":"✧ ENABLE AYARIME AI";
+      toggle.textContent=enabled?"✧ PAUSE AYARIME AI":"✧ RESUME AYARIME AI";
       toggle.disabled=!loaded;
     }
     if(note)note.textContent=saveError||(!loaded
       ?"Reading AI module preferences from Firefox local storage…"
       :enabled
-        ?"AI module enabled locally. Firefox tab access and provider consent remain separate."
-        :"AI module off. No model requests; your existing ELF//SHELL settings are unchanged.");
+        ?"Ayarime is ready. Model keys, page access and provider consent remain separate."
+        :"Ayarime is paused. No model requests; saved ELF//SHELL settings are unchanged.");
     if(launch){
       launch.setAttribute("aria-disabled",String(!enabled));
-      launch.title=enabled?"Focus the integrated Ayarime AI console":"Enable Ayarime AI first; no account access is granted";
+      launch.title=enabled?"Open the integrated Ayarime AI console":"Ayarime is paused; resume from Station settings";
     }
   }
   function current(){return loaded&&enabled;}
   const ready=(async()=>{
     try{
       const data=await browser.storage.local.get(KEY);
-      enabled=data[KEY]===true;  // missing/malformed preference -> disabled
+      enabled=data[KEY]!==false;  // available by default; explicit OFF remains respected
     }catch{enabled=false;}
     loaded=true;
     render();
@@ -65,7 +65,7 @@
   });
   browser.storage.onChanged?.addListener((changes,area)=>{
     if(area!=="local"||!Object.prototype.hasOwnProperty.call(changes,KEY))return;
-    enabled=changes[KEY].newValue===true;
+    enabled=changes[KEY].newValue!==false;
     saveError=null;
     loaded=true;
     render();

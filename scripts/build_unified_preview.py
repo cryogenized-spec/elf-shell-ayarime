@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build a separate, unsigned one-extension engineering preview.
+"""Build an unsigned one-extension preview from this ONE repository.
 
-This script never changes manifest.json, AMO package inventory, or installed add-ons.
-It assembles *two pinned, reviewed source trees* into dist/unified-preview/.
+The Ayarime assistant lives in assistant/. No second GitHub checkout,
+remote network, GitHub token or separate version pin is required.
+The existing public AMO manifest and installed add-ons are never modified.
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from package import sources as core_sources  # reviewed release inventory, not a recursive scan
 
-COMPANION_COMMIT = "3a586bcce19a6e66bf924521d54fefc732faffb3"
+COMPANION_COMMIT = "885157e3d7bfeba3d1a344068448c1f4782d3be0"
 KIND = "elfshell.workspace.bridge"
 BRIDGE_COMMAND = "elfshell:unified:bridge:v1"
 OUTPUT = ROOT / "dist" / "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi"
@@ -35,13 +36,17 @@ def check(condition: bool, message: str) -> None:
 
 
 def checked_companion(folder: Path) -> None:
-    check(folder.is_dir(), "Companion checkout missing")
-    head = subprocess.check_output(
-        ["git", "-C", str(folder), "rev-parse", "HEAD"],
-        text=True, stderr=subprocess.DEVNULL,
-    ).strip()
-    check(head == COMPANION_COMMIT,
-          "Companion checkout mismatch: use the reviewed exact commit (not a moving branch)")
+    # The original import is recorded for history, NOT frozen forever. Future
+    # feature edits change assistant/ directly in the same repository.
+    check(folder.resolve() == (ROOT / "assistant").resolve(),
+          "Use only the vendored assistant/ folder in this repository")
+    check(folder.is_dir(), "Integrated assistant/ source missing")
+    provenance = json.loads((folder / "SOURCE_LOCK.json").read_text(encoding="utf-8"))
+    check(provenance.get("source_repository") ==
+          "cryogenized-spec/elf-shell-workspace-ai" and
+          provenance.get("source_commit") == COMPANION_COMMIT and
+          provenance.get("import_path") == "assistant",
+          "Assistant import provenance has changed: review required")
 
 
 def companion_inventory(folder: Path) -> list[str]:
@@ -68,7 +73,7 @@ def companion_inventory(folder: Path) -> list[str]:
     return files
 
 
-def combine_manifest(core: dict, companion: dict) -> dict:
+def combine_manifest(core: dict, companion: dict, enable_google_master: bool = False) -> dict:
     check(core["manifest_version"] == companion["manifest_version"] == 3,
           "Unexpected WebExtension manifest version")
     check(core["browser_specific_settings"]["gecko"]["id"]
@@ -90,14 +95,20 @@ def combine_manifest(core: dict, companion: dict) -> dict:
     check(len(manifest["background"]["scripts"]) ==
           len(set(manifest["background"]["scripts"])),
           "Duplicate merged background script")
-    manifest["sidebar_action"] = companion["sidebar_action"]
+    manifest["sidebar_action"] = dict(companion["sidebar_action"])
+    # Firefox owns the sidebar's chrome. Opening at install is declarative;
+    # after that its toolbar action opens the same native sidebar on demand.
+    manifest["sidebar_action"]["open_at_install"] = True
     manifest["action"] = companion["action"]
     # The published core's required permissions remain exactly unchanged.
-    manifest["permissions"] = list(core["permissions"])
+    # The Firefox identity API is mandatory for launchWebAuthFlow. Add it ONLY
+    # in the explicitly selected engineering build, never in the default/AMO RC.
+    manifest["permissions"] = list(core["permissions"]) + (["identity"] if enable_google_master else [])
     # Mozilla does not support identity/alarms in optional_permissions.
     # Keep them out of the preview instead of escalating core required grants.
     manifest["optional_permissions"] = sorted(
-        set(core.get("optional_permissions", [])) | {"tabs", "tabGroups"})
+        set(core.get("optional_permissions", [])) |
+        {"tabs", "tabGroups", "activeTab", "scripting"})
     manifest["optional_host_permissions"] = sorted(
         set(core.get("optional_host_permissions", []))
         | set(companion.get("optional_host_permissions", [])))
@@ -117,7 +128,7 @@ def combine_manifest(core: dict, companion: dict) -> dict:
     return manifest
 
 
-def adapt_background(source: str) -> str:
+def adapt_background(source: str, enable_google_master: bool = False) -> str:
     """Isolate companion source and route a limited set of internal messages."""
     original = (
         'browser.runtime.onMessage.addListener((message,sender) => {\n'
@@ -177,19 +188,22 @@ def adapt_background(source: str) -> str:
         '!["type","kind","version"].includes(key)))\n'
         '      return Promise.resolve({ok:false,error:"Unsupported unified dashboard command"});\n'
         '  }\n'
-        '  if (message.type.startsWith("GOOGLE_") || '
+        '  if (message.type.startsWith("GOOGLE_") || message.type.startsWith("MASTER_") || '
         'message.type==="MORNING_COFFEE_PREPARE" || '
         'message.type.startsWith("UPDATE_"))\n'
         '    return Promise.resolve({ok:false,error:"Google OAuth and update checks are disabled '
         'in this unsigned unified preview."});\n'
         '  if (message.type==="UNIFIED_OPEN_ASSISTANT" || '
         '(message.type.startsWith("AI_") && '
-        '!["AI_CLEAR_SESSION_KEY","AI_CONVERSATION_CLEAR"].includes(message.type)))\n'
+        '!["AI_CLEAR_SESSION_KEY","AI_CONVERSATION_CLEAR","AI_CANCEL_REQUEST"].includes(message.type)))\n'
         '    return unifiedAiEnabled().then(allowed=>allowed ? handle(message) '
-        ': {ok:false,error:"Enable Ayarime AI in the Station before using the assistant"});\n'
+        ': {ok:false,error:"Ayarime is paused; resume in Station preferences"});\n'
         '  return handle(message);\n'
         '});'
     )
+    # Keep the default build byte-for-byte safe. Only the explicitly selected
+    # engineering package lifts the Master-only command block; desktop Google
+    # REST OAuth, update checks and all other unrelated routes remain blocked.
     source = source.replace(original, guarded)
     action = (
         '  serialise(launchWorkspace).catch(error => '
@@ -197,9 +211,8 @@ def adapt_background(source: str) -> str:
     )
     check(source.count(action) == 1, "Companion action listener changed")
     source = source.replace(action, (
-        '  browser.permissions.request({permissions:["tabs","tabGroups"]})\n'
-        '    .then(granted=>granted ? serialise(launchWorkspace) : undefined)\n'
-        '    .catch(()=>{});'
+        '  browser.sidebarAction.open()\n'
+        '    .catch(()=>console.warn("Ayarime sidebar could not open"));'
     ))
     external = (
         'browser.runtime.onMessageExternal.addListener((message, sender) =>\n'
@@ -213,7 +226,7 @@ def adapt_background(source: str) -> str:
         'const UNIFIED_STREAMS=new Set();\n'
         'async function unifiedAiEnabled(){\n'
         '  const state=await browser.storage.local.get(UNIFIED_AI_KEY);\n'
-        '  return state[UNIFIED_AI_KEY]===true;\n'
+        '  return state[UNIFIED_AI_KEY]!==false;\n'
         '}\n'
         'browser.storage.onChanged.addListener((changes,area)=>{\n'
         '  if(area!=="local" || !Object.hasOwn(changes,UNIFIED_AI_KEY) ||\n'
@@ -242,7 +255,7 @@ def adapt_background(source: str) -> str:
     source = source.replace(stream_marker, (
         '      unifiedAiEnabled().then(allowed=>{\n'
         '        if(!allowed){send({kind:"terminal",status:"failed",\n'
-        '          message:"Enable Ayarime AI in the Station before streaming"});return;}\n'
+        '          message:"Ayarime is paused; resume in Station preferences"});return;}\n'
         '        if(controller.signal.aborted)return;\n'
         + stream_marker
     ))
@@ -258,29 +271,59 @@ def adapt_ui(source: str) -> str:
     needle = '    const response=await request({type:"OPEN_WORKSPACE"});'
     check(source.count(needle) == 1,
           "Companion launch UI changed; explicit tab permissions need manual review")
-    return source.replace(needle, (
-        '    const granted=await browser.permissions.request('
+    source = source.replace(needle, (
+        '    const permissionRequest=browser.permissions.request('
         '{permissions:["tabs","tabGroups"]});\n'
-        '    if(!granted)throw Error("Workspace tab access was not granted");\n'
+        '    if(!await permissionRequest)throw Error("Workspace tab access was not granted");\n'
         + needle
     ))
+    coffee = 'if(coffeeButton)coffeeButton.addEventListener("click",async()=>{'
+    check(source.count(coffee) == 1, "Coffee handoff anchor changed")
+    source = source.replace(coffee, coffee + (
+        '\n  if(document.body.dataset.view==="sidebar"){\n'
+        '    // A click in the extension sidebar is a valid Firefox user gesture.\n'
+        '    try{browser.sidebarAction.close().catch(()=>{});}catch{}\n'
+        '    browser.tabs.create({url:browser.runtime.getURL("hub.html#coffee")})\n'
+        '      .catch(error=>coffeeStatus(error.message,true));\n'
+        '    return;\n'
+        '  }'
+    ))
+    return source
 
 
-def build(companion_dir: Path) -> None:
+def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     checked_companion(companion_dir)
     files = companion_inventory(companion_dir)
     core_manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     companion_manifest = json.loads((companion_dir / "manifest.json").read_text(encoding="utf-8"))
-    manifest = combine_manifest(core_manifest, companion_manifest)
-    if STAGING.exists():
-        shutil.rmtree(STAGING)
-    STAGING.mkdir(parents=True)
+    manifest = combine_manifest(core_manifest, companion_manifest, enable_google_master)
+    # Neither the default preview nor the opt-in engineering build may
+    # bundle the owner's pinned Cloudflare transport or its host grants.
+    private = {"google/master-read-client.js", "google/master-oauth.js"}
+    manifest["background"]["scripts"] = [
+        p for p in manifest["background"]["scripts"] if p not in private
+    ]
+    manifest["optional_host_permissions"] = [
+        p for p in manifest["optional_host_permissions"]
+        if "cryogenized.workers.dev" not in p
+    ]
+    # Never overwrite or mutate the separately reviewed default-off RC package.
+    staging = ROOT / "dist" / ("unified-google-master-preview" if enable_google_master else "unified-preview")
+    output = ROOT / "dist" / ("ELF-SHELL-Ayarime-Google-Master-UNSIGNED.xpi" if enable_google_master else "ELF-SHELL-Ayarime-unified-UNSIGNED.xpi")
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True)
     inventory: dict[str, bytes] = {}
     for source in core_sources():
         rel = source.relative_to(ROOT).as_posix()
         inventory[rel] = source.read_bytes()
     for rel in files:
         if rel in ("manifest.json", "background.js"):
+            continue
+        if rel in {
+            "google/master-read-client.js", "google/master-oauth.js",
+            "google/master-ui.js"
+        }:
             continue
         check(rel not in inventory, "Unreviewed runtime filename collision: " + rel)
         data = (companion_dir / rel).read_bytes()
@@ -294,11 +337,35 @@ def build(companion_dir: Path) -> None:
             check(html.count(container) == 1, "Companion page structure changed: " + rel)
             banner = ('<div class="frame" role="note" '
                       'style="padding:12px;margin-bottom:12px;border-color:#aa83ad">'
-                      'UNSIGNED UNIFIED PREVIEW — Google OAuth/account operations '
-                      'and automatic update checks are disabled until separately reviewed.'
-                      '</div>')
+                      + ('UNSIGNED GOOGLE MASTER ENGINEERING PREVIEW — the '
+                         'Google Master OAuth connect and capability probe are '
+                         'manual. No Google account contents are fetched at startup; '
+                         'direct Google REST OAuth and automatic update checks '
+                         'remain disabled.'
+                         if enable_google_master else
+                         'UNSIGNED UNIFIED PREVIEW — Google OAuth/account operations '
+                         'and automatic update checks are disabled until separately reviewed.')
+                      + '</div>')
             html = html.replace(container, container + "\n" + banner, 1)
+            if rel == "hub.html":
+                check(html.count("</head>") == 1, "Hub head changed")
+                html = html.replace("</head>",
+                    '<link rel="stylesheet" href="unified/hub-tabs.css">'
+                    '<script defer src="unified/hub-tabs.js"></script></head>', 1)
+                # Historical pinned Cloudflare panel is never active in the
+                # new public-facing user-owned engineering configuration.
+                master_script = '<script defer src="google/master-ui.js"></script>'
+                master_panel = '<section class="frame master-panel"'
+                check(html.count(master_script) == html.count(master_panel) == 1,
+                      "Private Master panel structure changed")
+                html = html.replace(master_script, "")
+                html = html.replace(master_panel,
+                    '<section class="frame master-panel" hidden aria-hidden="true"', 1)
             if rel == "sidebar.html":
+                check(html.count("</head>") == 1, "Sidebar head changed")
+                html = html.replace("</head>",
+                    '<script defer src="unified/page-context.js"></script>'
+                    '<script defer src="unified/sidebar-handoff.js"></script></head>', 1)
                 # Settings are shared with the Hub; keep all existing inputs and
                 # handlers available but give the narrow sidebar a chat-first view.
                 start = '<form id="ai-settings-form" class="ai-form">'
@@ -326,7 +393,10 @@ def build(companion_dir: Path) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
-        '<script defer src="unified/module.js"></script>\n' + script_tag)
+        '<link rel="stylesheet" href="unified/station-drawer.css">\n'
+        '<script defer src="unified/module.js"></script>\n'
+        '<script defer src="unified/station-drawer.js"></script>\n'
+        + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
     toggle_html = (
@@ -334,6 +404,24 @@ def build(companion_dir: Path) -> None:
         'aria-pressed="false" disabled>✧ ENABLE AYARIME AI</button>\n'
     )
     station_html = station_html.replace(tool_button, toggle_html + '          ' + tool_button)
+    if enable_google_master:
+        # Integrated Station navigation only in the opt-in engineering build;
+        # no new extension, no separate credential store and no auto-connection.
+        # Navigate within the SAME extension instead of requiring an opaque
+        # moz-extension:// URL or requesting unrelated tab permissions.
+        station_link = (
+            '<a id="google-master-toggle" class="settings-toggle station-story-launch" '
+            'type="button" '
+            'aria-label="Google Master MCP private connection">'
+            '✧ GOOGLE MASTER / MCP</button>\\n'
+        )
+        check(station_html.count(tool_button) == 1,
+              "Station Google Master navigation insertion point changed")
+        station_html = station_html.replace(tool_button, station_link + '          ' + tool_button)
+        station_label = '10 TOOLS · CTRL+K'
+        check(station_html.count(station_label) == 1,
+              "Station tool count label changed")
+        station_html = station_html.replace(station_label, '11 TOOLS · CTRL+K', 1)
     label = '<p id="workspace-bridge-status"'
     check(station_html.count(label) == 1, "Core bridge status element changed")
     station_html = station_html.replace(label,
@@ -343,6 +431,13 @@ def build(companion_dir: Path) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js", "sidebar-handoff.js"):
+        inventory["unified/" + name] = (
+            ROOT / "unified-preview" / name).read_bytes()
+    inventory["unified/station-drawer.js"] = (
+        ROOT / "unified-preview" / "station-drawer.js").read_bytes()
+    inventory["unified/station-drawer.css"] = (
+        ROOT / "unified-preview" / "station-drawer.css").read_bytes()
     # Inert by design: bundled for contract review and tests, NOT injected into
     # the page or background until OAuth scopes and host allowlists are accepted.
     inventory["unified/google-worker-contract.js"] = (
@@ -367,6 +462,9 @@ def build(companion_dir: Path) -> None:
         check(station_js.count(before) == 1,
               "Core Station command copy changed: " + before)
         station_js = station_js.replace(before, after)
+    drawer = (ROOT / "unified-preview" / "station-drawer.html").read_text(encoding="utf-8")
+    check(station_html.count("<body>") == 1, "ELF Station body markup changed")
+    station_html = station_html.replace("<body>", "<body>\n" + drawer, 1)
     inventory["newtab.html"] = station_html.encode("utf-8")
     inventory["newtab.js"] = station_js.encode("utf-8")
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
@@ -374,37 +472,39 @@ def build(companion_dir: Path) -> None:
     inventory["workspace/bridge.js"] = (
         ROOT / "unified-preview" / "bridge.js").read_bytes()
     inventory["workspace-ai-background.js"] = adapt_background(
-        (companion_dir / "background.js").read_text(encoding="utf-8")
+        (companion_dir / "background.js").read_text(encoding="utf-8"),
+        enable_google_master=enable_google_master
     ).encode("utf-8")
     for rel, data in sorted(inventory.items()):
-        destination = STAGING / rel
+        destination = staging / rel
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    with ZipFile(OUTPUT, "w", ZIP_DEFLATED, compresslevel=9) as archive:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with ZipFile(output, "w", ZIP_DEFLATED, compresslevel=9) as archive:
         for rel, data in sorted(inventory.items()):
             info = ZipInfo(rel, STAMP)
             info.compress_type = ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, data, compress_type=ZIP_DEFLATED, compresslevel=9)
-    with ZipFile(OUTPUT) as archive:
+    with ZipFile(output) as archive:
         check(set(archive.namelist()) == set(inventory), "Preview package inventory mismatch")
         check(all(archive.read(name) == data for name, data in inventory.items()),
               "Preview ZIP bytes differ from staged source")
         check(archive.testzip() is None, "Preview ZIP CRC mismatch")
-    print("UNSIGNED, development only:", OUTPUT)
+    print("UNSIGNED, development only:", output)
     print("Core identity:", manifest["browser_specific_settings"]["gecko"]["id"])
-    print("Companion pinned commit:", COMPANION_COMMIT)
+    print("Historical assistant import commit:", COMPANION_COMMIT)
     print("Runtime files:", len(inventory))
-    print("SHA256:", hashlib.sha256(OUTPUT.read_bytes()).hexdigest())
+    print("SHA256:", hashlib.sha256(output.read_bytes()).hexdigest())
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--companion", required=True, type=Path,
-                        help="Exact, separately checked-out Workspace AI source tree")
+    # Source-of-truth is always the local assistant/ directory.
+    parser.add_argument("--enable-google-master", action="store_true",
+                        help="Prepare separate unsigned Firefox build with explicit identity permission, manual Google Master OAuth and capability probe (NEVER an AMO build)")
     args = parser.parse_args()
     try:
-        build(args.companion.resolve())
+        build(ROOT / "assistant", enable_google_master=args.enable_google_master)
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         raise SystemExit("Unified preview build refused: " + str(error))
