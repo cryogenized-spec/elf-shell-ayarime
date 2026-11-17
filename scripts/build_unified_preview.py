@@ -95,7 +95,10 @@ def combine_manifest(core: dict, companion: dict, enable_google_master: bool = F
     check(len(manifest["background"]["scripts"]) ==
           len(set(manifest["background"]["scripts"])),
           "Duplicate merged background script")
-    manifest["sidebar_action"] = companion["sidebar_action"]
+    manifest["sidebar_action"] = dict(companion["sidebar_action"])
+    # Firefox owns the sidebar's chrome. Opening at install is declarative;
+    # after that its toolbar action opens the same native sidebar on demand.
+    manifest["sidebar_action"]["open_at_install"] = True
     manifest["action"] = companion["action"]
     # The published core's required permissions remain exactly unchanged.
     # The Firefox identity API is mandatory for launchWebAuthFlow. Add it ONLY
@@ -104,7 +107,8 @@ def combine_manifest(core: dict, companion: dict, enable_google_master: bool = F
     # Mozilla does not support identity/alarms in optional_permissions.
     # Keep them out of the preview instead of escalating core required grants.
     manifest["optional_permissions"] = sorted(
-        set(core.get("optional_permissions", [])) | {"tabs", "tabGroups"})
+        set(core.get("optional_permissions", [])) |
+        {"tabs", "tabGroups", "activeTab", "scripting"})
     manifest["optional_host_permissions"] = sorted(
         set(core.get("optional_host_permissions", []))
         | set(companion.get("optional_host_permissions", [])))
@@ -193,7 +197,7 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         '(message.type.startsWith("AI_") && '
         '!["AI_CLEAR_SESSION_KEY","AI_CONVERSATION_CLEAR","AI_CANCEL_REQUEST"].includes(message.type)))\n'
         '    return unifiedAiEnabled().then(allowed=>allowed ? handle(message) '
-        ': {ok:false,error:"Enable Ayarime AI in the Station before using the assistant"});\n'
+        ': {ok:false,error:"Ayarime is paused; resume in Station preferences"});\n'
         '  return handle(message);\n'
         '});'
     )
@@ -207,9 +211,8 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
     )
     check(source.count(action) == 1, "Companion action listener changed")
     source = source.replace(action, (
-        '  browser.permissions.request({permissions:["tabs","tabGroups"]})\n'
-        '    .then(granted=>granted ? serialise(launchWorkspace) : undefined)\n'
-        '    .catch(()=>{});'
+        '  browser.sidebarAction.open()\n'
+        '    .catch(()=>console.warn("Ayarime sidebar could not open"));'
     ))
     external = (
         'browser.runtime.onMessageExternal.addListener((message, sender) =>\n'
@@ -223,7 +226,7 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         'const UNIFIED_STREAMS=new Set();\n'
         'async function unifiedAiEnabled(){\n'
         '  const state=await browser.storage.local.get(UNIFIED_AI_KEY);\n'
-        '  return state[UNIFIED_AI_KEY]===true;\n'
+        '  return state[UNIFIED_AI_KEY]!==false;\n'
         '}\n'
         'browser.storage.onChanged.addListener((changes,area)=>{\n'
         '  if(area!=="local" || !Object.hasOwn(changes,UNIFIED_AI_KEY) ||\n'
@@ -252,7 +255,7 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
     source = source.replace(stream_marker, (
         '      unifiedAiEnabled().then(allowed=>{\n'
         '        if(!allowed){send({kind:"terminal",status:"failed",\n'
-        '          message:"Enable Ayarime AI in the Station before streaming"});return;}\n'
+        '          message:"Ayarime is paused; resume in Station preferences"});return;}\n'
         '        if(controller.signal.aborted)return;\n'
         + stream_marker
     ))
@@ -268,12 +271,24 @@ def adapt_ui(source: str) -> str:
     needle = '    const response=await request({type:"OPEN_WORKSPACE"});'
     check(source.count(needle) == 1,
           "Companion launch UI changed; explicit tab permissions need manual review")
-    return source.replace(needle, (
-        '    const granted=await browser.permissions.request('
+    source = source.replace(needle, (
+        '    const permissionRequest=browser.permissions.request('
         '{permissions:["tabs","tabGroups"]});\n'
-        '    if(!granted)throw Error("Workspace tab access was not granted");\n'
+        '    if(!await permissionRequest)throw Error("Workspace tab access was not granted");\n'
         + needle
     ))
+    coffee = 'if(coffeeButton)coffeeButton.addEventListener("click",async()=>{'
+    check(source.count(coffee) == 1, "Coffee handoff anchor changed")
+    source = source.replace(coffee, coffee + (
+        '\n  if(document.body.dataset.view==="sidebar"){\n'
+        '    // A click in the extension sidebar is a valid Firefox user gesture.\n'
+        '    try{browser.sidebarAction.close().catch(()=>{});}catch{}\n'
+        '    browser.tabs.create({url:browser.runtime.getURL("hub.html#coffee")})\n'
+        '      .catch(error=>coffeeStatus(error.message,true));\n'
+        '    return;\n'
+        '  }'
+    ))
+    return source
 
 
 def build(companion_dir: Path, enable_google_master: bool = False) -> None:
@@ -333,6 +348,10 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                       + '</div>')
             html = html.replace(container, container + "\n" + banner, 1)
             if rel == "hub.html":
+                check(html.count("</head>") == 1, "Hub head changed")
+                html = html.replace("</head>",
+                    '<link rel="stylesheet" href="unified/hub-tabs.css">'
+                    '<script defer src="unified/hub-tabs.js"></script></head>', 1)
                 # Historical pinned Cloudflare panel is never active in the
                 # new public-facing user-owned engineering configuration.
                 master_script = '<script defer src="google/master-ui.js"></script>'
@@ -343,6 +362,10 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                 html = html.replace(master_panel,
                     '<section class="frame master-panel" hidden aria-hidden="true"', 1)
             if rel == "sidebar.html":
+                check(html.count("</head>") == 1, "Sidebar head changed")
+                html = html.replace("</head>",
+                    '<script defer src="unified/page-context.js"></script>'
+                    '<script defer src="unified/sidebar-handoff.js"></script></head>', 1)
                 # Settings are shared with the Hub; keep all existing inputs and
                 # handlers available but give the narrow sidebar a chat-first view.
                 start = '<form id="ai-settings-form" class="ai-form">'
@@ -408,6 +431,9 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js", "sidebar-handoff.js"):
+        inventory["unified/" + name] = (
+            ROOT / "unified-preview" / name).read_bytes()
     inventory["unified/station-drawer.js"] = (
         ROOT / "unified-preview" / "station-drawer.js").read_bytes()
     inventory["unified/station-drawer.css"] = (

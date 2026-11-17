@@ -1,0 +1,13 @@
+/* Unified Workspace Hub: one bounded view per tab, no full-page settings wall. */
+.unified-hub-tabs{display:flex;flex-wrap:wrap;gap:7px;position:relative;z-index:2;margin:0 0 24px;padding:8px;background:#131e2fe8;border:1px solid #668c91;border-radius:8px}
+.unified-hub-tabs button{flex:1 1 125px;min-height:42px;padding:9px 12px;border:1px solid transparent;border-radius:5px;background:#182638;color:#c6d8dd;font:600 12px/1.3 system-ui,sans-serif;cursor:pointer}
+.unified-hub-tabs button[aria-selected="true"]{background:#354052;border-color:#b8e985;color:#f7ffea;box-shadow:inset 0 -2px 0 #c3ec80}
+.unified-hub-tabs button:hover,.unified-hub-tabs button:focus-visible{border-color:#a8f48c;outline-offset:2px}
+.unified-hub-pane{min-width:0;max-width:100%;min-height:300px}
+.unified-hub-pane[hidden]{display:none!important}
+.unified-hub-pane>.frame,.unified-hub-pane>.columns{margin-bottom:18px}
+.unified-hub-pane>.coffee-panel,.unified-hub-pane>#ai-console{margin-top:0}
+.unified-hub-pane .columns{grid-template-columns:repeat(2,minmax(0,1fr))}
+.unified-hub-pane .frame{backdrop-filter:none;-webkit-backdrop-filter:none;background:#151d2ff2}
+@media(max-width:850px){.unified-hub-pane .columns{grid-template-columns:1fr}}
+@media(max-width:600px){.unified-hub-tabs{gap:4px;padding:6px}.unified-hub-tabs button{flex:1 1 30%;font-size:11px;padding:9px 5px}}

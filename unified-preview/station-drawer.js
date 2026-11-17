@@ -31,7 +31,15 @@
     new MutationObserver(syncAi).observe(aiToggle,{attributes:true,attributeFilter:["disabled","aria-pressed"]});
     syncAi();
   }
-  $("sd-workspace")?.addEventListener("click",()=>{close();void window.AyarimeWorkspaceBridge?.openWorkspace();});
+  $("sd-open-hub")?.addEventListener("click",()=>{
+    try{browser.sidebarAction?.close?.().catch(()=>{});}catch{}
+    close();
+    void window.AyarimeWorkspaceBridge?.openAssistant();
+  });
+  $("sd-workspace")?.addEventListener("click",()=>{
+    try{browser.sidebarAction?.close?.().catch(()=>{});}catch{}
+    close();void window.AyarimeWorkspaceBridge?.openWorkspace();
+  });
   $("sd-chat")?.addEventListener("click",async()=>{try{if(!browser.sidebarAction?.open)throw Error("unsupported");await browser.sidebarAction.open();}catch{$("sd-chat-status").textContent="Use Firefox's sidebar selector to open Ayarime."; }});
   [["sd-settings","settings-toggle"],["sd-access","permissions-toggle"],["sd-sessions","sessions-toggle"],["sd-rss","feeds-toggle"]].forEach(([a,b])=>$(a)?.addEventListener("click",()=>{close();$(b)?.click();}));
   const sites=Object.freeze({gmail:"https://gmailmcp.googleapis.com/mcp/v1",drive:"https://drivemcp.googleapis.com/mcp/v1",docs:"https://docsmcp.googleapis.com/mcp/v1",sheets:"https://sheetsmcp.googleapis.com/mcp/v1",calendar:"https://calendarmcp.googleapis.com/mcp/v1"});
@@ -71,4 +79,143 @@
     catch{status.textContent="Enter your own HTTPS resource ending in /mcp and OAuth issuer origin. Nothing was saved.";status.dataset.error="true";}
   });
   browser.storage.local.get(KEY).then(x=>{const p=x[KEY];if(p){$("sd-mcp-resource").value=p.resource||"";$("sd-mcp-issuer").value=p.issuer||"";status.textContent="Your local connection configuration is saved. No remote service is active.";}}).catch(()=>{status.textContent="Unable to read local configuration.";});
+
+  // These first-party Station actions call the *existing* controls. The old
+  // two-column menu remains in the DOM for keyboard commands but is not shown.
+  [["sd-notes","notes-toggle"],["sd-recents","recents-toggle"],
+   ["sd-housekeeping","housekeeping-toggle"]].forEach(([a,b])=>{
+    $(a)?.addEventListener("click",()=>{close();$(b)?.click();});
+  });
+  // A real user gesture is required to close the Firefox sidebar. It is not
+  // forcibly closed from arbitrary web pages or extension startup timers.
+  const AI_KEY="elfshell.station.launcherVisible.v1";
+  const launcherCheck=$("sd-launcher-visible");
+  async function applyLauncher() {
+    try {
+      const data=await browser.storage.local.get(AI_KEY);
+      const visible=data[AI_KEY]!==false;
+      openButton.hidden=!visible;
+      if(launcherCheck)launcherCheck.checked=visible;
+    }catch{
+      openButton.hidden=false;
+      if(launcherCheck)launcherCheck.checked=true;
+    }
+  }
+  launcherCheck?.addEventListener("change",async()=>{
+    try {
+      await browser.storage.local.set({[AI_KEY]:launcherCheck.checked});
+      await applyLauncher();
+    }catch{
+      launcherCheck.checked=!launcherCheck.checked;
+      status.textContent="Could not save Station visibility.";
+    }
+  });
+  browser.storage.onChanged?.addListener((changes,area)=>{
+    if(area==="local"&&Object.hasOwn(changes,AI_KEY))void applyLauncher();
+  });
+  document.addEventListener("keydown",event=>{
+    if(event.altKey&&event.shiftKey&&event.key.toLowerCase()==="a"&&
+       !event.ctrlKey&&!event.metaKey){
+      event.preventDefault();
+      panel.hidden?show("station"):close();
+    }
+  });
+  void applyLauncher();
+
+  // Named MCP *registry* only: recording an HTTPS endpoint does NOT mean
+  // OAuth, the MCP initialize handshake or tools/list has completed.
+  const REGISTRY_KEY="elfshell.mcp.registry.v1",form=$("sd-mcp-add");
+  const list=$("sd-mcp-list"),message=$("sd-mcp-list-status");
+  let entries=[];
+  function registryUrl(input) {
+    const url=new URL(input);
+    const host=url.hostname.toLowerCase().replace(/\.$/,"");
+    const ipv4=/^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+    if(url.protocol!=="https:"||url.username||url.password||url.port||
+       url.search||url.hash||url.href.length>400||!host.includes(".")||
+       ipv4||host.includes(":")||host.endsWith(".local")||host.endsWith(".internal")||
+       host.endsWith(".localhost")||host.endsWith(".test")||host.endsWith(".invalid"))
+      throw Error("Use a public HTTPS MCP endpoint without embedded credentials, query tokens or local addresses.");
+    return url.toString();
+  }
+  function note(value){if(message)message.textContent=value;}
+  function renderRegistry() {
+    if(!list)return;
+    list.replaceChildren();
+    if(!entries.length){
+      const p=document.createElement("p");
+      p.className="sd-note";
+      p.textContent="No custom servers registered. Google's official endpoints are suggested above.";
+      list.append(p);return;
+    }
+    for(const item of entries){
+      const card=document.createElement("article");card.className="sd-mcp-entry";
+      const heading=document.createElement("strong");heading.textContent=item.name;
+      const url=document.createElement("small");url.textContent=item.url;
+      const statusLine=document.createElement("span");statusLine.className="sd-configured";
+      statusLine.textContent=item.auth==="oauth"
+        ?"Configured · OAuth needed · not connected"
+        :"Configured · no-auth transport pending · not connected";
+      const actions=document.createElement("div");actions.className="sd-connection-actions";
+      const inspect=document.createElement("button");
+      inspect.type="button";inspect.textContent="Inspect";inspect.dataset.registryInspect=item.id;
+      const refresh=document.createElement("button");
+      refresh.type="button";refresh.disabled=true;refresh.textContent="Refresh tools";
+      refresh.title="Available after the secure MCP transport, authorization and tool discovery are implemented.";
+      const remove=document.createElement("button");
+      remove.type="button";remove.textContent="Remove";remove.dataset.registryRemove=item.id;
+      actions.append(inspect,refresh,remove);
+      card.append(heading,url,statusLine,actions);list.append(card);
+    }
+  }
+  async function saveRegistry(){
+    await browser.storage.local.set({[REGISTRY_KEY]:entries});
+    renderRegistry();
+  }
+  browser.storage.local.get(REGISTRY_KEY).then(data=>{
+    const saved=data[REGISTRY_KEY];
+    entries=Array.isArray(saved)?saved.filter(x=>x&&typeof x.id==="string"&&
+      typeof x.name==="string"&&typeof x.url==="string"&&
+      ["oauth","none"].includes(x.auth)).slice(0,20):[];
+    renderRegistry();
+  }).catch(()=>note("Could not read saved MCP configurations."));
+  form?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const name=$("sd-mcp-name").value.trim();
+    const auth=$("sd-mcp-auth").value;
+    try {
+      const url=registryUrl($("sd-mcp-url").value.trim());
+      if(name.length<2||name.length>70||!["oauth","none"].includes(auth))
+        throw Error("Enter a name of 2–70 characters and a supported authentication choice.");
+      if(entries.length>=20)throw Error("The registry limit is 20 servers. Remove an old one first.");
+      if(entries.some(x=>x.url===url))throw Error("That endpoint is already registered.");
+      entries=[...entries,{id:crypto.randomUUID(),name,url,auth}];
+      await saveRegistry();
+      form.reset();
+      note(name+" saved locally. No credentials were requested and no connection was made.");
+    }catch(e){note(e.message||"Could not save server.");}
+  });
+  list?.addEventListener("click",async event=>{
+    const button=event.target.closest("button");
+    if(!button)return;
+    const id=button.dataset.registryRemove||button.dataset.registryInspect;
+    const item=entries.find(x=>x.id===id);
+    if(!item)return;
+    if(button.dataset.registryInspect){
+      note(item.name+" · "+item.auth.toUpperCase()+" · not connected. Tools have not been discovered. This is an endpoint configuration, not an authorised session.");
+      return;
+    }
+    if(button.dataset.registryRemove&&confirm("Remove "+item.name+" from your local MCP list?")){
+      const previous=entries;entries=entries.filter(x=>x.id!==id);
+      try {await saveRegistry();note(item.name+" removed. No external server was contacted.");}
+      catch{entries=previous;renderRegistry();note("Unable to remove configuration.");}
+    }
+  });
+  $("sd-use-google")?.addEventListener("click",()=>{
+    $("sd-mcp-name").value="Google "+product.selectedOptions[0].textContent;
+    $("sd-mcp-url").value=sites[product.value];
+    $("sd-mcp-auth").value="oauth";
+    $("sd-mcp-name").focus();
+    note("Google endpoint selected. Add it to your list; OAuth onboarding requires Developer Preview eligibility.");
+  });
 })();

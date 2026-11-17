@@ -381,3 +381,48 @@ footer{display:flex;justify-content:space-between;gap:18px;margin-top:35px;paddi
   .rose-tile{transform:none!important;opacity:1!important}
   .rose-spirit,.rose-spark{opacity:0!important}
 }
+
+
+/* Unified scroll performance (2026-11)
+   Large frosted, clipped panels force costly backdrop compositing in Firefox
+   whenever the Hub or its nested sidebar scrolls. A nearly opaque painted
+   surface preserves Ayarime's ink/plum appearance without sampling each
+   underlying frame. Keep this scoped to actual Hub/sidebar scrolling pages;
+   the Station's separately designed visual effects are not changed here. */
+body:is([data-view="hub"],[data-view="sidebar"]) .frame{
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  background:rgba(17,23,37,.95);
+}
+
+/* The fixed scanline texture is purely decorative. On a long Hub document it
+   adds a viewport-sized composited layer to every scroll. The static gradient
+   remains, so no content, function or background artwork is removed. */
+body[data-view="hub"] .backdrop{display:none}
+
+/* Let Firefox omit layout/paint of sections far outside the viewport.
+   contain-intrinsic-size reserves a stable approximate footprint while a
+   section has never been viewed; "auto" remembers its measured size afterward.
+   Sidebar uses real hidden tab-panels instead of this heuristic. */
+@supports (content-visibility:auto) {
+  body[data-view="hub"] .shell > .frame,
+  body[data-view="hub"] .shell > .columns > .frame{
+    content-visibility:auto;
+    contain-intrinsic-size:auto 480px;
+  }
+  body[data-view="hub"] .shell > .google-section{
+    contain-intrinsic-size:auto 1250px;
+  }
+  body[data-view="hub"] .shell > #ai-console{
+    contain-intrinsic-size:auto 1000px;
+  }
+  body[data-view="hub"] .shell > .profile-manager{
+    contain-intrinsic-size:auto 250px;
+  }
+}
+
+/* Avoid scroll chaining from the sidebar's independent tab panes into a
+   surrounding page, without intercepting or cancelling native wheel input. */
+body[data-view="sidebar"] .ayarime-sidebar-pane{
+  overscroll-behavior:contain;
+}
