@@ -27,7 +27,7 @@ The Hub and native Firefox sidebar can display recent completed exchanges and, *
 - Check Google Calendar/Tasks authorization and selected BYOK model metadata on demand, without provider generation or copying account records.
 - Explicitly request up to 20 recent Drive file metadata entries or eight Gmail inbox headers through independently selected, restricted Google OAuth scopes. No Gmail bodies, attachments or sending; no Google records are forwarded to an AI model.
 - Stream **OpenAI Responses** text and provider-issued reasoning summaries with an original, expandable action timeline, actual tool-event reporting, total/per-action timers and Stop cancellation. Hosted web search stays opt-in; other providers retain one-shot mode.
-- Select all 17 OpenAI offer-listed model IDs across the 250k and 2.5M daily groupings, with deprecated-model warnings, opt-in self-reported enrollment status and local, provider-reported UTC usage meters. These are not verified free balances.
+
 - Reuse open Google Workspace tabs (Gmail, Calendar, Drive, Docs, Sheets and Tasks) and create only missing tabs.
 - Group Workspace tabs in Firefox and focus the master Hub.
 - Create, rename and switch between up to 10 local Workspace profiles. Each has its own saved Google links and named tab group. Switching/deleting a profile never closes your tabs.
@@ -97,7 +97,6 @@ Read [OAuth setup, scope and privacy constraints](docs/google-oauth.md) before c
 
 **OpenAI streaming (v0.12):** [OpenAI live trace architecture, limits and verification](docs/openai-streaming.md). Only provider summaries—not private CoT—are shown; tool rows require real provider events. No live paid API call has been completed for acceptance.
 
-**OpenAI complimentary model catalog (v0.13):** [17 model options, conditional enrollment and two separate UTC usage counters](docs/openai-complimentary-offer.md). The extension neither controls sharing settings nor guarantees free requests.
 
 **Google OAuth recovery (v0.13.2):** the Account Access panel preserves Google/Firefox sign-in errors instead of overwriting them; it distinguishes callback capture from token exchange and offers a safe Reset stuck sign-in button. See [OAuth troubleshooting](docs/google-oauth.md). At v0.13.2 that connection was still unverified; Calendar/Tasks were subsequently confirmed by user field testing.
 
