@@ -7,3 +7,8 @@
 @media(max-width:700px){#ayarime-sidebar-launcher{left:10px;bottom:65px;width:48px;height:48px;font-size:24px}}
 @media(max-height:540px){#ayarime-sidebar-launcher{left:12px;bottom:12px;width:44px;height:44px;font-size:22px}#ayarime-sidebar-launcher-status{bottom:62px}}
 @media(prefers-reduced-motion:reduce){#ayarime-sidebar-launcher{transition:none}}
+
+#ayarime-workspace-launcher{position:fixed;z-index:800;left:clamp(82px,calc(2vw + 70px),98px);bottom:clamp(88px,calc(11vh + 12px),130px);height:34px;padding:0 13px;border:1px solid #a8ddad;border-radius:25px;background:#142a30;color:#d5f6e0;font:600 12px system-ui,sans-serif;cursor:pointer}
+#ayarime-workspace-launcher:hover,#ayarime-workspace-launcher:focus-visible{outline:2px solid #c3f981;outline-offset:2px}
+@media(max-width:700px){#ayarime-workspace-launcher{left:66px;bottom:73px}}
+@media(max-height:540px){#ayarime-workspace-launcher{left:67px;bottom:17px}}
