@@ -99,7 +99,7 @@ function createHarness(seed={},options={}) {
   });
   for (const file of ["shared/workspace.js","shared/persona.js",
     "google/oauth.js","google/read.js","google/files.js","google/catalog.js","briefing/engine.js","google/session.js","google/master-read-client.js","google/master-oauth.js",
-    "ai/providers.js","ai/openai-complimentary.js","diagnostics/connection.js","ai/session.js","ai/openai-stream.js","updater/release.js","updater/checker.js","background.js"]) {
+    "ai/providers.js","diagnostics/connection.js","ai/session.js","ai/openai-stream.js","updater/release.js","updater/checker.js","background.js"]) {
     vm.runInContext(fs.readFileSync(path.resolve(__dirname,"..",file),"utf8"),context,{filename:file});
   }
   return {
@@ -849,26 +849,21 @@ test("OpenAI Port emits real summary and answer events, without secrets",async()
   assert.equal(h.fetchCalls.length,1);
 });
 
-test("offer reads never send network requests and enrollment remains self-reported",async()=>{
+test("retired promotional commands cannot re-enable enrollment tracking",async()=>{
   const h=createHarness();
-  const s=await h.dispatch({type:"AI_OFFER_STATUS"});
-  assert.equal(s.ok,true);
-  assert.equal(s.offer.verifiedByOpenAI,false);
-  assert.equal(s.offer.enrollmentSelfReported,false);
-  assert.equal(s.offer.limits.standard,250000);
-  assert.equal(s.offer.limits.small,2500000);
+  for(const message of [{type:"AI_OFFER_STATUS"},
+    {type:"AI_OFFER_SET_ENROLLMENT",enrolled:true}]){
+    const reply=await h.dispatch(message);
+    assert.equal(reply.ok,false);
+  }
   assert.equal(h.fetchCalls.length,0);
-  const enabled=await h.dispatch({type:"AI_OFFER_SET_ENROLLMENT",enrolled:true});
-  assert.equal(enabled.ok,true);
-  assert.equal(enabled.offer.enrollmentSelfReported,true);
-  assert.equal(enabled.offer.verifiedByOpenAI,false);
-  assert(!JSON.stringify(h.settings).includes("sk-TEST"));
+  assert.equal(h.settings["elfshell.openai.offer.v1"],undefined);
   const external=await h.external({
     kind:"elfshell.workspace.bridge",version:1,command:"AI_OFFER_STATUS"
   });
   assert.equal(external.ok,false);
 });
-test("OpenAI free-offer tracker accounts for completed response usage without logging content",async()=>{
+test("OpenAI streams preserve provider usage but do not track promotional balances",async()=>{
   const h=createHarness({}, {aiPermission:true,mockFetch:async(url,options)=>{
     assert.equal(url,"https://api.openai.com/v1/responses");
     const content=[
@@ -886,11 +881,10 @@ test("OpenAI free-offer tracker accounts for completed response usage without lo
   for(let i=0;i<80&&!port.sent.some(e=>e.kind==="terminal");i++)
     await new Promise(resolve=>setTimeout(resolve,5));
   assert.equal(port.sent.at(-1).status,"completed",JSON.stringify(port.sent));
-  assert.equal(port.sent.at(-1).localUsage.observedTokens.small,42);
-  const s=await h.dispatch({type:"AI_OFFER_STATUS"});
-  assert.equal(s.offer.observedTokens.small,42);
-  assert.equal(s.offer.enrollmentSelfReported,false);
-  assert.equal(s.offer.verifiedByOpenAI,false);
+  assert.deepEqual(JSON.parse(JSON.stringify(port.sent.at(-1).usage)),
+    {inputTokens:12,outputTokens:30});
+  assert.equal(port.sent.at(-1).localUsage,undefined);
+  assert.equal(h.settings["elfshell.openai.offer.v1"],undefined);
   assert(!JSON.stringify(port.sent).includes("sk_TEST_SECRET"));
   assert(!JSON.stringify(h.settings).includes("Hello"));
 });

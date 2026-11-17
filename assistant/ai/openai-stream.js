@@ -29,13 +29,6 @@
       text=PROVIDERS.userText(prompt);
     if(!EFFORTS.includes(effort)||typeof webSearch!=="boolean"||!OUTPUT_LIMITS.includes(maxOutputTokens))
       throw Error("Invalid streaming settings or output-token budget");
-    const offer=root.WorkspaceOpenAIComplimentary?.lookup(id);
-    if(offer?.status==="shut-down")
-      throw Error("This legacy model has been shut down by OpenAI; select an available model");
-    if(offer?.nonReasoning && effort!=="none")
-      throw Error("This model does not support reasoning effort; choose None");
-    if(offer&&offer.group!=="other"&&effort==="max")
-      throw Error("Maximum reasoning is unsupported for this offer model; choose High or Extra High");
     const messages=history.length
       ? root.WorkspaceConversationContext.orderedMessages({turns:history},text)
       : [{role:"user",content:text}];
@@ -229,15 +222,9 @@
     });
     await consume(response,event=>trace.handle(event),signal);
     if(!trace.isTerminal()||!terminal)throw Error("Stream ended unexpectedly");
-    let localUsage=null;
-    if(Number.isSafeInteger(terminal.usage?.inputTokens) &&
-       Number.isSafeInteger(terminal.usage?.outputTokens)){
-      try{
-        localUsage=await root.WorkspaceOpenAIComplimentary.record(
-          browserApi,config.model,terminal.usage);
-      }catch{/* A local counter failure must not rewrite the provider's actual completion. */}
-    }
-    emit({...terminal,localUsage});
+    // Keep the provider-reported usage on the terminal event; do not infer
+    // account allowances, enrollment or a remaining free-token balance.
+    emit(terminal);
   }
   root.WorkspaceOpenAIStream={buildRequest,optionsFrom,frameData,consume,presenter,run};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.WorkspaceOpenAIStream;

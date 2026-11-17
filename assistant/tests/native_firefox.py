@@ -405,7 +405,7 @@ try:
     check("Google API diagnostics cannot run before OAuth consent",
           lambda:require(not driver.find_element(By.ID,"google-check").is_enabled(),
             "Google scope check unexpectedly enabled"))
-    check("OpenAI offer model catalog defaults to GPT-5.4 Mini with editable ID",
+    check("OpenAI model setup defaults to GPT-5.4 Mini with an editable model ID",
           lambda:require(ai["ai"]["model"]=="gpt-5.4-mini" and
             driver.find_element(By.ID,"ai-model").get_attribute("value")=="gpt-5.4-mini" and
             driver.find_element(By.ID,"ai-model").get_attribute("list")=="openai-model-presets",
@@ -416,19 +416,13 @@ try:
             not driver.find_element(By.ID,"ai-cancel").is_displayed() and
             driver.execute_script("return typeof window.WorkspaceTraceUI")=="object",
             "Unexpected trace surface or missing streaming controller"))
-    check("complimentary model selector contains screenshot models in two groups",
+    check("provider setup has no promotional quota, enrollment or meter panel",
           lambda:require(
-            driver.find_element(By.ID,"ai-model-choice").is_displayed() and
-            len(driver.find_elements(By.CSS_SELECTOR,"#ai-model-choice optgroup"))==3 and
-            len(driver.find_elements(By.CSS_SELECTOR,"#ai-model-choice optgroup:nth-of-type(1) option"))==8 and
-            len(driver.find_elements(By.CSS_SELECTOR,"#ai-model-choice optgroup:nth-of-type(2) option"))==9,
-            "OpenAI screenshot catalog groups are incomplete"))
-    check("offer enrollment is unchecked and usage is only locally observed",
-          lambda:require(
-            not driver.find_element(By.ID,"ai-offer-enrolled").is_selected() and
-            "NOT remaining free tokens" in driver.find_element(By.ID,"ai-offer-small-count").text and
-            "eligibility" in driver.find_element(By.ID,"ai-offer-panel").text,
-            "Offer view incorrectly claims verified free balance"))
+            not driver.find_elements(By.ID,"ai-offer-panel") and
+            not driver.find_elements(By.ID,"ai-model-choice") and
+            not driver.find_elements(By.ID,"ai-offer-enrolled") and
+            driver.find_element(By.ID,"ai-model").is_displayed(),
+            "Offer controls remain in the model setup view"))
     check("web search is disabled by default; summary effort selectable",
           lambda:require(not driver.find_element(By.ID,"ai-web-search").is_selected() and
             driver.find_element(By.ID,"ai-effort").get_attribute("value")=="medium",

@@ -247,9 +247,6 @@ async function handle(message) {
         return await serialise(()=>globalThis.WorkspaceReleaseChecker.handle(browser,fetch,message));
       case "GET_STATE":
         return {ok:true,...await serialise(()=>snapshot())};
-      case "AI_OFFER_STATUS":
-      case "AI_OFFER_SET_ENROLLMENT":
-        return await serialise(()=>globalThis.WorkspaceOpenAIComplimentary.handle(browser,message));
       case "AI_CONTEXT_PREVIEW":
         // Display-only metadata, computed locally from current provider/model.
         return await serialise(()=>globalThis.WorkspaceConversationContext.preview(browser,message));
