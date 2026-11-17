@@ -66,35 +66,13 @@ try:
     check("Ask Ayarime entry is present in the unified Station",
           len(driver.find_elements(By.ID,"ask-ayarime-toggle"))==1)
 
-    # The Station should be visible without digging through the old menu.
-    opener=driver.find_element(By.ID,"station-drawer-open")
-    check("Station control is visible directly on the new tab",
-          opener.is_displayed())
-    opener.click()
-    WebDriverWait(driver,5).until(lambda d:
-        d.find_element(By.ID,"station-drawer").is_displayed())
-    check("Station drawer opens from the left without a new page",
-          len(driver.window_handles)==len(existing_handles)+1 and
-          driver.find_element(By.ID,"station-drawer").is_displayed())
-    # The drawer deliberately animates in from outside the viewport.
-    # Wait for the real tab to reach the screen before Selenium clicks it.
-    WebDriverWait(driver,5,poll_frequency=.05).until(
-        lambda d:d.execute_script("""
-          const r=document.getElementById('station-drawer').getBoundingClientRect();
-          return r.left>=-2 && r.right>100;
-        """))
-    driver.find_element(By.ID,"sd-tab-mcp").click()
-    check("MCP tab recommends official Google endpoints by default",
-          driver.find_element(By.ID,"sd-provider").get_attribute("value")=="official" and
-          "gmailmcp.googleapis.com" in
-          driver.find_element(By.ID,"sd-google-url").get_attribute("value"))
-    driver.find_element(By.ID,"sd-tab-ayarime").click()
-    check("AI controls are directly accessible from the drawer",
-          driver.find_element(By.ID,"sd-ai-toggle").is_displayed())
-    driver.find_element(By.ID,"station-drawer-close").click()
-    check("Station drawer closes and preserves the dashboard",
-          not driver.find_element(By.ID,"station-drawer").is_displayed() and
-          driver.title=="ELF//SHELL — Ayarime")
+    # Only one sidebar exists: Firefox owns it. The neon launcher is a
+    # single user-initiated control, with a separate full Hub shortcut.
+    check("neon control launches one native sidebar, not a Station overlay",
+          driver.find_element(By.ID,"ayarime-sidebar-launcher").is_displayed()
+          and driver.find_element(By.ID,"ayarime-workspace-launcher").is_displayed()
+          and not driver.find_elements(By.ID,"station-drawer")
+          and not driver.find_elements(By.ID,"station-scrim"))
 
     reply=message({"type":"UNIFIED_HELLO",
                    "kind":"elfshell.workspace.bridge","version":1})
@@ -115,17 +93,16 @@ try:
           malformed.get("ok") is False)
 
     def click_ai_toggle():
-        driver.find_element(By.ID,"station-drawer-open").click()
-        WebDriverWait(driver,6).until(lambda d:
-            d.find_element(By.ID,"station-drawer").is_displayed())
-        WebDriverWait(driver,6,poll_frequency=.05).until(lambda d:
-            d.execute_script("""
-              const r=document.getElementById('station-drawer').getBoundingClientRect();
-              return r.left>=-2 && r.right>100;
-            """))
-        driver.find_element(By.ID,"sd-tab-ayarime").click()
-        driver.find_element(By.ID,"sd-ai-toggle").click()
-        driver.find_element(By.ID,"station-drawer-close").click()
+        dashboard_url=driver.current_url
+        sidebar_url=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
+        driver.get(sidebar_url)
+        WebDriverWait(driver,12).until(lambda d:
+            d.find_element(By.ID,"ayarime-sidebar-tab-more").is_displayed())
+        driver.find_element(By.ID,"ayarime-sidebar-tab-more").click()
+        WebDriverWait(driver,12).until(lambda d:
+            d.find_element(By.ID,"unified-ai-pause").is_displayed())
+        driver.find_element(By.ID,"unified-ai-pause").click()
+        driver.get(dashboard_url)
 
     WebDriverWait(driver,8).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").is_enabled())
@@ -275,14 +252,7 @@ try:
       return browser.permissions.request===deny;
     """)
     check("QA can simulate a declined permission without touching browser grants",stubbed)
-    driver.find_element(By.ID,"station-drawer-open").click()
-    WebDriverWait(driver,6).until(lambda d:
-        d.find_element(By.ID,"station-drawer").is_displayed())
-    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
-        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
-    """))
-    driver.find_element(By.ID,"sd-tab-station").click()
-    driver.find_element(By.ID,"sd-open-hub").click()
+    driver.find_element(By.ID,"ayarime-workspace-launcher").click()
     WebDriverWait(driver,10).until(lambda d:
         "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())
     check("Station shows a useful error after declined access",
@@ -298,14 +268,7 @@ try:
       return browser.permissions.request===allow;
     """)
     check("QA can simulate an optimistic page-local grant",simulated)
-    driver.find_element(By.ID,"station-drawer-open").click()
-    WebDriverWait(driver,6).until(lambda d:
-        d.find_element(By.ID,"station-drawer").is_displayed())
-    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
-        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
-    """))
-    driver.find_element(By.ID,"sd-tab-station").click()
-    driver.find_element(By.ID,"sd-open-hub").click()
+    driver.find_element(By.ID,"ayarime-workspace-launcher").click()
     WebDriverWait(driver,10).until(lambda d:
         "tab access must be granted" in
         d.find_element(By.ID,"workspace-bridge-status").text.lower())
