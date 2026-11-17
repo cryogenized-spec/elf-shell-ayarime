@@ -25,7 +25,15 @@ class MonorepoContract(unittest.TestCase):
         self.assertIn("google/master-oauth.js",source["files"])
         self.assertIn("mcp/src/server.js",source["files"])
         # The provenance snapshot is intentionally NOT a code freeze.
-        self.assertTrue(all((ASSISTANT/name).is_file() for name in source["files"]))
+        # SOURCE_LOCK is an immutable historical import inventory, not a live
+        # code-freeze. Obsolete promotional features may be explicitly removed.
+        retired = {"ai/openai-complimentary.js",
+                   "docs/openai-complimentary-offer.md",
+                   "tests/openai_offer.test.cjs"}
+        missing = {name for name in source["files"]
+                   if not (ASSISTANT/name).is_file()}
+        self.assertEqual(missing, retired)
+        self.assertFalse(any((ASSISTANT/name).exists() for name in retired))
 
     def test_packager_explicitly_whitelists_companion_runtime(self):
         node=ast.parse((ASSISTANT/"scripts/package.py").read_text())
