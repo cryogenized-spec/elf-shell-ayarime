@@ -14,3 +14,9 @@
 .unified-mcp-entry .quiet{font-size:11px}
 .unified-mcp-actions{display:flex;gap:7px;flex-wrap:wrap}
 .unified-mcp-actions button:disabled{opacity:.5}
+
+/* Visible provider-scoped model selector with editable custom ID beneath it. */
+.ai-form #ai-model-picker{width:100%;min-width:0;border:1px solid #b9eb94;background:#19263b;color:#f4fff1;padding:11px;font:12px ui-monospace,monospace;border-radius:5px}
+.ai-form #ai-model-picker:focus-visible{outline:2px solid #d2ffb4;outline-offset:2px}
+body[data-view="sidebar"] .ayarime-model-pane{display:grid;gap:10px}
+body[data-view="sidebar"] .ayarime-model-pane .ai-form{margin:0}
