@@ -369,7 +369,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                 # Settings are shared with the Hub; keep all existing inputs and
                 # handlers available but give the narrow sidebar a chat-first view.
                 start = '<form id="ai-settings-form" class="ai-form">'
-                end = '  </section>\n    <section class="conversation-panel"'
+                end = '    <section class="conversation-panel"'
                 check(html.count(start) == html.count(end) == 1,
                       "Sidebar provider settings structure changed")
                 html = html.replace(start,
@@ -378,7 +378,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     '<p class="quiet">Shared with Workspace Hub. Expand to configure or clear a session key.</p>\n'
                     + start, 1)
                 html = html.replace(end,
-                    '  </section>\n</details>\n    <section class="conversation-panel"', 1)
+                    '</details>\n    <section class="conversation-panel"', 1)
             css_link = '<link rel="stylesheet" href="ui.css">'
             check(html.count(css_link) == 1,
                   "Companion page stylesheet changed: " + rel)
