@@ -7,6 +7,10 @@
   const update=()=>browser.storage.local.get(KEY)
     .then(state=>{button.hidden=state[KEY]===false;})
     .catch(()=>{button.hidden=false;});
+  const hubButton=document.getElementById("ayarime-workspace-launcher");
+  hubButton?.addEventListener("click",()=>{
+    void window.AyarimeWorkspaceBridge?.openAssistant();
+  });
   button.addEventListener("click",()=>{
     // Firefox owns its single, native sidebar; no custom overlay is created.
     const open=browser.sidebarAction?.open?.();
