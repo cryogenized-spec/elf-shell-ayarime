@@ -99,7 +99,7 @@ function createHarness(seed={},options={}) {
   });
   for (const file of ["shared/workspace.js","shared/persona.js",
     "google/oauth.js","google/read.js","google/files.js","google/catalog.js","briefing/engine.js","google/session.js","google/master-read-client.js","google/master-oauth.js",
-    "ai/providers.js","ai/openai-complimentary.js","diagnostics/connection.js","ai/session.js","ai/openai-stream.js","updater/release.js","updater/checker.js","background.js"]) {
+    "ai/providers.js","diagnostics/connection.js","ai/session.js","ai/openai-stream.js","updater/release.js","updater/checker.js","background.js"]) {
     vm.runInContext(fs.readFileSync(path.resolve(__dirname,"..",file),"utf8"),context,{filename:file});
   }
   return {
