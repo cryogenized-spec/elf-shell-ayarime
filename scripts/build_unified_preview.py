@@ -467,6 +467,9 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         '<button id="ayarime-sidebar-launcher" type="button" '
         'title="Open Ayarime in Firefox sidebar" '
         'aria-label="Open Ayarime in Firefox sidebar">✧</button>'
+        '<button id="ayarime-workspace-launcher" type="button" '
+        'title="Open full Ayarime Workspace Hub" '
+        'aria-label="Open full Ayarime Workspace Hub">Hub</button>'
         '<p id="ayarime-sidebar-launcher-status" role="status"></p>'
     )
     check(station_html.count("<body>") == 1, "ELF Station body markup changed")
