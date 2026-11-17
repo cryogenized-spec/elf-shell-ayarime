@@ -91,7 +91,6 @@
     '<form id="unified-mcp-form" class="unified-mcp-form">'+
     '<label for="unified-mcp-google">Google MCP template</label>'+
     '<select id="unified-mcp-google"><option value="">Custom HTTPS endpoint</option>'+
-    Object.keys(google).map(key=>'<option value="'+key+'">'+google[key][0]+'</option>').join("")+
     '</select>'+
     '<label for="unified-mcp-name">Connection name</label>'+
     '<input id="unified-mcp-name" type="text" maxlength="70" required placeholder="My MCP server">'+
@@ -104,6 +103,13 @@
     '<p id="unified-mcp-status" class="quiet" role="status"></p>'+
     '<div id="unified-mcp-list" class="unified-mcp-list" aria-live="polite"></div>';
   parent.append(section);
+  const template=section.querySelector("#unified-mcp-google");
+  for(const [key,[label]] of Object.entries(google)) {
+    const option=document.createElement("option");
+    option.value=key;
+    option.textContent=label;
+    template.append(option);
+  }
   const form=section.querySelector("#unified-mcp-form");
   const name=section.querySelector("#unified-mcp-name");
   const url=section.querySelector("#unified-mcp-url");
