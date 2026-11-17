@@ -867,9 +867,9 @@ test("OpenAI streams preserve provider usage but do not track promotional balanc
   const h=createHarness({}, {aiPermission:true,mockFetch:async(url,options)=>{
     assert.equal(url,"https://api.openai.com/v1/responses");
     const content=[
-      'data: {"type":"response.created"}\\n\\n',
-      'data: {"type":"response.output_text.delta","item_id":"m","content_index":0,"delta":"Result"}\\n\\n',
-      'data: {"type":"response.completed","response":{"usage":{"input_tokens":12,"output_tokens":30}}}\\n\\n'
+      'data: {"type":"response.created"}\n\n',
+      'data: {"type":"response.output_text.delta","item_id":"m","content_index":0,"delta":"Result"}\n\n',
+      'data: {"type":"response.completed","response":{"usage":{"input_tokens":12,"output_tokens":30}}}\n\n'
     ].join("");
     return {status:200,ok:true,body:new ReadableStream({
       start(ctrl){ctrl.enqueue(new TextEncoder().encode(content));ctrl.close();}
