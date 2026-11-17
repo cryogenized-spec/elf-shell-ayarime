@@ -100,17 +100,13 @@ try:
     WebDriverWait(driver,15).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").is_enabled())
     check("fresh profile has no provider host/data consent",has_provider() is False)
-    # The user explicitly enables AI in the Station. This action does not
-    # grant a provider URL or API key.
-    menu=driver.find_element(By.ID,"station-menu")
-    if not menu.get_property("open"):
-        menu.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ai-module-toggle").click()
-    WebDriverWait(driver,10).until(lambda d:
-        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
-    check("AI on still has no provider consent",has_provider() is False)
+    # The sidebar/assistant is ready by default, but that does not provide
+    # host permissions, credentials or optional personal-data permissions.
+    check("assistant ready with no provider consent",
+          driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true"
+          and has_provider() is False)
     hub=driver.execute_script("return browser.runtime.getURL('hub.html')")
-    driver.get(hub)
+    driver.get(hub+"#assistant")
     WebDriverWait(driver,15).until(lambda d:
         len(d.find_elements(By.ID,"ai-grant"))==1)
     driver.find_element(By.ID,"ai-grant").click()

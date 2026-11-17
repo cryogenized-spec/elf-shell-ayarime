@@ -39,32 +39,30 @@ function harness(){
     failCredentialClear:next=>{clearFails=next;},
     clearCalls:()=>clearCalls,stored:()=>({hasKey,value})};
 }
-test("AI opt-in begins off, without creating preference storage",async()=>{
+test("AI is available by default without writing any preference",async()=>{
   const h=harness();await h.load();
-  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),false);
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true);
   assert.deepEqual(h.stored(),{hasKey:false,value:false});
-  assert.equal(h.nodes.get("ai-module-toggle").attributes["aria-pressed"],"false");
+  assert.equal(h.nodes.get("ai-module-toggle").attributes["aria-pressed"],"true");
 });
-test("failed preference save leaves previous setting and visible error intact",async()=>{
+
+test("failing to pause does not claim pause or erase previous preference",async()=>{
   const h=harness();await h.load();
   h.fail(true);await h.click();
-  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),false);
-  assert.match(h.nodes.get("ai-module-status").textContent,/could not save/);
-  assert.equal(h.nodes.get("ai-module-toggle").attributes["aria-pressed"],"false");
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true);
+  assert.match(h.nodes.get("ai-module-status").textContent,/could not save|Could not save/);
+  assert.equal(h.nodes.get("ai-module-toggle").attributes["aria-pressed"],"true");
   assert.deepEqual(h.stored(),{hasKey:false,value:false});
   h.fail(false);await h.click();
-  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true);
-  assert.doesNotMatch(h.nodes.get("ai-module-status").textContent,/could not save/);
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),false);
+  assert.deepEqual(h.stored(),{hasKey:true,value:false});
   h.fail(true);await h.click();
-  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true,
-    "Failed disable must not incorrectly claim AI was disabled");
-  assert.match(h.nodes.get("ai-module-status").textContent,/could not save/);
-  assert.equal(h.nodes.get("ai-module-toggle").attributes["aria-pressed"],"true");
-  assert.deepEqual(h.stored(),{hasKey:true,value:true});
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),false,
+    "Failed resume must never imply provider access was restored");
 });
-test("AI disable first purges credentials, and a failure does not claim success",async()=>{
-  const h=harness();await h.load();await h.click();
-  assert.equal(h.stored().value,true);
+
+test("pausing purges credentials; a failure does not claim pause",async()=>{
+  const h=harness();await h.load();
   h.failCredentialClear(true);
   await h.click();
   assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true);
@@ -74,4 +72,7 @@ test("AI disable first purges credentials, and a failure does not claim success"
   await h.click();
   assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),false);
   assert.equal(h.clearCalls(),2);
+  await h.click();
+  assert.equal(h.ctx.window.AyarimeUnifiedModule.isEnabled(),true);
+  assert.equal(h.stored().value,true);
 });

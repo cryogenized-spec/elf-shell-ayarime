@@ -52,14 +52,29 @@ def window_tabs():
     """)
 
 def launch_from_station():
-    menu=driver.find_element(By.ID,"station-menu")
-    if not menu.get_property("open"):
-        menu.find_element(By.CSS_SELECTOR,"summary").click()
-    WebDriverWait(driver,8).until(
-        lambda d:d.find_element(By.ID,"ask-ayarime-toggle").is_displayed())
-    # Real Selenium click, not synthetic JS dispatch: triggers an actual Firefox
-    # user gesture for permissions.request().
-    driver.find_element(By.ID,"ask-ayarime-toggle").click()
+    driver.find_element(By.ID,"station-drawer-open").click()
+    WebDriverWait(driver,6).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    # The drawer opens with a short animation; wait until its hit target is onscreen.
+    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+        const r=document.getElementById('station-drawer').getBoundingClientRect();
+        return r.left>=-2 && r.right>100;
+    """))
+    driver.find_element(By.ID,"sd-tab-station").click()
+    # Real Firefox click preserves the user gesture for permission requests.
+    driver.find_element(By.ID,"sd-open-hub").click()
+
+
+def pause_ai_from_station():
+    driver.find_element(By.ID,"station-drawer-open").click()
+    WebDriverWait(driver,6).until(lambda d:
+        d.find_element(By.ID,"station-drawer").is_displayed())
+    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
+        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
+    """))
+    driver.find_element(By.ID,"sd-tab-ayarime").click()
+    driver.find_element(By.ID,"sd-ai-toggle").click()
+    driver.find_element(By.ID,"station-drawer-close").click()
 
 def popup_details():
     with driver.context(driver.CONTEXT_CHROME):
@@ -142,26 +157,14 @@ try:
     WebDriverWait(driver,8).until(
         lambda d:d.find_element(By.ID,"ai-module-toggle").is_enabled())
     before_optin=window_tabs()
-    require(isinstance(before_optin,list),"Could not inspect tabs before AI opt-in")
-    launch_from_station()
-    WebDriverWait(driver,8).until(lambda d:
-        "enable ayarime ai" in
-        d.find_element(By.ID,"workspace-bridge-status").text.lower())
-    check("AI disabled by default without opening a Firefox prompt",
+    require(isinstance(before_optin,list),"Could not inspect tabs before usage")
+    check("AI sidebar available by default without browser tab permission",
           lambda:require(
-            granted("tabs") is False and
-            {tab["id"] for tab in window_tabs()}==
+            driver.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true"
+            and granted("tabs") is False
+            and {tab["id"] for tab in window_tabs()}==
               {tab["id"] for tab in before_optin},
-            "Disabled AI unexpectedly created a Hub or requested browser access"))
-    menu=driver.find_element(By.ID,"station-menu")
-    if not menu.get_property("open"):
-        menu.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ai-module-toggle").click()
-    WebDriverWait(driver,8).until(lambda d:
-        d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
-    check("AI module needs a separate explicit Station opt-in",
-          lambda:require(granted("tabs") is False,
-                         "AI opt-in silently granted tabs"))
+            "AI readiness must not automatically access browser tabs"))
 
     before=window_tabs()
     require(isinstance(before,list),"Unable to inspect initial browser tabs")
@@ -220,10 +223,7 @@ try:
     # Switching the AI module off does not revoke unrelated browser
     # permissions or alter existing tabs, but it must block any *new* AI launch.
     driver.switch_to.window(dashboard)
-    menu=driver.find_element(By.ID,"station-menu")
-    if not menu.get_property("open"):
-        menu.find_element(By.CSS_SELECTOR,"summary").click()
-    driver.find_element(By.ID,"ai-module-toggle").click()
+    pause_ai_from_station()
     WebDriverWait(driver,8).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
     no_new_ai=ext_call("""
@@ -236,7 +236,7 @@ try:
     check("disabling AI blocks new assistant launches despite prior tab grant",
           lambda:require(isinstance(no_new_ai,dict) and
             no_new_ai.get("ok") is False and
-            "enable ayarime ai" in no_new_ai.get("error","").lower(),
+            "ayarime is paused" in no_new_ai.get("error","").lower(),
             "Disabling AI did not enforce the background guard"))
     check("turning AI off leaves Firefox permission and existing Hub untouched",
           lambda:require(granted("tabs") is True and
