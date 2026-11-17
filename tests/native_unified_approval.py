@@ -52,29 +52,23 @@ def window_tabs():
     """)
 
 def launch_from_station():
-    driver.find_element(By.ID,"station-drawer-open").click()
-    WebDriverWait(driver,6).until(lambda d:
-        d.find_element(By.ID,"station-drawer").is_displayed())
-    # The drawer opens with a short animation; wait until its hit target is onscreen.
-    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
-        const r=document.getElementById('station-drawer').getBoundingClientRect();
-        return r.left>=-2 && r.right>100;
-    """))
-    driver.find_element(By.ID,"sd-tab-station").click()
-    # Real Firefox click preserves the user gesture for permission requests.
-    driver.find_element(By.ID,"sd-open-hub").click()
+    # The small Hub shortcut is the only separate Station action. The main
+    # neon launcher opens Firefox's single native sidebar, not a second drawer.
+    driver.find_element(By.ID,"ayarime-workspace-launcher").click()
 
 
 def pause_ai_from_station():
-    driver.find_element(By.ID,"station-drawer-open").click()
-    WebDriverWait(driver,6).until(lambda d:
-        d.find_element(By.ID,"station-drawer").is_displayed())
-    WebDriverWait(driver,6).until(lambda d:d.execute_script("""
-        return document.getElementById('station-drawer').getBoundingClientRect().left>=-2;
-    """))
-    driver.find_element(By.ID,"sd-tab-ayarime").click()
-    driver.find_element(By.ID,"sd-ai-toggle").click()
-    driver.find_element(By.ID,"station-drawer-close").click()
+    dashboard=driver.current_url
+    sidebar=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
+    driver.get(sidebar)
+    WebDriverWait(driver,12).until(lambda d:
+        d.find_element(By.ID,"ayarime-sidebar-tab-more").is_displayed())
+    driver.find_element(By.ID,"ayarime-sidebar-tab-more").click()
+    WebDriverWait(driver,12).until(lambda d:
+        d.find_element(By.ID,"unified-ai-pause").is_displayed())
+    driver.find_element(By.ID,"unified-ai-pause").click()
+    driver.get(dashboard)
+
 
 def popup_details():
     with driver.context(driver.CONTEXT_CHROME):
