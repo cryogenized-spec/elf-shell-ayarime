@@ -130,7 +130,7 @@
   const issuerInput=guide.querySelector("#unified-google-issuer");
   const CLIENT_KEY="elfshell.mcp.publicGoogleClient.v1";
   const PROFILE_KEY="elfshell.mcp.userProfile.v1";
-  const publicClient=/^[0-9]+-[a-z0-9_-]+\\.apps\\.googleusercontent\\.com$/i;
+  const publicClient=/^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i;
   guide.querySelector("#unified-google-save-client").addEventListener("click",async()=>{
     const value=clientInput.value.trim();
     if(value&&!publicClient.test(value)){
