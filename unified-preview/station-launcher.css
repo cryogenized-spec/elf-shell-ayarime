@@ -1,0 +1,9 @@
+/* One browser sidebar, no overlapping custom Station drawer. */
+.station-menu{display:none!important}
+#ayarime-sidebar-launcher{position:fixed;z-index:800;left:clamp(12px,2vw,28px);bottom:clamp(75px,11vh,118px);width:58px;height:58px;border:2px solid #c3f981;border-radius:50%;background:linear-gradient(140deg,#263c2c,#091822 70%);color:#e3ffb3;box-shadow:0 0 0 3px #07171ad9,0 0 18px #abff7985,inset 0 0 12px #9bea672a;font:600 29px Georgia,serif;display:grid;place-items:center;cursor:pointer;transition:box-shadow .18s,transform .18s}
+#ayarime-sidebar-launcher:hover,#ayarime-sidebar-launcher:focus-visible{box-shadow:0 0 0 3px #07171ad9,0 0 28px #b9ff94c7,inset 0 0 14px #c3ec8055;transform:scale(1.05);outline:0}
+#ayarime-sidebar-launcher[hidden]{display:none!important}
+#ayarime-sidebar-launcher-status{position:fixed;z-index:801;left:14px;bottom:12px;max-width:300px;font:11px/1.5 monospace;color:#d5f6e0;pointer-events:none}
+@media(max-width:700px){#ayarime-sidebar-launcher{left:10px;bottom:65px;width:48px;height:48px;font-size:24px}}
+@media(max-height:540px){#ayarime-sidebar-launcher{left:12px;bottom:12px;width:44px;height:44px;font-size:22px}#ayarime-sidebar-launcher-status{bottom:62px}}
+@media(prefers-reduced-motion:reduce){#ayarime-sidebar-launcher{transition:none}}
