@@ -1,0 +1,16 @@
+
+/* First-party settings use the already existing Hub tabs, never an overlay. */
+.unified-controls{margin:18px 0;padding:18px}
+.unified-control-check{display:flex;align-items:center;gap:10px;margin-top:16px}
+.unified-control-check input{width:auto;flex:none}
+.unified-mcp-form{display:grid;gap:9px;max-width:720px;margin:16px 0}
+.unified-mcp-form :is(input,select){width:100%;min-width:0;background:#152134;color:#f3f7ef;border:1px solid #638d94;border-radius:5px;padding:11px;font:12px system-ui,sans-serif}
+.unified-mcp-form label{font-size:11px;color:#b8d4ce}
+.unified-mcp-form button{justify-self:start;margin-top:7px}
+.unified-mcp-list{display:grid;gap:9px}
+.unified-mcp-entry{border:1px solid #587782;background:#132134c9;padding:13px;border-radius:6px}
+.unified-mcp-entry strong,.unified-mcp-entry small{display:block;overflow-wrap:anywhere}
+.unified-mcp-entry small{font:11px/1.5 monospace;color:#a8c5d3;margin-top:5px}
+.unified-mcp-entry .quiet{font-size:11px}
+.unified-mcp-actions{display:flex;gap:7px;flex-wrap:wrap}
+.unified-mcp-actions button:disabled{opacity:.5}
