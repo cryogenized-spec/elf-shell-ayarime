@@ -103,6 +103,64 @@
     '<p id="unified-mcp-status" class="quiet" role="status"></p>'+
     '<div id="unified-mcp-list" class="unified-mcp-list" aria-live="polite"></div>';
   parent.append(section);
+  const guide=make("section","frame unified-controls unified-mcp-guide");
+  guide.setAttribute("aria-label","Google MCP developer configuration");
+  guide.innerHTML='<h2>Google MCP setup</h2>'+
+    '<p class="quiet">Developer configuration only; saving these settings neither signs you in nor starts a tool connection.</p>'+
+    '<div class="unified-mcp-guides">'+
+    '<a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Create Google Cloud project</a>'+
+    '<a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer">Google API library</a>'+
+    '<a href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener noreferrer">Google OAuth clients</a>'+
+    '<a href="https://dash.cloudflare.com/" target="_blank" rel="noopener noreferrer">Cloudflare dashboard</a>'+
+    '<a href="https://github.com/cryogenized-spec/Google-master-worker-MCP" target="_blank" rel="noopener noreferrer">Google Master Worker reference</a></div>'+
+    '<p class="quiet">A public Google OAuth client ID identifies your app; it is not an access token. Do not paste API keys or client secrets into these fields.</p>'+
+    '<label for="unified-google-client-id">Public Google OAuth client ID</label>'+
+    '<input id="unified-google-client-id" type="text" maxlength="180" autocomplete="off" spellcheck="false" placeholder="123456789-abc.apps.googleusercontent.com">'+
+    '<button id="unified-google-save-client" type="button" class="mini">Save public client ID</button>'+
+    '<div class="unified-mcp-form"><label for="unified-google-resource">Self-hosted HTTPS MCP resource</label>'+
+    '<input id="unified-google-resource" type="url" maxlength="400" spellcheck="false" placeholder="https://my-server.example/mcp">'+
+    '<label for="unified-google-issuer">OAuth issuer origin</label>'+
+    '<input id="unified-google-issuer" type="url" maxlength="400" spellcheck="false" placeholder="https://auth.example">'+
+    '<button id="unified-google-save-endpoints" type="button" class="mini">Save unconnected endpoint settings</button></div>'+
+    '<p id="unified-google-status" class="quiet" role="status"></p>';
+  parent.append(guide);
+  const googleStatus=guide.querySelector("#unified-google-status");
+  const clientInput=guide.querySelector("#unified-google-client-id");
+  const resourceInput=guide.querySelector("#unified-google-resource");
+  const issuerInput=guide.querySelector("#unified-google-issuer");
+  const CLIENT_KEY="elfshell.mcp.publicGoogleClient.v1";
+  const PROFILE_KEY="elfshell.mcp.userProfile.v1";
+  const publicClient=/^[0-9]+-[a-z0-9_-]+\\.apps\\.googleusercontent\\.com$/i;
+  guide.querySelector("#unified-google-save-client").addEventListener("click",async()=>{
+    const value=clientInput.value.trim();
+    if(value&&!publicClient.test(value)){
+      googleStatus.textContent="Invalid public Google client ID. Nothing saved.";return;
+    }
+    try{
+      if(value)await browser.storage.local.set({[CLIENT_KEY]:value});
+      else await browser.storage.local.remove(CLIENT_KEY);
+      googleStatus.textContent=value
+        ?"Public client ID saved locally. No authorization attempted."
+        :"Public client ID cleared.";
+    }catch{googleStatus.textContent="Unable to save public Google client ID.";}
+  });
+  guide.querySelector("#unified-google-save-endpoints").addEventListener("click",async()=>{
+    try{
+      const resource=normalizeURL(resourceInput.value.trim());
+      const issuer=normalizeURL(issuerInput.value.trim());
+      if(new URL(resource).pathname!=="/mcp"||new URL(issuer).pathname!=="/")
+        throw Error("MCP resource must end with /mcp and issuer must be an HTTPS origin.");
+      await browser.storage.local.set({[PROFILE_KEY]:{resource,issuer}});
+      googleStatus.textContent="Endpoint profile saved locally; not connected and no OAuth performed.";
+    }catch(error){googleStatus.textContent=error.message||"Invalid endpoint profile.";}
+  });
+  browser.storage.local.get([CLIENT_KEY,PROFILE_KEY]).then(saved=>{
+    if(typeof saved[CLIENT_KEY]==="string")clientInput.value=saved[CLIENT_KEY];
+    if(saved[PROFILE_KEY]&&typeof saved[PROFILE_KEY]==="object"){
+      resourceInput.value=saved[PROFILE_KEY].resource||"";
+      issuerInput.value=saved[PROFILE_KEY].issuer||"";
+    }
+  }).catch(()=>{googleStatus.textContent="Could not restore saved Google developer settings.";});
   const template=section.querySelector("#unified-mcp-google");
   for(const [key,[label]] of Object.entries(google)) {
     const option=document.createElement("option");
