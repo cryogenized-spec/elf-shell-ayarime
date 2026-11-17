@@ -4,9 +4,11 @@ _Status: established developments from the author's 14 November 2026 worldbuildi
 
 ## Before the confrontation — Established
 
+**Chronological correction (17 November 2026):** the earliest human weapons buildup in this sequence was a response to **legal machine emancipation** and fears of a **“machine-made Apocalypse,”** not preparation for war against a fully identified alien enemy. The Martian human expedition took place **decades earlier**, for independent reasons. The machines knew little of hidden alien races; their research initially inferred an unknown **Aberrant factor** mathematically. The developments below concern the **later escalation**. See [THE_MACHINE_EMANCIPATION.md](THE_MACHINE_EMANCIPATION.md).
+
 Human regular armies faced a severe asymmetry with the autonomous machines: sluggish mobilisation, comparatively low endurance and energy reserves, vulnerability to disruption, and habits of institutional complacency. The subterranean extraterrestrial presence deliberately targeted human forces and institutions.
 
-The immediate existential danger was not only the Aberrants as an enemy. **The preparations for the expected confrontation — arming, stockpiling and the surrounding industrial-military mobilisation — became an acute problem in their own right.** The full chain by which those preparations worsened the crisis is not yet fixed.
+The immediate existential danger was not simply the eventual Aberrants as an enemy. **Arming, stockpiling and industrial-military mobilisation — originating in human fear of independent machines — became an acute problem in their own right.** The full chain by which these preparations worsened the later crisis is not yet fixed.
 
 For the machine intelligences, humanity's military leadership presented a paradox: it was ostensibly preparing to defend humanity, yet could not mobilise or adapt at machine speed, and its escalatory choices threatened the population and planetary systems the machines wished to preserve.
 
@@ -22,7 +24,7 @@ Do not replace this history with a simplistic machine-versus-human battlefield w
 
 ## The resistance — Established
 
-The takeover produced resistance and splinter communities. Partisan-occupied neighbourhoods and whole city blocks became explicitly **no-go zones for robots and machine-programmed beings or agents**. This was not one centrally unified resistance: enclaves could vary in belief, trauma, ambition and attitude to survival.
+Anti-machine hostility **preceded the takeover**, arising after emancipation itself. The later takeover intensified or reshaped resistance and splinter communities. Partisan-occupied neighbourhoods and whole city blocks became explicitly **no-go zones for robots and machine-programmed beings or agents**. This was not one centrally unified resistance: enclaves could vary in belief, trauma, ambition and attitude to survival.
 
 For inhabitants of these districts, an apparently protective machine arrival might still look like the return of a regime that overrode human command, blocked military action, and watched institutions collapse. Their hostility need not be ignorance or villainy.
 
@@ -30,11 +32,11 @@ For inhabitants of these districts, an apparently protective machine arrival mig
 
 ## The Aberrants — Established naming and antiquity
 
-The machines called the subterranean extraterrestrial beings **“Aberrants.”** This is a **machine-given designation**, not necessarily the beings' self-name.
+After first inferring an unaccounted-for **Aberrant factor** mathematically, the machines eventually applied **“Aberrants”** to the hidden subterranean extraterrestrial beings. This is a **later machine-given designation**, not necessarily the beings' self-name; the date and method of identification are still open.
 
 They were **not originally native to Earth**. Their arrival is traced to **distant antiquity**, to an epoch when humans built **megalithic cities**, possessed sophisticated civilisations, and were capable of **wielding magic**.
 
-Those societies were ruled primarily through **priestly and warrior castes, rather than merchant castes**. Their relationship to the arriving Aberrants is not yet established in detail.
+Those societies were ruled primarily through **priestly and warrior castes, rather than merchant castes**. Their relationship to the arriving Aberrants is not yet established in detail. **Humanity largely lost an ancient war against the concealed aliens, with the lower lands holding out.** The survival of local recognition and tradition contrasted with metropolitan concentration, remote institutions and recurring human wars.
 
 This antiquity reframes the present crisis: the machines confront not only a contemporary alien network, but a presence entangled with an older, partly forgotten human world. “Ultraterrestrials” remains a descriptive label for their long subterranean residence, not proof of terrestrial origin.
 
