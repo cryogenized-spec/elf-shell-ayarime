@@ -51,8 +51,8 @@
       try {
         await browser.storage.local.set({[AI_KEY]:!enabled});
         status.textContent=enabled
-          ?"Ayarime resumed. Provider permission and session key remain separate."
-          :"Ayarime paused. Background clears the session API key.";
+          ?"Ayarime paused. Background clears the session API key."
+          :"Ayarime resumed. Provider permission and session key remain separate.";
         await sync();
       } catch {status.textContent="Could not change Ayarime setting."; }
       finally{pause.disabled=false;}
