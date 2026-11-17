@@ -351,7 +351,10 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                 check(html.count("</head>") == 1, "Hub head changed")
                 html = html.replace("</head>",
                     '<link rel="stylesheet" href="unified/hub-tabs.css">'
-                    '<script defer src="unified/hub-tabs.js"></script></head>', 1)
+                    '<link rel="stylesheet" href="unified/workspace-settings.css">'
+                    '<script defer src="unified/hub-tabs.js"></script>'
+                    '<script defer src="unified/workspace-settings.js"></script>'
+                    '<script defer src="unified/coffee-readiness.js"></script></head>', 1)
                 # Historical pinned Cloudflare panel is never active in the
                 # new public-facing user-owned engineering configuration.
                 master_script = '<script defer src="google/master-ui.js"></script>'
@@ -364,21 +367,15 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
             if rel == "sidebar.html":
                 check(html.count("</head>") == 1, "Sidebar head changed")
                 html = html.replace("</head>",
+                    '<link rel="stylesheet" href="unified/workspace-settings.css">'
                     '<script defer src="unified/page-context.js"></script>'
-                    '<script defer src="unified/sidebar-handoff.js"></script></head>', 1)
-                # Settings are shared with the Hub; keep all existing inputs and
-                # handlers available but give the narrow sidebar a chat-first view.
-                start = '<form id="ai-settings-form" class="ai-form">'
-                end = '    <section class="conversation-panel"'
-                check(html.count(start) == html.count(end) == 1,
-                      "Sidebar provider settings structure changed")
-                html = html.replace(start,
-                    '<details class="unified-provider-settings">\n'
-                    '<summary>PROVIDER &amp; API KEY SETTINGS</summary>\n'
-                    '<p class="quiet">Shared with Workspace Hub. Expand to configure or clear a session key.</p>\n'
-                    + start, 1)
-                html = html.replace(end,
-                    '</details>\n    <section class="conversation-panel"', 1)
+                    '<script defer src="unified/sidebar-handoff.js"></script>'
+                    '<script defer src="unified/workspace-settings.js"></script>'
+                    '<script defer src="unified/coffee-readiness.js"></script></head>', 1)
+                # The sidebar already has a dedicated Model tab. Never wrap
+                # those controls in a redundant nested disclosure.
+                check(html.count('<form id="ai-settings-form" class="ai-form">') == 1,
+                      "Sidebar provider form changed")
             css_link = '<link rel="stylesheet" href="ui.css">'
             check(html.count(css_link) == 1,
                   "Companion page stylesheet changed: " + rel)
@@ -393,9 +390,9 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
-        '<link rel="stylesheet" href="unified/station-drawer.css">\n'
+        '<link rel="stylesheet" href="unified/station-launcher.css">\n'
         '<script defer src="unified/module.js"></script>\n'
-        '<script defer src="unified/station-drawer.js"></script>\n'
+        '<script defer src="unified/station-launcher.js"></script>\n'
         + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
@@ -431,13 +428,15 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
-    for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js", "sidebar-handoff.js"):
+    for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js",
+                 "sidebar-handoff.js", "workspace-settings.js",
+                 "workspace-settings.css", "coffee-readiness.js"):
         inventory["unified/" + name] = (
             ROOT / "unified-preview" / name).read_bytes()
-    inventory["unified/station-drawer.js"] = (
-        ROOT / "unified-preview" / "station-drawer.js").read_bytes()
-    inventory["unified/station-drawer.css"] = (
-        ROOT / "unified-preview" / "station-drawer.css").read_bytes()
+    inventory["unified/station-launcher.js"] = (
+        ROOT / "unified-preview" / "station-launcher.js").read_bytes()
+    inventory["unified/station-launcher.css"] = (
+        ROOT / "unified-preview" / "station-launcher.css").read_bytes()
     # Inert by design: bundled for contract review and tests, NOT injected into
     # the page or background until OAuth scopes and host allowlists are accepted.
     inventory["unified/google-worker-contract.js"] = (
@@ -462,9 +461,19 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         check(station_js.count(before) == 1,
               "Core Station command copy changed: " + before)
         station_js = station_js.replace(before, after)
-    drawer = (ROOT / "unified-preview" / "station-drawer.html").read_text(encoding="utf-8")
+    # A single circular launcher opens Firefox's native sidebar. No custom
+    # drawer, overlay or duplicate Station navigation is mounted.
+    launcher = (
+        '<button id="ayarime-sidebar-launcher" type="button" '
+        'title="Open Ayarime in Firefox sidebar" '
+        'aria-label="Open Ayarime in Firefox sidebar">✧</button>'
+        '<button id="ayarime-workspace-launcher" type="button" '
+        'title="Open full Ayarime Workspace Hub" '
+        'aria-label="Open full Ayarime Workspace Hub">Hub</button>'
+        '<p id="ayarime-sidebar-launcher-status" role="status"></p>'
+    )
     check(station_html.count("<body>") == 1, "ELF Station body markup changed")
-    station_html = station_html.replace("<body>", "<body>\n" + drawer, 1)
+    station_html = station_html.replace("<body>", "<body>\n" + launcher, 1)
     inventory["newtab.html"] = station_html.encode("utf-8")
     inventory["newtab.js"] = station_js.encode("utf-8")
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)

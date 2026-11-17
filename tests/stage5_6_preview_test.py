@@ -57,8 +57,14 @@ class StageFiveSixPreview(unittest.TestCase):
         for bad in ["tasks_create_task","gmail_send_message","drive_delete_file",
                     "write_prepare_action","script_update_sources"]:
             self.assertNotIn(bad,self.contract)
-        self.assertIn('id="station-drawer-open"',(STAGE/"newtab.html").read_text())
-        self.assertIn('option value="official"',(STAGE/"newtab.html").read_text())
+        self.assertIn('id="ayarime-sidebar-launcher"',(STAGE/"newtab.html").read_text())
+        self.assertNotIn('id="station-drawer"',(STAGE/"newtab.html").read_text())
+        # Google MCP templates now belong to the Hub Connections tab, not
+        # to a second Station drawer over the new-tab page.
+        registry=(STAGE/"unified/workspace-settings.js").read_text()
+        self.assertIn("gmailmcp.googleapis.com",registry)
+        self.assertIn("drivemcp.googleapis.com",registry)
+        self.assertIn("No-auth configuration saved",registry)
 
 
 if __name__=="__main__":

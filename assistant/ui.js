@@ -642,6 +642,42 @@ const AI_HOSTS={
   gemini:"https://generativelanguage.googleapis.com/*"
 };
 const AI_DEFAULTS={openai:"gpt-5.4-mini",anthropic:"claude-sonnet-4-5",gemini:"gemini-3.8-flash"};
+const AI_MODEL_PRESETS=Object.freeze({
+  openai:[
+    ["gpt-5.4-mini","GPT-5.4 Mini"],
+    ["gpt-5.4","GPT-5.4"],
+    ["gpt-4.1-mini","GPT-4.1 Mini"],
+    ["gpt-4.1","GPT-4.1"],
+    ["gpt-4o-mini","GPT-4o Mini"]
+  ],
+  anthropic:[
+    ["claude-sonnet-4-5","Claude Sonnet 4.5"],
+    ["claude-haiku-4-5","Claude Haiku 4.5"],
+    ["claude-opus-4-5","Claude Opus 4.5"]
+  ],
+  gemini:[
+    ["gemini-3.8-flash","Gemini 3.8 Flash"],
+    ["gemini-2.5-flash","Gemini 2.5 Flash"],
+    ["gemini-2.5-pro","Gemini 2.5 Pro"]
+  ]
+});
+// Presets are convenience examples, not a guarantee of API entitlement.
+// Custom model IDs are always supported and tested by Verify model access.
+function refreshModelPicker(provider,modelId) {
+  const picker=document.getElementById("ai-model-picker");
+  if(!picker)return;
+  picker.replaceChildren();
+  const add=(value,label)=>{
+    const choice=document.createElement("option");
+    choice.value=value;choice.textContent=label;picker.append(choice);
+  };
+  add("","Custom model ID…");
+  for(const [id,label] of AI_MODEL_PRESETS[provider]||[])add(id,label);
+  if(modelId && ![...picker.options].some(option=>option.value===modelId))
+    add(modelId,modelId+" · saved / custom");
+  picker.value=modelId||"";
+}
+
 const aiForm=document.querySelector("#ai-settings-form");
 let aiSavedProvider="openai";
 function aiMessage(message,error=false){
@@ -654,6 +690,7 @@ function showAIState(ai){
   if(!aiForm)return;
   const provider=aiForm.querySelector("#ai-provider"),model=aiForm.querySelector("#ai-model");
   provider.value=ai.provider;model.value=ai.model;
+  refreshModelPicker(ai.provider,ai.model);
   aiSavedProvider=ai.provider;
   if(ai.provider==="openai")model.setAttribute("list","openai-model-presets");
   else model.removeAttribute("list");
@@ -678,7 +715,14 @@ if(aiForm){
   const provider=aiForm.querySelector("#ai-provider"),model=aiForm.querySelector("#ai-model");
   provider.addEventListener("change",()=>{
     model.value=AI_DEFAULTS[provider.value];
+    refreshModelPicker(provider.value,model.value);
   });
+  const picker=aiForm.querySelector("#ai-model-picker");
+  picker?.addEventListener("change",()=>{
+    if(picker.value)model.value=picker.value;
+    else{model.value="";model.focus();}
+  });
+  model.addEventListener("input",()=>refreshModelPicker(provider.value,model.value));
   aiForm.addEventListener("submit",async event=>{
     event.preventDefault();
     if(globalThis.WorkspaceTraceUI.isRunning()){
