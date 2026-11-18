@@ -350,13 +350,14 @@ try:
             "Provider reasoning summary" in
               driver.find_element(By.ID,"ai-summary-details").get_attribute("outerHTML"),
             "Reasoning panel has incorrect default state"))
-    check("activity and thinking are separate expandable panels",
+    check("activity and thinking are optional expandable panels without fake LIVE",
           lambda:require(
             driver.find_element(By.ID,"ai-activity-details").tag_name=="details" and
             driver.find_element(By.ID,"ai-summary-details").tag_name=="details" and
-            "not private internal reasoning" in
-              driver.find_element(By.ID,"ai-reasoning-source").get_attribute("textContent"),
-            "Reasoning source disclosure is missing"))
+            "Provider summary" in
+              driver.find_element(By.ID,"ai-reasoning-source").get_attribute("textContent") and
+            not driver.find_elements(By.ID,"ai-summary-hint"),
+            "Optional activity must not contain simulated LIVE badges"))
     # Exercise only the local loading presentation; no paid inference or
     # Google content is touched. Restore the idle state after reading styles.
     rose_style=driver.execute_script("""
@@ -405,12 +406,21 @@ try:
     check("Google API diagnostics cannot run before OAuth consent",
           lambda:require(not driver.find_element(By.ID,"google-check").is_enabled(),
             "Google scope check unexpectedly enabled"))
+    check("conversation and composer are the default hero, setup is a dropdown",
+          lambda:require(
+            driver.find_element(By.ID,"ai-conversation-list").is_displayed() and
+            driver.find_element(By.ID,"ai-prompt").is_displayed() and
+            not driver.find_element(By.CSS_SELECTOR,".chat-first-provider").get_property("open") and
+            not driver.find_element(By.CSS_SELECTOR,".chat-first-options").get_property("open"),
+            "Chat-first disclosure layout is not active"))
+    driver.find_element(By.CSS_SELECTOR,".chat-first-provider > summary").click()
+    driver.find_element(By.CSS_SELECTOR,".chat-first-options > summary").click()
     check("OpenAI model setup defaults to GPT-5.4 Mini with an editable model ID",
           lambda:require(ai["ai"]["model"]=="gpt-5.4-mini" and
             driver.find_element(By.ID,"ai-model").get_attribute("value")=="gpt-5.4-mini" and
             driver.find_element(By.ID,"ai-model").get_attribute("list")=="openai-model-presets",
             "OpenAI model preset is not configured"))
-    check("live trace UI starts hidden without fetching data or a session key",
+    check("provider trace starts hidden and advanced controls stay subordinate",
           lambda:require(driver.find_element(By.ID,"ai-stream-options").is_displayed() and
             not driver.find_element(By.ID,"ai-trace").is_displayed() and
             not driver.find_element(By.ID,"ai-cancel").is_displayed() and
