@@ -194,7 +194,7 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         '      return Promise.resolve({ok:false,error:"Untrusted sidebar control"});\n'
         '  }\n'
         '  if (message.type==="UI_REGISTER_HUB") {\n'
-        '    if (sender?.url !== browser.runtime.getURL("hub.html") ||\n'
+        '    if (sender?.url?.split("#")[0] !== browser.runtime.getURL("hub.html") ||\n'
         '        !Number.isInteger(sender.tab?.id) ||\n'
         '        Object.keys(message).some(key=>key!=="type"))\n'
         '      return Promise.resolve({ok:false,error:"Untrusted Hub registration"});\n'
@@ -224,6 +224,13 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
     # sidebars or page-local stores. A registered Hub ID is compared to the
     # active Firefox tab without exposing another tab's URL or content.
     source = 'let unifiedHubTabId=null;\n' + source
+    source = source.replace(
+        '  let hub = all.find(tab => (tab.url || "").split("#")[0] === hubUrl && !tab.incognito);',
+        '  let hub = all.find(tab => (tab.url || "").split("#")[0] === hubUrl && !tab.incognito);\n'
+        '  if(!hub && Number.isInteger(unifiedHubTabId))\n'
+        '    hub=all.find(tab=>tab.id===unifiedHubTabId && !tab.incognito);', 1)
+    check('tab.id===unifiedHubTabId' in source,
+          "Canonical Hub tab fallback anchor changed")
     source = source.replace('async function focusAssistant() {',
         'async function focusAssistant() {', 1)
     source = source.replace('  return {focused:true,hubTabId:hub.id,view:"assistant"};',
@@ -316,17 +323,6 @@ def adapt_ui(source: str) -> str:
         '    if(!await permissionRequest)throw Error("Workspace tab access was not granted");\n'
         + needle
     ))
-    coffee = 'if(coffeeButton)coffeeButton.addEventListener("click",async()=>{'
-    check(source.count(coffee) == 1, "Coffee handoff anchor changed")
-    source = source.replace(coffee, coffee + (
-        '\n  if(document.body.dataset.view==="sidebar"){\n'
-        '    // A click in the extension sidebar is a valid Firefox user gesture.\n'
-        '    try{browser.sidebarAction.close().catch(()=>{});}catch{}\n'
-        '    browser.tabs.create({url:browser.runtime.getURL("hub.html#coffee")})\n'
-        '      .catch(error=>coffeeStatus(error.message,true));\n'
-        '    return;\n'
-        '  }'
-    ))
     return source
 
 
@@ -393,7 +389,8 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     '<link rel="stylesheet" href="unified/workspace-settings.css">'
                     '<script defer src="unified/hub-tabs.js"></script>'
                     '<script defer src="unified/workspace-settings.js"></script>'
-                    '<script defer src="unified/coffee-readiness.js"></script></head>', 1)
+                    '<script defer src="unified/coffee-readiness.js"></script>'
+                    '<script defer src="unified/surface-exclusive.js"></script></head>', 1)
                 # Historical pinned Cloudflare panel is never active in the
                 # new public-facing user-owned engineering configuration.
                 master_script = '<script defer src="google/master-ui.js"></script>'
@@ -410,7 +407,8 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     '<script defer src="unified/page-context.js"></script>'
                     '<script defer src="unified/sidebar-handoff.js"></script>'
                     '<script defer src="unified/workspace-settings.js"></script>'
-                    '<script defer src="unified/coffee-readiness.js"></script></head>', 1)
+                    '<script defer src="unified/coffee-readiness.js"></script>'
+                    '<script defer src="unified/surface-exclusive.js"></script></head>', 1)
                 # The sidebar already has a dedicated Model tab. Never wrap
                 # those controls in a redundant nested disclosure.
                 check(html.count('<form id="ai-settings-form" class="ai-form">') == 1,
@@ -429,15 +427,12 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
-        '<link rel="stylesheet" href="unified/station-launcher.css">\n'
-        '<script defer src="unified/module.js"></script>\n'
-        '<script defer src="unified/station-launcher.js"></script>\n'
-        + script_tag)
+        '<script defer src="unified/module.js"></script>\n' + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
     toggle_html = (
         '<button id="ai-module-toggle" class="settings-toggle" type="button" '
-        'aria-pressed="false" disabled>✧ ENABLE AYARIME AI</button>\n'
+        'aria-pressed="false" disabled hidden>✧ ENABLE AYARIME AI</button>\n'
     )
     station_html = station_html.replace(tool_button, toggle_html + '          ' + tool_button)
     if enable_google_master:
@@ -467,15 +462,13 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "ui-polish.css").read_bytes()
     inventory["unified/module.js"] = (
         ROOT / "unified-preview" / "module.js").read_bytes()
+    inventory["unified/surface-exclusive.js"] = (
+        ROOT / "unified-preview" / "surface-exclusive.js").read_bytes()
     for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js",
                  "sidebar-handoff.js", "workspace-settings.js",
                  "workspace-settings.css", "coffee-readiness.js"):
         inventory["unified/" + name] = (
             ROOT / "unified-preview" / name).read_bytes()
-    inventory["unified/station-launcher.js"] = (
-        ROOT / "unified-preview" / "station-launcher.js").read_bytes()
-    inventory["unified/station-launcher.css"] = (
-        ROOT / "unified-preview" / "station-launcher.css").read_bytes()
     # Inert by design: bundled for contract review and tests, NOT injected into
     # the page or background until OAuth scopes and host allowlists are accepted.
     inventory["unified/google-worker-contract.js"] = (
@@ -500,19 +493,13 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         check(station_js.count(before) == 1,
               "Core Station command copy changed: " + before)
         station_js = station_js.replace(before, after)
-    # A single circular launcher opens Firefox's native sidebar. No custom
-    # drawer, overlay or duplicate Station navigation is mounted.
-    launcher = (
-        '<button id="ayarime-sidebar-launcher" type="button" '
-        'title="Open Ayarime in Firefox sidebar" '
-        'aria-label="Open Ayarime in Firefox sidebar">✧</button>'
-        '<button id="ayarime-workspace-launcher" type="button" '
-        'title="Open full Ayarime Workspace Hub" '
-        'aria-label="Open full Ayarime Workspace Hub">Hub</button>'
-        '<p id="ayarime-sidebar-launcher-status" role="status"></p>'
-    )
-    check(station_html.count("<body>") == 1, "ELF Station body markup changed")
-    station_html = station_html.replace("<body>", "<body>\n" + launcher, 1)
+    # The Firefox extension toolbar is the ONLY in-app sidebar launcher.
+    # The sidebar header is the ONLY in-app full Hub launcher. Keep legacy
+    # Station widgets inert for compatibility with its existing script.
+    for control in ("ask-ayarime-toggle", "workspace-companion-toggle"):
+        needle = '<button id="' + control + '"'
+        check(station_html.count(needle) == 1, "Station launcher anchor changed: " + control)
+        station_html = station_html.replace(needle, needle + ' hidden', 1)
     inventory["newtab.html"] = station_html.encode("utf-8")
     inventory["newtab.js"] = station_js.encode("utf-8")
     inventory["manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False)
