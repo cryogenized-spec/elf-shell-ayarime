@@ -410,7 +410,7 @@ body[data-view="sidebar"] .ayarime-sidebar-pane{
 
 /* Chat-first Ayarime: the transcript is the workspace. Setup and diagnostics
  * are native keyboard-accessible dropdowns, with no duplicate form state. */
-.ai-console:has(.chat-first-stage){display:flex;flex-direction:column;gap:12px}
+.ai-console.chat-first-ready{display:flex;flex-direction:column;gap:12px}
 .ai-console .chat-first-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
 .ai-console .chat-first-disclosure{min-width:0;background:#121d2ab8;border:1px solid #64858f74;border-radius:7px;overflow:hidden}
 .ai-console .chat-first-disclosure[hidden]{display:none!important}
