@@ -106,4 +106,5 @@
 
   // Everything optional follows the conversation; no layout-changing copies.
   root.append(controls,stage);
+  root.classList.add("chat-first-ready");
 })();
