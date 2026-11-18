@@ -241,7 +241,9 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         'async function unifiedHubIsForeground(){\n'
         '  if(!Number.isInteger(unifiedHubTabId))return false;\n'
         '  const active=await browser.tabs.query({active:true,currentWindow:true});\n'
-        '  return active.some(tab=>tab.id===unifiedHubTabId);\n'
+        '  const hubUrl=browser.runtime.getURL("hub.html");\n'
+        '  return active.some(tab=>tab.id===unifiedHubTabId &&\n'
+        '    (tab.url||"").split("#")[0]===hubUrl);\n'
         '}\n'
         'async function ensureGroup(windowId, ids, title=GROUP_TITLE) {', 1)
     check('async function unifiedHubIsForeground()' in source,
