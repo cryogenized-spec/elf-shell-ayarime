@@ -152,6 +152,13 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         '        if(!await browser.permissions.contains({permissions:["tabs"]}))\n'
         '          throw Error("Firefox tab access must be granted before opening the AI Hub");\n'
         '        return {ok:true,result:await serialise(focusAssistant)};\n'
+        '      case "UI_OPEN_WORKSPACE":\n'
+        '        return {ok:true,result:await serialise(focusAssistant)};\n'
+        '      case "UI_REGISTER_HUB":\n'
+        '        if(Number.isInteger(message.tabId))throw Error("Untrusted Hub tab identifier");\n'
+        '        return {ok:true};\n'
+        '      case "UI_SURFACE_STATUS":\n'
+        '        return {ok:true,hubActive:await unifiedHubIsForeground()};\n'
         + anchor
     ))
     # Any extension page can send same-extension messages; keep the actual
@@ -181,6 +188,18 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         'browser.runtime.onMessage.addListener((message,sender) => {\n'
         '  if (sender?.id !== browser.runtime.id || '
         ' !WORKSPACE_MESSAGE_TYPES.has(message?.type)) return undefined;\n'
+        '  if (message.type==="UI_OPEN_WORKSPACE" || message.type==="UI_SURFACE_STATUS") {\n'
+        '    if (sender?.url !== browser.runtime.getURL("sidebar.html") ||\n'
+        '        Object.keys(message).some(key=>key!=="type"))\n'
+        '      return Promise.resolve({ok:false,error:"Untrusted sidebar control"});\n'
+        '  }\n'
+        '  if (message.type==="UI_REGISTER_HUB") {\n'
+        '    if (sender?.url !== browser.runtime.getURL("hub.html") ||\n'
+        '        !Number.isInteger(sender.tab?.id) ||\n'
+        '        Object.keys(message).some(key=>key!=="type"))\n'
+        '      return Promise.resolve({ok:false,error:"Untrusted Hub registration"});\n'
+        '    unifiedHubTabId=sender.tab.id;\n'
+        '  }\n'
         '  if (message.type.startsWith("UNIFIED_")) {\n'
         '    if (sender?.url !== browser.runtime.getURL("newtab.html") || '
         'message.kind!=="elfshell.workspace.bridge" || message.version!==1 ||\n'
@@ -201,6 +220,26 @@ def adapt_background(source: str, enable_google_master: bool = False) -> str:
         '  return handle(message);\n'
         '});'
     )
+    # Surface state is in this one extension background, not in independent
+    # sidebars or page-local stores. A registered Hub ID is compared to the
+    # active Firefox tab without exposing another tab's URL or content.
+    source = 'let unifiedHubTabId=null;\n' + source
+    source = source.replace('async function focusAssistant() {',
+        'async function focusAssistant() {', 1)
+    source = source.replace('  return {focused:true,hubTabId:hub.id,view:"assistant"};',
+        '  unifiedHubTabId=hub.id;\n'
+        '  return {focused:true,hubTabId:hub.id,view:"assistant"};', 1)
+    check('unifiedHubTabId=hub.id;' in source, "Canonical Hub state anchor missing")
+    source = source.replace('async function ensureGroup(windowId, ids, title=GROUP_TITLE) {',
+        'async function unifiedHubIsForeground(){\n'
+        '  if(!Number.isInteger(unifiedHubTabId))return false;\n'
+        '  const active=await browser.tabs.query({active:true,currentWindow:true});\n'
+        '  return active.some(tab=>tab.id===unifiedHubTabId);\n'
+        '}\n'
+        'async function ensureGroup(windowId, ids, title=GROUP_TITLE) {', 1)
+    check('async function unifiedHubIsForeground()' in source,
+          "Foreground Hub authority anchor missing")
+
     # Keep the default build byte-for-byte safe. Only the explicitly selected
     # engineering package lifts the Master-only command block; desktop Google
     # REST OAuth, update checks and all other unrelated routes remain blocked.
