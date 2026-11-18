@@ -6,9 +6,8 @@ const bg=read("background.js"),html=read("hub.html"),ui=read("ui.js");
 test("assistant route is a local, explicit UI handoff",()=>{
   assert(html.includes('id="ai-console"'));
   assert(html.includes('href="#assistant"'));
-  assert(html.includes('id="ai-open-sidebar"'));
-  assert(ui.includes('browser.sidebarAction.open().then('));
-  assert(ui.includes('openAssistantSidebar.addEventListener("click",()=>{'));
+  assert(!html.includes('id="ai-open-sidebar"'));
+  assert(!ui.includes('openAssistantSidebar.addEventListener("click",()=>{'));
   assert(ui.includes('location.hash!=="#assistant"'));
   assert(ui.includes('prompt.focus({preventScroll:true})'));
   assert(ui.includes('prompt.scrollIntoView({block:"center"})'),"Handoff must show the actual AI composer, not just top of settings");
