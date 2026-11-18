@@ -2,6 +2,7 @@
 (function(root){
   "use strict";
   const KEY="elfshell.byok.visibleTranscript.v1";
+  const DRAFT_KEY="elfshell.byok.sharedDraft.v1";
   const host=document.querySelector("#ai-conversation-list");
   if(!host) {root.WorkspaceConversationUI={record:async()=>false};return;}
   const count=document.querySelector("#ai-conversation-count");
@@ -103,6 +104,10 @@
       ++generation;
       render(result.entries);
       tell("Saved.");
+      if(field && field.value.trim()===prompt.trim()){
+        field.value="";
+        void browser.storage.session?.remove(DRAFT_KEY).catch(()=>{});
+      }
       if(enable?.checked)void refreshPreview();
       return true;
     }catch{
@@ -125,6 +130,23 @@
   enable?.addEventListener("change",()=>void refreshPreview());
   limit?.addEventListener("change",()=>void refreshPreview());
   const field=document.querySelector("#ai-prompt");
+  let draftTimer=null;
+  function flushDraft(){
+    if(draftTimer!==null){clearTimeout(draftTimer);draftTimer=null;}
+    if(!field||!browser.storage.session)return;
+    const value=field.value.slice(0,12000);
+    void browser.storage.session.set({[DRAFT_KEY]:value}).catch(()=>{});
+  }
+  field?.addEventListener("input",()=>{
+    if(draftTimer!==null)clearTimeout(draftTimer);
+    draftTimer=setTimeout(flushDraft,160);
+  });
+  // Restore a draft when transferring between native sidebar and full Hub.
+  // Text remains Firefox-session only, never part of the persistent profile.
+  browser.storage.session?.get(DRAFT_KEY).then(saved=>{
+    if(field && !field.value && typeof saved[DRAFT_KEY]==="string")
+      field.value=saved[DRAFT_KEY].slice(0,12000);
+  }).catch(()=>{});
   field?.addEventListener("keydown",event=>{
     if(event.key==="Enter"&&(event.ctrlKey||event.metaKey)){
       event.preventDefault();
@@ -133,8 +155,14 @@
     }
   });
   browser.storage?.onChanged?.addListener((changes,area)=>{
-    if(area==="session"&&Object.prototype.hasOwnProperty.call(changes,KEY))void reload();
+    if(area!=="session")return;
+    if(Object.prototype.hasOwnProperty.call(changes,KEY))void reload();
+    if(Object.prototype.hasOwnProperty.call(changes,DRAFT_KEY)&&field&&
+       document.activeElement!==field&&draftTimer===null){
+      const value=changes[DRAFT_KEY].newValue;
+      field.value=typeof value==="string"?value.slice(0,12000):"";
+    }
   });
   void reload();
-  root.WorkspaceConversationUI={record,reload,contextOptions,resetContext,refreshPreview};
+  root.WorkspaceConversationUI={record,reload,contextOptions,resetContext,refreshPreview,flushDraft};
 })(globalThis);
