@@ -21,6 +21,8 @@
     // Close before the asynchronous tab-switch request; no new Hub tab is
     // created in the UI itself.
     button.disabled=true;
+    // Queue the session draft before Firefox destroys the sidebar document.
+    globalThis.WorkspaceConversationUI?.flushDraft?.();
     try{browser.sidebarAction.close().catch(()=>{});}catch{}
     browser.runtime.sendMessage({type:"UI_OPEN_WORKSPACE"})
       .then(reply=>{
