@@ -18,7 +18,8 @@ test("Hub and sidebar contain no promotional-token offer, meters or enrollment c
     assert.match(html,/id="ai-grant"/);
     assert.match(html,/id="ai-key"/);
     assert.match(html,/id="ai-trace-usage"/);
-    assert.match(html,/API usage may incur charges/i);
+    assert.doesNotMatch(html,/API usage may incur charges|higher cost|potential cost|additional charges/i);
+    assert.doesNotMatch(html,/id="ai-summary-hint"[^>]*>LIVE/);
   }
 });
 
