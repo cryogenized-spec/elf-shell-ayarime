@@ -11,7 +11,7 @@ class Element{
 function harness(){
   const ids=["ai-output","ai-status","ai-trace","ai-trace-steps","ai-summary-text",
     "ai-summary-status","ai-elapsed","ai-trace-usage","ai-send","ai-cancel",
-    "ai-reasoning-label","ai-summary-hint","ai-summary-details","ai-activity-count",
+    "ai-reasoning-label","ai-summary-details","ai-activity-count",
     "ai-activity-details","ai-prompt","ai-model"];
   const nodes=Object.fromEntries(ids.map(x=>[x,new Element()]));
   nodes["ai-model"].value="gpt-6-luna";
@@ -35,11 +35,12 @@ function harness(){
 test("Hub and sidebar expose the same honest, expandable reasoning panel",()=>{
   for(const page of ["hub.html","sidebar.html"]){
     const html=fs.readFileSync(path.join(root,page),"utf8");
-    for(const id of ["ai-reasoning-label","ai-summary-hint","ai-summary-details",
+    for(const id of ["ai-reasoning-label","ai-summary-details",
       "ai-trace-steps","ai-activity-details","ai-activity-count","ai-output-budget"])
       assert(html.includes('id="'+id+'"'),page+" lacks "+id);
     assert(html.includes("Provider reasoning summary"),"Must label summary accurately");
-    assert(html.includes("not private internal reasoning"),"Must disclose summary limitations");
+    assert(html.includes("Provider summary"),"Must label the provider summary accurately");
+    assert(!html.includes('id="ai-summary-hint"'),"No ornamental LIVE badge");
     assert(html.includes('value="768" selected'),"Output budget must default to economical 768");
     assert(html.includes('value="2048"')&&html.includes('value="4096"'));
   }
@@ -60,7 +61,7 @@ test("thinking streams summaries live, then collapses on answer with accurate ti
   h.advance(2700);
   h.emit({kind:"summary",id:"a",text:"**Plan** Test the input",done:false});
   assert(n["ai-summary-text"].children.length>0,"Provider summary should appear during streaming");
-  assert.equal(n["ai-summary-hint"].textContent,"STREAMING");
+  assert.equal(n["ai-trace"].dataset.stage,"thinking");
   h.advance(1000);
   h.emit({kind:"answer",id:"m",text:"Here is the answer.",done:false});
   assert.equal(n["ai-trace"].dataset.stage,"answering");
@@ -71,7 +72,7 @@ test("thinking streams summaries live, then collapses on answer with accurate ti
   assert.equal(n["ai-trace"].dataset.stage,"completed");
   assert.match(n["ai-reasoning-label"].textContent,/Thought for 4\.0s/);
   assert.match(n["ai-trace-usage"].textContent,/internal reasoning 50/);
-  assert.match(n["ai-summary-status"].textContent,/not private chain-of-thought/);
+  assert.match(n["ai-summary-status"].textContent,/Provider summary/);
 });
 test("actual tool events render circular, accessible category icons; unknown tools use neutral fallback",()=>{
   const h=harness(),n=h.nodes;
@@ -109,7 +110,7 @@ test("user-expanded summary is not forcibly collapsed; missing summary is never 
   assert.equal(n["ai-summary-details"].open,true);
   h.emit({kind:"terminal",status:"completed",usage:{inputTokens:10,outputTokens:10}});
   assert.equal(n["ai-summary-details"].open,true);
-  assert.match(n["ai-summary-status"].textContent,/did not expose a reasoning summary/);
+  assert.match(n["ai-summary-status"].textContent,/No summary supplied/);
   assert.match(n["ai-reasoning-label"].textContent,/Completed in/);
   assert.equal(n["ai-summary-text"].children.length,0);
 });

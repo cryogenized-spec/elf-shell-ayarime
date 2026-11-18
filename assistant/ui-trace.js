@@ -59,7 +59,6 @@
     const clock=document.querySelector("#ai-elapsed"),usage=document.querySelector("#ai-trace-usage");
     const send=document.querySelector("#ai-send"),stop=document.querySelector("#ai-cancel");
     const headline=document.querySelector("#ai-reasoning-label");
-    const hint=document.querySelector("#ai-summary-hint");
     const details=document.querySelector("#ai-summary-details");
     const activityCount=document.querySelector("#ai-activity-count");
     let renderHandle=null;
@@ -73,7 +72,6 @@
     board.hidden=false;
     board.dataset.stage="connecting";
     if(headline)headline.textContent="Connecting…";
-    if(hint)hint.textContent="WAITING";
     if(activityCount)activityCount.textContent="0 events";
     if(details){
       details.open=true;
@@ -84,7 +82,7 @@
     const activity=document.querySelector("#ai-activity-details");
     if(activity)activity.open=false;
     summaryInfo.textContent="Waiting for a provider-exposed reasoning summary…";
-    usage.textContent="No token usage available yet.";
+    usage.textContent="";
     send.disabled=true;stop.hidden=false;stop.disabled=false;
     status.textContent="Connecting to OpenAI · waiting for streamed events…";
     status.classList.remove("error");
@@ -157,7 +155,6 @@
         :message.status==="cancelled"?"Stopped after "+seconds(total)
         :message.status==="incomplete"?"Incomplete after "+seconds(total)
         :"Failed after "+seconds(total);
-      if(hint)hint.textContent=state.hasSummary?"SUMMARY": "NOT PROVIDED";
       if(details&&!state.summaryTouched)details.open=false;
       const ended=step("terminal",message.status==="completed"?"Completed":
         message.status==="cancelled"?"Cancelled":
@@ -165,11 +162,11 @@
       ended.end=ended.start;
       ended.marker.textContent=message.status==="completed"?"✓":"!";
       status.textContent=message.status==="completed"
-        ?"OpenAI stream completed · provider summaries and actual events shown."
+        ?"Response complete."
         :message.message||"OpenAI stream ended: "+message.status;
       status.classList.toggle("error",message.status==="failed");
       if(!state.hasSummary)
-        summaryInfo.textContent="This model did not expose a reasoning summary. Activity and time are shown, but private internal thoughts are not available.";
+        summaryInfo.textContent="No summary supplied.";
       if(message.usage)usage.textContent="Reported tokens · input "+
         (message.usage.inputTokens??"—")+" · output "+
         (message.usage.outputTokens??"—")+
@@ -199,7 +196,6 @@
         state.model=message.model;
         board.dataset.stage="thinking";
         if(headline)headline.textContent="Thinking…";
-        if(hint)hint.textContent="LIVE";
         finishStep("connecting");
         step("accepted","Model: "+message.model+" · reasoning "+message.effort+
           " · "+(message.contextTurns||0)+" prior exchange(s)");
@@ -210,19 +206,17 @@
         step("phase-"+state.steps.size,message.name||"Processing");
       }else if(message.kind==="summary"){
         state.hasSummary=true;
-        if(hint)hint.textContent=message.done?"UPDATED":"STREAMING";
         const id=message.id||"summary";
         state.summaries.set(id,message.text||"");
         step("summary-"+id,"Provider reasoning summary");
         if(message.done)finishStep("summary-"+id);
         queueSummary();
-        summaryInfo.textContent="OpenAI-provided summary · not private chain-of-thought.";
+        summaryInfo.textContent="Provider summary.";
       }else if(message.kind==="answer"){
         if(state.firstAnswerAt===null){
           state.firstAnswerAt=now();
           board.dataset.stage="answering";
           if(headline)headline.textContent="Responding…";
-          if(hint)hint.textContent=state.hasSummary?"SUMMARY":"NO SUMMARY";
           flushSummary();
           if(details&&!state.summaryTouched)details.open=false;
         }

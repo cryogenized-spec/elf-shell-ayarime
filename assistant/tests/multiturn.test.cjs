@@ -126,7 +126,8 @@ test("Hub and sidebar require a per-send checkbox, limit, and preview",()=>{
       assert(html.includes('id="'+id+'"'),"missing "+id+" from "+path);
     assert(html.includes("this request only"));
     assert(!/<input id="ai-context-enable"[^>]*checked/.test(html),"context must start unchecked");
-    assert(html.includes("can increase tokens, cost and latency"));
+    assert(html.includes('src="chat-first.js"'));
+    assert(!html.includes("can increase tokens, cost and latency"));
   }
   const ui=read("ui.js"),trace=read("ui-trace.js"),conversation=read("ui-conversation.js");
   assert(ui.includes("...context"));

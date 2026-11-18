@@ -169,6 +169,14 @@ try:
     verify("Assistant deeplink foregrounds only the assistant tab",
            driver.find_element(By.ID,"unified-hub-tab-assistant").get_attribute("aria-selected")=="true"
            and driver.find_element(By.ID,"unified-hub-pane-overview").get_property("hidden"))
+    verify("Hub presents chat and composer before expanded configuration",
+           driver.find_element(By.ID,"ai-conversation-list").is_displayed()
+           and driver.find_element(By.ID,"ai-prompt").is_displayed()
+           and not driver.find_element(By.CSS_SELECTOR,".chat-first-provider").get_property("open")
+           and not driver.find_element(By.CSS_SELECTOR,".chat-first-options").get_property("open")
+           and not driver.find_elements(By.ID,"ai-summary-hint")
+           and "API usage may incur charges" not in
+                driver.find_element(By.ID,"ai-console").get_attribute("textContent"))
     WebDriverWait(driver, 10).until(
         lambda d: d.execute_script(
             "return document.activeElement?.id === 'ai-prompt'"))
@@ -214,15 +222,21 @@ try:
     driver.get(sidebar)
     stable_page("Sidebar")
     tabs = driver.find_elements(By.CSS_SELECTOR, ".ayarime-sidebar-tabs [role=tab]")
-    verify("Native sidebar has Chat / Model / Workspace / Google / More tabs",
-           [t.text for t in tabs] == ["Chat","Model","Workspace","Google","More"])
-    verify("Chat is the initial pane, other sections are not stacked",
-           driver.find_element(By.ID, "ayarime-sidebar-tab-chat").get_attribute("aria-selected") == "true"
-           and driver.find_element(By.ID, "ayarime-sidebar-pane-model").get_property("hidden"))
-    driver.find_element(By.ID, "ayarime-sidebar-tab-model").click()
-    verify("Model tab has a real dropdown and editable custom ID without a second disclosure",
-           not driver.find_elements(By.CSS_SELECTOR, ".unified-provider-settings")
-           and driver.find_element(By.ID, "ai-provider").is_displayed()
+    verify("Native sidebar has Chat / Workspace / Google / More tabs",
+           [t.text for t in tabs] == ["Chat","Workspace","Google","More"])
+    verify("Chat is initial and no separate Model pane or second sidebar exists",
+           driver.find_element(By.ID,"ayarime-sidebar-tab-chat").get_attribute("aria-selected")=="true"
+           and not driver.find_elements(By.ID,"ayarime-sidebar-pane-model")
+           and not driver.find_elements(By.ID,"station-drawer"))
+    verify("Conversation is visible while optional controls start collapsed",
+           driver.find_element(By.ID,"ai-conversation-list").is_displayed()
+           and driver.find_element(By.ID,"ai-prompt").is_displayed()
+           and driver.find_element(By.ID,"ai-send").is_displayed()
+           and not driver.find_element(By.CSS_SELECTOR,".chat-first-provider").get_property("open")
+           and not driver.find_element(By.CSS_SELECTOR,".chat-first-options").get_property("open"))
+    driver.find_element(By.CSS_SELECTOR,".chat-first-provider > summary").click()
+    verify("Model picker and editable custom ID sit inside Chat's dropdown",
+           driver.find_element(By.ID, "ai-provider").is_displayed()
            and driver.find_element(By.ID, "ai-model-picker").is_displayed()
            and driver.find_element(By.ID, "ai-model").is_displayed()
            and driver.find_element(By.ID, "ai-key").is_displayed())

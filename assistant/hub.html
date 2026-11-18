@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ELF//SHELL — Workspace Hub</title><link rel="stylesheet" href="ui.css">
-<script defer src="google/master-ui.js"></script><script defer src="ui-trace.js"></script><script defer src="google/login-ui.js"></script><script defer src="ui-conversation.js"></script><script defer src="ui.js"></script></head>
+<script defer src="google/master-ui.js"></script><script defer src="ui-trace.js"></script><script defer src="google/login-ui.js"></script><script defer src="ui-conversation.js"></script><script defer src="ui.js"></script><script defer src="chat-first.js"></script></head>
 <body data-view="hub">
 <div class="backdrop" aria-hidden="true"></div>
 <main class="shell">
@@ -171,12 +171,12 @@
   <p class="quiet">Google Tasks scheduled dates do not necessarily mean deadlines. Results are limited to today's primary calendar and the first few incomplete task lists; any incomplete coverage is labelled.</p>
 </section>
 <section id="ai-console" class="frame ai-console" aria-label="Ayarime BYOK text assistant">
-  <div class="section-head"><div><p class="eyebrow">// 07 · AYARIME / BYOK</p><h2>AI Console</h2></div></div>
+  <div class="section-head"><div><p class="eyebrow">// 07 · AYARIME / BYOK</p><h2>Ayarime</h2></div></div>
   <div class="ai-sidebar-actions">
-    <button id="ai-open-sidebar" class="mini ai-sidebar-button" type="button">✧ CONTINUE IN FIREFOX SIDEBAR</button>
+    <button id="ai-open-sidebar" class="mini ai-sidebar-button" type="button">Open sidebar</button>
     <span id="ai-sidebar-status" class="quiet" role="status" aria-live="polite"></span>
   </div>
-  <p class="quiet">Choose your own AI provider and model. The API key lasts only for this Firefox session. ChatGPT and Claude app subscriptions are not interchangeable with API access.</p>
+
   <form id="ai-settings-form" class="ai-form">
     <label for="ai-provider">Provider</label>
     <select id="ai-provider">
@@ -194,7 +194,7 @@
       <option value="gpt-6-luna">GPT-6 Luna · efficient</option>
       <option value="gpt-6.1-terra">GPT-6.1 Terra</option>
       <option value="gpt-6.1-sol">GPT-6.1 Sol</option>
-      <option value="gpt-6-astra">GPT-6 Astra · highest cost</option>
+      <option value="gpt-6-astra">GPT-6 Astra</option>
     </datalist>
 
     <button type="submit" class="mini">Save provider and model</button>
@@ -213,33 +213,31 @@
       <button id="ai-conversation-clear" class="mini" type="button" disabled>Clear conversation</button>
     </div>
     <div id="ai-conversation-list" class="conversation-list" role="log" aria-live="polite" aria-relevant="additions text">
-      <p class="conversation-empty">No replies in this Firefox session. Ask Ayarime to begin.</p>
+      <p class="conversation-empty">Start a conversation.</p>
     </div>
-    <p class="quiet conversation-privacy">Your prompts and replies are kept in Firefox session storage (not encrypted) and cleared when the session ends or you choose Clear. Previous exchanges <strong>are not sent as context unless you opt in for that request</strong>.</p>
-    <p id="ai-conversation-status" class="quiet" role="status" aria-live="polite"></p>
+<p id="ai-conversation-status" class="quiet" role="status" aria-live="polite"></p>
   </section>
-  <label for="ai-prompt" class="eyebrow">SEND AN EXPLICIT PROMPT</label>
+  <label for="ai-prompt" class="eyebrow">Message</label>
   <textarea id="ai-prompt" rows="4" maxlength="6000" placeholder="Ayarime, help me organize my work…"></textarea>
   <div id="ai-stream-options" class="trace-options">
     <label for="ai-effort">OpenAI reasoning effort</label>
     <select id="ai-effort" aria-label="OpenAI reasoning effort">
       <option value="none">None · no summary request</option>
       <option value="low">Low</option>
-      <option value="medium" selected>Medium · recommended</option>
+      <option value="medium" selected>Medium</option>
       <option value="high">High</option>
       <option value="xhigh">Extra high</option>
-      <option value="max">Maximum · more tokens and potential cost</option>
+      <option value="max">Maximum</option>
     </select>
     <label class="trace-budget" for="ai-output-budget">Maximum output tokens (includes internal reasoning)
       <select id="ai-output-budget" aria-label="Maximum output tokens for this request">
-        <option value="768" selected>768 · economical / default</option>
-        <option value="2048">2,048 · longer thinking / more cost</option>
-        <option value="4096">4,096 · extended / higher cost</option>
+        <option value="768" selected>768</option>
+        <option value="2048">2,048</option>
+        <option value="4096">4,096</option>
       </select>
     </label>
-    <label class="trace-check" for="ai-web-search"><input id="ai-web-search" type="checkbox" /> Allow OpenAI hosted web search for this request (additional charges may apply)</label>
-    <p class="quiet">Responses API streaming with provider-exposed reasoning summaries. Raw private chain-of-thought is not available. Tool steps appear only when the provider actually emits them.</p>
-  </div>
+    <label class="trace-check" for="ai-web-search"><input id="ai-web-search" type="checkbox" /> Web search for this request</label>
+</div>
   <fieldset class="ai-context-panel" aria-label="Previous conversation context">
     <legend>// CONTEXT / PER-REQUEST OPT-IN</legend>
     <label class="ai-context-optin" for="ai-context-enable">
@@ -254,10 +252,9 @@
       </select>
     </label>
     <p id="ai-context-preview" class="quiet" role="status" aria-live="polite">Context OFF. Only your new prompt and persona are sent.</p>
-    <p class="quiet">History must match the current provider and model, up to 12,000 characters in total. More context can increase tokens, cost and latency. The checkbox resets after each send. Previous messages are never sent unless you opt in.</p>
+    <p class="quiet"></p>
   </fieldset>
-  <p class="quiet prompt-shortcut">Ctrl+Enter sends the current prompt · Enter adds a line</p>
-  <button id="ai-send" type="button" class="secondary">Ask Ayarime ↗</button>
+<button id="ai-send" type="button" class="secondary">Ask Ayarime ↗</button>
   <button id="ai-cancel" type="button" class="mini danger" hidden>Stop OpenAI generation</button>
   <section id="ai-trace" class="trace-board" aria-label="Provider reasoning summary and activity" data-stage="idle" hidden>
     <div class="trace-head" aria-live="polite">
@@ -280,7 +277,7 @@
       <span id="ai-elapsed" class="trace-clock" aria-label="Total elapsed time">0.0s</span>
     </div>
     <details id="ai-summary-details" class="trace-summary" open>
-      <summary><span>Provider reasoning summary</span><span id="ai-summary-hint" class="trace-summary-hint">LIVE</span></summary>
+      <summary><span>Provider reasoning summary</span></summary>
       <p id="ai-summary-status" class="quiet">Waiting for a provider-exposed summary.</p>
       <div id="ai-summary-text" class="trace-summary-body"></div>
     </details>
@@ -289,16 +286,16 @@
       <div id="ai-trace-steps" class="trace-steps" aria-live="off"></div>
     </details>
     <div class="trace-footer">
-      <small id="ai-reasoning-source" class="quiet">Provider summary only — not private internal reasoning.</small>
-      <small id="ai-trace-usage" class="quiet">Usage appears when the provider reports it.</small>
+      <small id="ai-reasoning-source" class="quiet">Provider summary</small>
+      <small id="ai-trace-usage" class="quiet"></small>
     </div>
   </section>
 
   <button id="ai-check-model" type="button" class="mini" disabled>Verify model access · no generation</button>
-  <p class="quiet" id="ai-check-result" role="status" aria-live="polite">Model verification not run. This uses a provider metadata GET, not an inference request.</p>
-  <p id="ai-status" class="status" role="status" aria-live="polite">AI not configured.</p>
+  <p class="quiet" id="ai-check-result" role="status" aria-live="polite"></p>
+  <p id="ai-status" class="status" role="status" aria-live="polite"></p>
   <div id="ai-output" class="ai-output" aria-live="polite"></div>
-  <p class="quiet">Only the prompt, persona and any explicitly selected prior exchanges go to your chosen provider after Firefox consent. API usage may incur charges. No Google account contents are forwarded automatically.</p>
+
 </section>
 <section class="frame updater-panel" aria-label="Extension release notifications">
   <p class="eyebrow">// 09 · SOFTWARE RELEASES</p>

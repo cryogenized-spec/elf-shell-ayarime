@@ -8,9 +8,5 @@ body[data-view="sidebar"] .ayarime-sidebar-tabs button[aria-selected="true"]{bac
 body[data-view="sidebar"] .ayarime-sidebar-pane{flex:1 1 auto;min-height:0;max-width:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:12px 2px 20px;scrollbar-width:thin}
 body[data-view="sidebar"] .ayarime-sidebar-pane[hidden]{display:none!important}
 body[data-view="sidebar"] .ayarime-sidebar-pane > .frame{max-width:100%;box-sizing:border-box}
-body[data-view="sidebar"] .ayarime-model-pane .unified-provider-settings{display:block}
-body[data-view="sidebar"] .ayarime-model-pane .unified-provider-settings[open] > summary{display:none}
-body[data-view="sidebar"] .ayarime-model-shortcut{margin-bottom:12px;white-space:normal}
-body[data-view="sidebar"] .ayarime-sidebar-tabs button:focus-visible,body[data-view="sidebar"] .ayarime-model-shortcut:focus-visible{outline:2px solid #ffc1d5;outline-offset:2px}
 @media(max-width:350px){body[data-view="sidebar"] .side-shell{padding:8px 6px 0}body[data-view="sidebar"] .ayarime-sidebar-tabs button{min-width:60px;padding:9px 6px;font-size:10px}}
 @media(prefers-reduced-motion:reduce){body[data-view="sidebar"] .ayarime-sidebar-tabs{scroll-behavior:auto}}

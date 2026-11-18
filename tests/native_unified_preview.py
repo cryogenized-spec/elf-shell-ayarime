@@ -199,12 +199,19 @@ try:
     click_ai_toggle()
     WebDriverWait(driver,10).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
-    cleared=driver.execute_async_script("""
-      const done=arguments[arguments.length-1];
-      browser.storage.session.get("elfshell.byok.apiKey.v1")
-        .then(v=>done(!Object.hasOwn(v,"elfshell.byok.apiKey.v1")),()=>done(false));
-    """)
-    check("disabling Ayarime AI removes BYOK key without modifying core settings",cleared is True)
+    # Firefox signals the local toggle before the independent background
+    # session-storage deletion resolves. Verify the security invariant with a
+    # bounded wait instead of racing those asynchronous browser processes.
+    def credential_cleared(_):
+        return driver.execute_async_script("""
+          const done=arguments[arguments.length-1];
+          browser.storage.session.get("elfshell.byok.apiKey.v1")
+            .then(v=>done(!Object.hasOwn(v,"elfshell.byok.apiKey.v1")),
+                  ()=>done(false));
+        """) is True
+    WebDriverWait(driver,10,poll_frequency=.1).until(credential_cleared)
+    check("disabling Ayarime AI removes BYOK key without modifying core settings",
+          credential_cleared(driver))
     click_ai_toggle()
     WebDriverWait(driver,10).until(lambda d:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="true")
