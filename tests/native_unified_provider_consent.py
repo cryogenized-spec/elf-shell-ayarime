@@ -109,6 +109,12 @@ try:
     driver.get(hub+"#assistant")
     WebDriverWait(driver,15).until(lambda d:
         len(d.find_elements(By.ID,"ai-grant"))==1)
+    # The user expands Model & connection before requesting host/data
+    # permission. The native Firefox permission prompt remains unchanged.
+    chooser=driver.find_element(By.CSS_SELECTOR,".chat-first-provider > summary")
+    chooser.click()
+    WebDriverWait(driver,8).until(lambda d:
+        d.find_element(By.ID,"ai-grant").is_displayed())
     driver.find_element(By.ID,"ai-grant").click()
     choose(False)
     WebDriverWait(driver,10).until(lambda _:has_provider() is False)
