@@ -72,7 +72,29 @@ def launch_from_sidebar():
         """)
         return probe.get("ok") is True and probe.get("hubActive") is False and (
             driver.find_element(By.ID,"ayarime-open-workspace").is_displayed())
-    WebDriverWait(driver,12,poll_frequency=.1).until(sidebar_owns_chat)
+    try:
+        WebDriverWait(driver,12,poll_frequency=.1).until(sidebar_owns_chat)
+    except Exception:
+        status=ext_call("""
+          const done=arguments[arguments.length-1];
+          browser.runtime.sendMessage({type:"UI_SURFACE_STATUS"})
+            .then(done,error=>done({ok:false,error:String(error)}));
+        """)
+        view=driver.execute_script("""
+          const button=document.getElementById("ayarime-open-workspace");
+          return {passive:document.body.classList.contains("hub-foreground"),
+            buttonVisible:!!button && getComputedStyle(button).display!=="none",
+            status:document.getElementById("ayarime-passive-surface")?.textContent||""};
+        """)
+        tabs=window_tabs()
+        print("SIDEBAR_HANDOFF_DIAGNOSTIC:",json.dumps({
+            "background":status,"view":view,
+            "tabs":[{"kind":("hub" if t.get("url","").split("#")[0].endswith("/hub.html")
+                       else "sidebar" if t.get("url","").split("#")[0].endswith("/sidebar.html")
+                       else "other"),"id":t.get("id"),"pinned":t.get("pinned")}
+                      for t in tabs]
+        }),flush=True)
+        raise
     driver.find_element(By.ID,"ayarime-open-workspace").click()
 
 
