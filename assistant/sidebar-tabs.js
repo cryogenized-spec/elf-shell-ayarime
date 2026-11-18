@@ -7,10 +7,8 @@
   if (!shell || !header || !chat) return;
 
   const sections = [
-    {key:"chat", title:"Chat", hint:"Conversation and response controls"},
-    {key:"work", title:"Workspace", hint:"Profiles, tabs and saved links"},
-    {key:"google", title:"Google", hint:"Account setup and Morning Coffee"},
-    {key:"more", title:"More", hint:"Personality, updates and diagnostics"}
+    {key:"chat", title:"Chat", hint:"Conversation"},
+    {key:"settings", title:"Settings", hint:"Integrations and preferences"}
   ];
   const nav = document.createElement("nav");
   nav.className = "ayarime-sidebar-tabs";
@@ -41,16 +39,41 @@
   }
   const move = (section,element) => { if (element) panes.get(section).append(element); };
   const parentSection = selector => shell.querySelector(selector)?.closest("section.frame");
-  move("work",parentSection("#profile-select"));
-  move("work",parentSection("#launch"));
-  move("work",parentSection("#resource-list"));
-  move("google",parentSection(".companion-link"));
-  move("google",shell.querySelector(":scope > .coffee-panel"));
-  move("more",parentSection("#persona-current-mode"));
-  move("more",shell.querySelector(":scope > .updater-panel"));
-  move("more",shell.querySelector(':scope > [role="note"]'));
-  move("more",shell.querySelector(":scope > footer"));
-
+  // One sidebar: compact groups share the Settings tab, and no duplicate
+  // launch button or deep link can open another Workspace from inside it.
+  const settings=panes.get("settings");
+  function group(title,elements) {
+    const detail=document.createElement("details");
+    detail.className="ayarime-sidebar-settings-group";
+    const summary=document.createElement("summary");
+    summary.textContent=title;
+    detail.append(summary);
+    for(const element of elements)if(element)detail.append(element);
+    settings.append(detail);
+    return detail;
+  }
+  const workspace=group("Workspace",[
+    parentSection("#profile-select"),
+    parentSection("#launch"),
+    parentSection("#resource-list")
+  ]);
+  const oldLaunch=document.getElementById("launch");
+  if(oldLaunch)oldLaunch.hidden=true;
+  const google=group("Google & Morning Coffee",[
+    parentSection(".companion-link"),
+    shell.querySelector(":scope > .coffee-panel")
+  ]);
+  google.querySelector(".companion-link")?.setAttribute("hidden","");
+  const coffeeLaunch=google.querySelector("#coffee-run");
+  if(coffeeLaunch)coffeeLaunch.hidden=true;
+  const coffeeDesc=google.querySelectorAll(".quiet");
+  for(const item of coffeeDesc)if(!item.id)item.hidden=true;
+  group("More",[
+    parentSection("#persona-current-mode"),
+    shell.querySelector(":scope > .updater-panel"),
+    shell.querySelector(':scope > [role="note"]'),
+    shell.querySelector(":scope > footer")
+  ]);
   move("chat",chat);
 
   function select(key, focus=false) {
