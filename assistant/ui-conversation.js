@@ -38,7 +38,7 @@
       if(preview)preview.textContent=info.turns
         ?info.provider+" / "+info.model+" · "+info.turns+" previous exchange(s) · "+info.characters+
           " characters · roughly "+info.approxTokens+
-          " text tokens before the new prompt (estimate only; costs vary by model)."
+          " text tokens of context (approximate)."
         :"No recent completed exchanges match this provider and model. Only your new prompt will be sent.";
     }catch{
       if(mine===previewGeneration&&preview)
@@ -62,7 +62,7 @@
     if(count)count.textContent=items.length+" / 10 exchanges";
     if(clear)clear.disabled=items.length===0;
     if(!items.length){
-      host.append(node("p","conversation-empty","No replies in this Firefox session. Ask Ayarime to begin."));
+      host.append(node("p","conversation-empty","Start a conversation."));
       return;
     }
     for(const item of items){
@@ -102,7 +102,7 @@
       const result=await request("AI_CONVERSATION_APPEND",{prompt,answer,provider,model,truncated:truncated===true});
       ++generation;
       render(result.entries);
-      tell("Saved for this Firefox session only. Previous messages are sent only when you choose to include them.");
+      tell("Saved.");
       if(enable?.checked)void refreshPreview();
       return true;
     }catch{
