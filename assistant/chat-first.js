@@ -105,5 +105,5 @@
   if(heading)heading.textContent="Ayarime";
 
   // Everything optional follows the conversation; no layout-changing copies.
-  root.append(stage,controls);
+  root.append(controls,stage);
 })();
