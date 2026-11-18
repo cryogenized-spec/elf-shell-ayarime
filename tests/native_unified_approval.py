@@ -77,16 +77,24 @@ def launch_from_sidebar():
 
 
 def pause_ai_from_station():
-    dashboard=driver.current_url
+    # After a Hub handoff the Selenium tab contains sidebar.html; explicitly
+    # return to the Station page to inspect its legacy passive state marker.
+    home=driver.execute_script('return browser.runtime.getURL("newtab.html")')
     sidebar=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
     driver.get(sidebar)
+    driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.tabs.getCurrent()
+        .then(tab=>browser.tabs.update(tab.id,{active:true}))
+        .then(()=>done(true),error=>done({error:String(error)}));
+    """)
     WebDriverWait(driver,12).until(lambda d:
         d.find_element(By.ID,"ayarime-sidebar-tab-settings").is_displayed())
     driver.find_element(By.ID,"ayarime-sidebar-tab-settings").click()
     WebDriverWait(driver,12).until(lambda d:
         d.find_element(By.ID,"unified-ai-pause").is_displayed())
     driver.find_element(By.ID,"unified-ai-pause").click()
-    driver.get(dashboard)
+    driver.get(home)
 
 
 def popup_details():
