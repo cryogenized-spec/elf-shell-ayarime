@@ -57,7 +57,7 @@ class StageFiveSixPreview(unittest.TestCase):
         for bad in ["tasks_create_task","gmail_send_message","drive_delete_file",
                     "write_prepare_action","script_update_sources"]:
             self.assertNotIn(bad,self.contract)
-        self.assertIn('id="ayarime-sidebar-launcher"',(STAGE/"newtab.html").read_text())
+        self.assertNotIn('id="ayarime-sidebar-launcher"',(STAGE/"newtab.html").read_text())\n        self.assertIn('src="unified/surface-exclusive.js"',(STAGE/"sidebar.html").read_text())
         self.assertNotIn('id="station-drawer"',(STAGE/"newtab.html").read_text())
         # Google MCP templates now belong to the Hub Connections tab, not
         # to a second Station drawer over the new-tab page.
