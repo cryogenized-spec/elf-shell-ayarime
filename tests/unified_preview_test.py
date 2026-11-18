@@ -140,8 +140,15 @@ class UnifiedPreviewContract(unittest.TestCase):
         self.assertIn('href="unified/hub-tabs.css"',hub)
         self.assertIn('src="unified/page-context.js"',sidebar)
         self.assertIn('src="unified/sidebar-handoff.js"',sidebar)
-        self.assertIn('id="ayarime-sidebar-launcher"',newtab)
-        self.assertIn('id="ayarime-workspace-launcher"',newtab)
+        self.assertNotIn('id="ayarime-sidebar-launcher"',newtab)
+        self.assertNotIn('id="ayarime-workspace-launcher"',newtab)
+        self.assertNotIn('id="ai-open-sidebar"',hub)
+        self.assertIn('id="ayarime-open-workspace"',
+                      (STAGE/"unified/sidebar-handoff.js").read_text())
+        self.assertIn('UI_OPEN_WORKSPACE',background)
+        self.assertIn('UI_SURFACE_STATUS',background)
+        self.assertIn('src="unified/surface-exclusive.js"',sidebar)
+        self.assertIn('src="unified/surface-exclusive.js"',hub)
         self.assertNotIn('id="station-drawer"',newtab)
         self.assertNotIn('station-drawer.js',newtab)
         self.assertIn('id="ai-model-picker"',sidebar)
@@ -153,7 +160,7 @@ class UnifiedPreviewContract(unittest.TestCase):
         for asset in ("hub-tabs.js","hub-tabs.css","page-context.js",
                       "sidebar-handoff.js","workspace-settings.js",
                       "workspace-settings.css","coffee-readiness.js",
-                      "station-launcher.js","station-launcher.css"):
+                      "surface-exclusive.js","surface-exclusive.css"):
             self.assertTrue((STAGE/"unified"/asset).is_file())
         self.assertFalse((STAGE/"unified/station-drawer.js").exists())
 
