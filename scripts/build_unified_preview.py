@@ -429,6 +429,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
     script_tag = '<script defer src="workspace/bridge.js"></script>'
     check(station_html.count(script_tag) == 1, "Core bridge include changed")
     station_html = station_html.replace(script_tag,
+        '<link rel="stylesheet" href="unified/surface-exclusive.css">\n'
         '<script defer src="unified/module.js"></script>\n' + script_tag)
     tool_button = '<button id="ask-ayarime-toggle"'
     check(station_html.count(tool_button) == 1, "Station assistant control changed")
