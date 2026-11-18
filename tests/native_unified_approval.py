@@ -64,8 +64,15 @@ def launch_from_sidebar():
         .then(tab=>browser.tabs.update(tab.id,{active:true}))
         .then(()=>done(true),error=>done({error:String(error)}));
     """)
-    WebDriverWait(driver,12).until(lambda d:
-        d.find_element(By.ID,"ayarime-open-workspace").is_displayed())
+    def sidebar_owns_chat(_):
+        probe=ext_call("""
+          const done=arguments[arguments.length-1];
+          browser.runtime.sendMessage({type:"UI_SURFACE_STATUS"})
+            .then(done,error=>done({ok:false,error:String(error)}));
+        """)
+        return probe.get("ok") is True and probe.get("hubActive") is False and (
+            driver.find_element(By.ID,"ayarime-open-workspace").is_displayed())
+    WebDriverWait(driver,12,poll_frequency=.1).until(sidebar_owns_chat)
     driver.find_element(By.ID,"ayarime-open-workspace").click()
 
 
@@ -196,9 +203,23 @@ try:
 
     initial_ids={tab["id"] for tab in window_tabs()}
     launch_from_sidebar()
-    WebDriverWait(driver,12).until(lambda _:sum(
-        1 for tab in window_tabs()
-        if tab["url"].split("#")[0]==hub_url and tab["pinned"])==1)
+    try:
+        WebDriverWait(driver,12,poll_frequency=.1).until(lambda _:sum(
+            1 for tab in window_tabs()
+            if tab["url"].split("#")[0]==hub_url and tab["pinned"])==1)
+    except Exception:
+        current=window_tabs()
+        print("CANONICAL_HUB_REUSE_DIAGNOSTIC:",json.dumps({
+            "pages":[{"name":("hub" if tab.get("url","").split("#")[0]==hub_url
+                else "sidebar" if tab.get("url","").split("#")[0].endswith("/sidebar.html")
+                else "other"),
+                "id":tab["id"],"pinned":tab["pinned"]} for tab in current],
+            "sidebarError":driver.execute_script(
+                'return document.getElementById("ayarime-workspace-handoff-status")?.textContent||""'),
+            "sidebarPassive":driver.execute_script(
+                'return document.body.classList.contains("hub-foreground")')
+        }),flush=True)
+        raise
     check("reopening the full Workspace reuses the exact Hub tab",
           lambda:require(
             {tab["id"] for tab in window_tabs()}==initial_ids,
