@@ -291,9 +291,27 @@ try:
            "QA local-only reply" in driver.find_element(
                By.ID, "ai-conversation-list").text and
            not driver.find_element(By.ID, "ai-context-enable").is_selected())
+    driver.execute_script("""
+      const field=document.getElementById("ai-prompt");
+      field.value="QA unsent sidebar draft";
+      field.dispatchEvent(new Event("input",{bubbles:true}));
+      window.WorkspaceConversationUI.flushDraft();
+    """)
+    WebDriverWait(driver,10).until(lambda d:
+        d.execute_async_script("""
+          const done=arguments[arguments.length-1];
+          browser.storage.session.get("elfshell.byok.sharedDraft.v1")
+            .then(x=>done(x["elfshell.byok.sharedDraft.v1"]),()=>done(""));
+        """) == "QA unsent sidebar draft")
     driver.get(hub+"#assistant")
     WebDriverWait(driver, 15).until(lambda d:
         "1 / 10" in d.find_element(By.ID, "ai-conversation-count").text)
+    WebDriverWait(driver,10).until(lambda d:
+        d.find_element(By.ID,"ai-prompt").get_attribute("value") ==
+            "QA unsent sidebar draft")
+    verify("unsent sidebar draft is restored in the same Hub conversation",
+           driver.find_element(By.ID,"ai-prompt").get_attribute("value") ==
+             "QA unsent sidebar draft")
     verify("Hub loads the same Firefox-session exchange",
            "QA local prompt" in driver.find_element(
                By.ID, "ai-conversation-list").text)
