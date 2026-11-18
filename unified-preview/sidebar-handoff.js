@@ -17,6 +17,13 @@
   status.id="ayarime-workspace-handoff-status";
   status.setAttribute("role","status");
   button.addEventListener("click",()=>{
+    const sending=document.getElementById("ai-send");
+    const cancel=document.getElementById("ai-cancel");
+    if(globalThis.WorkspaceTraceUI?.isRunning()||
+       (sending?.disabled && cancel && !cancel.hidden)){
+      status.textContent="Finish or stop the current response before switching views.";
+      return;
+    }
     // Firefox only permits closing a native sidebar from a user gesture.
     // Close before the asynchronous tab-switch request; no new Hub tab is
     // created in the UI itself.
