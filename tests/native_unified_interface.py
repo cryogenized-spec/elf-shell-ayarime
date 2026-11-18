@@ -222,8 +222,8 @@ try:
     driver.get(sidebar)
     stable_page("Sidebar")
     tabs = driver.find_elements(By.CSS_SELECTOR, ".ayarime-sidebar-tabs [role=tab]")
-    verify("Native sidebar has Chat / Workspace / Google / More tabs",
-           [t.text for t in tabs] == ["Chat","Workspace","Google","More"])
+    verify("Native sidebar has only Chat and Settings",
+           [t.text for t in tabs] == ["Chat","Settings"])
     verify("Chat is initial and no separate Model pane or second sidebar exists",
            driver.find_element(By.ID,"ayarime-sidebar-tab-chat").get_attribute("aria-selected")=="true"
            and not driver.find_elements(By.ID,"ayarime-sidebar-pane-model")
@@ -243,15 +243,21 @@ try:
     verify("OpenAI model choices are provider-specific",
            driver.find_element(By.ID, "ai-model-picker").get_attribute("value")=="gpt-5.4-mini"
            and len(driver.find_elements(By.CSS_SELECTOR, "#ai-model-picker option")) >= 4)
-    driver.find_element(By.ID, "ayarime-sidebar-tab-google").click()
-    verify("Google tab separates authorization and daily briefing",
-           driver.find_element(By.CLASS_NAME, "coffee-panel").is_displayed()
-           and driver.find_element(By.CLASS_NAME, "companion-link").is_displayed()
-           and "Open Morning Coffee" in driver.find_element(By.ID,"coffee-run").text)
-    driver.find_element(By.ID,"ayarime-sidebar-tab-more").click()
-    verify("Ayarime controls are integrated into the existing native sidebar",
-           driver.find_element(By.ID,"unified-ai-pause").is_displayed()
-           and driver.find_element(By.ID,"unified-open-connections").is_displayed())
+    verify("Only one in-extension Workspace launch exists in sidebar header",
+           len(driver.find_elements(By.ID,"ayarime-open-workspace"))==1
+           and driver.find_element(By.ID,"ayarime-open-workspace").is_displayed()
+           and not driver.find_elements(By.ID,"unified-open-connections"))
+    driver.find_element(By.ID,"ayarime-sidebar-tab-settings").click()
+    verify("Google and Workspace are subordinate closed Settings groups",
+           len(driver.find_elements(By.CSS_SELECTOR,
+               ".ayarime-sidebar-settings-group"))==3
+           and not any(item.get_property("open") for item in
+               driver.find_elements(By.CSS_SELECTOR,
+                   ".ayarime-sidebar-settings-group"))
+           and not driver.find_element(By.ID,"launch").is_displayed()
+           and not driver.find_element(By.ID,"coffee-run").is_displayed())
+    verify("Ayarime controls are in native Sidebar Settings",
+           driver.find_element(By.ID,"unified-ai-pause").is_displayed())
     driver.find_element(By.ID, "ayarime-sidebar-tab-chat").click()
     for width, height in [(390, 844), (320, 700)]:
         no_horizontal_overflow("sidebar", width, height)
