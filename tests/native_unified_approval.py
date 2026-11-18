@@ -52,9 +52,18 @@ def window_tabs():
     """)
 
 def launch_from_sidebar():
-    # One canonical in-extension Hub launch; the background must reuse it.
+    # Model a user returning to a normal tab before bringing up the
+    # native sidebar again. When the Hub itself is foreground the sidebar is
+    # deliberately passive, so its Hub launcher is correctly hidden.
+    driver.switch_to.window(dashboard)
     sidebar=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
     driver.get(sidebar)
+    driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.tabs.getCurrent()
+        .then(tab=>browser.tabs.update(tab.id,{active:true}))
+        .then(()=>done(true),error=>done({error:String(error)}));
+    """)
     WebDriverWait(driver,12).until(lambda d:
         d.find_element(By.ID,"ayarime-open-workspace").is_displayed())
     driver.find_element(By.ID,"ayarime-open-workspace").click()
