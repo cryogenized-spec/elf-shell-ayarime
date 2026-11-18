@@ -390,6 +390,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     '<script defer src="unified/hub-tabs.js"></script>'
                     '<script defer src="unified/workspace-settings.js"></script>'
                     '<script defer src="unified/coffee-readiness.js"></script>'
+                    '<link rel="stylesheet" href="unified/surface-exclusive.css">'
                     '<script defer src="unified/surface-exclusive.js"></script></head>', 1)
                 # Historical pinned Cloudflare panel is never active in the
                 # new public-facing user-owned engineering configuration.
@@ -408,6 +409,7 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
                     '<script defer src="unified/sidebar-handoff.js"></script>'
                     '<script defer src="unified/workspace-settings.js"></script>'
                     '<script defer src="unified/coffee-readiness.js"></script>'
+                    '<link rel="stylesheet" href="unified/surface-exclusive.css">'
                     '<script defer src="unified/surface-exclusive.js"></script></head>', 1)
                 # The sidebar already has a dedicated Model tab. Never wrap
                 # those controls in a redundant nested disclosure.
@@ -464,6 +466,8 @@ def build(companion_dir: Path, enable_google_master: bool = False) -> None:
         ROOT / "unified-preview" / "module.js").read_bytes()
     inventory["unified/surface-exclusive.js"] = (
         ROOT / "unified-preview" / "surface-exclusive.js").read_bytes()
+    inventory["unified/surface-exclusive.css"] = (
+        ROOT / "unified-preview" / "surface-exclusive.css").read_bytes()
     for name in ("hub-tabs.js", "hub-tabs.css", "page-context.js",
                  "sidebar-handoff.js", "workspace-settings.js",
                  "workspace-settings.css", "coffee-readiness.js"):
