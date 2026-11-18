@@ -66,13 +66,14 @@ try:
     check("Ask Ayarime entry is present in the unified Station",
           len(driver.find_elements(By.ID,"ask-ayarime-toggle"))==1)
 
-    # Only one sidebar exists: Firefox owns it. The neon launcher is a
-    # single user-initiated control, with a separate full Hub shortcut.
-    check("neon control launches one native sidebar, not a Station overlay",
-          driver.find_element(By.ID,"ayarime-sidebar-launcher").is_displayed()
-          and driver.find_element(By.ID,"ayarime-workspace-launcher").is_displayed()
+    # The Firefox extension toolbar is the sidebar's only launch path; no
+    # separate floating Station trigger or second Hub shortcut survives.
+    check("Station does not expose competing Ayarime launchers",
+          not driver.find_elements(By.ID,"ayarime-sidebar-launcher")
+          and not driver.find_elements(By.ID,"ayarime-workspace-launcher")
           and not driver.find_elements(By.ID,"station-drawer")
-          and not driver.find_elements(By.ID,"station-scrim"))
+          and not driver.find_element(By.ID,"ask-ayarime-toggle").is_displayed()
+          and not driver.find_element(By.ID,"workspace-companion-toggle").is_displayed())
 
     reply=message({"type":"UNIFIED_HELLO",
                    "kind":"elfshell.workspace.bridge","version":1})
@@ -97,8 +98,8 @@ try:
         sidebar_url=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
         driver.get(sidebar_url)
         WebDriverWait(driver,12).until(lambda d:
-            d.find_element(By.ID,"ayarime-sidebar-tab-more").is_displayed())
-        driver.find_element(By.ID,"ayarime-sidebar-tab-more").click()
+            d.find_element(By.ID,"ayarime-sidebar-tab-settings").is_displayed())
+        driver.find_element(By.ID,"ayarime-sidebar-tab-settings").click()
         WebDriverWait(driver,12).until(lambda d:
             d.find_element(By.ID,"unified-ai-pause").is_displayed())
         driver.find_element(By.ID,"unified-ai-pause").click()
@@ -249,48 +250,22 @@ try:
           blocked_workspace.get("ok") is False and
           "tab-group access" in blocked_workspace.get("error","").lower())
 
-    # Test the real Station click handler without invoking Firefox's live
-    # permission doorhanger: a deterministic temporary page-local stub
-    # imitates a denied permission request. This is NOT user grant acceptance.
-    stubbed=driver.execute_script("""
-      window.__qaOriginalPermissionRequest=browser.permissions.request;
-      const deny=()=>Promise.resolve(false);
-      browser.permissions.request=deny;
-      return browser.permissions.request===deny;
-    """)
-    check("QA can simulate a declined permission without touching browser grants",stubbed)
-    driver.find_element(By.ID,"ayarime-workspace-launcher").click()
-    WebDriverWait(driver,10).until(lambda d:
-        "declined" in d.find_element(By.ID,"workspace-bridge-status").text.lower())
-    check("Station shows a useful error after declined access",
-          "existing tabs are unchanged" in
-          driver.find_element(By.ID,"workspace-bridge-status").text.lower())
-    driver.execute_script("browser.permissions.request=window.__qaOriginalPermissionRequest;")
-
-    # The dashboard must not be able to bypass the background permission check
-    # by falsely reporting that a prompt was approved.
-    simulated=driver.execute_script("""
-      const allow=()=>Promise.resolve(true);
-      browser.permissions.request=allow;
-      return browser.permissions.request===allow;
-    """)
-    check("QA can simulate an optimistic page-local grant",simulated)
-    driver.find_element(By.ID,"ayarime-workspace-launcher").click()
-    WebDriverWait(driver,10).until(lambda d:
-        "tab access must be granted" in
-        d.find_element(By.ID,"workspace-bridge-status").text.lower())
-    check("background blocks launch even if the page claims permission was granted",
-          "workspace unavailable" in
-          driver.find_element(By.ID,"workspace-bridge-status").text.lower())
-    driver.execute_script("browser.permissions.request=window.__qaOriginalPermissionRequest;")
-    check("simulated grants have not changed Firefox's actual tab permissions",
+    # The authenticated sidebar header owns Hub opening. The Station must
+    # not impersonate it, irrespective of tab permissions or model state.
+    fake=message({"type":"UI_OPEN_WORKSPACE"})
+    fake_status=message({"type":"UI_SURFACE_STATUS"})
+    fake_registration=message({"type":"UI_REGISTER_HUB"})
+    check("Station cannot impersonate sidebar or Hub navigation",
+          all(isinstance(reply,dict) and reply.get("ok") is False
+              for reply in (fake,fake_status,fake_registration)))
+    check("navigating to Ayarime never silently requests tabs or tabGroups",
           all(item.get("granted") is False for item in
-          driver.execute_async_script("""
-             const done=arguments[arguments.length-1];
-             Promise.all(["tabs","tabGroups"].map(async name=>({
-               name,granted:await browser.permissions.contains({permissions:[name]})
-             }))).then(done);
-          """)))
+              driver.execute_async_script("""
+                const done=arguments[arguments.length-1];
+                Promise.all(["tabs","tabGroups"].map(async name=>({
+                  name,granted:await browser.permissions.contains({permissions:[name]})
+                }))).then(done);
+              """)))
 
     native=message({"type":"elfshell:telemetry:read:v1"})
     check("core background still owns its telemetry permission boundary",

@@ -51,23 +51,72 @@ def window_tabs():
         error=>done({error:String(error)}));
     """)
 
-def launch_from_station():
-    # The small Hub shortcut is the only separate Station action. The main
-    # neon launcher opens Firefox's single native sidebar, not a second drawer.
-    driver.find_element(By.ID,"ayarime-workspace-launcher").click()
+def launch_from_sidebar():
+    # Model a user returning to a normal tab before bringing up the
+    # native sidebar again. When the Hub itself is foreground the sidebar is
+    # deliberately passive, so its Hub launcher is correctly hidden.
+    driver.switch_to.window(dashboard)
+    sidebar=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
+    driver.get(sidebar)
+    driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.tabs.getCurrent()
+        .then(tab=>browser.tabs.update(tab.id,{active:true}))
+        .then(()=>done(true),error=>done({error:String(error)}));
+    """)
+    def sidebar_owns_chat(_):
+        probe=ext_call("""
+          const done=arguments[arguments.length-1];
+          browser.runtime.sendMessage({type:"UI_SURFACE_STATUS"})
+            .then(done,error=>done({ok:false,error:String(error)}));
+        """)
+        return probe.get("ok") is True and probe.get("hubActive") is False and (
+            driver.find_element(By.ID,"ayarime-open-workspace").is_displayed())
+    try:
+        WebDriverWait(driver,12,poll_frequency=.1).until(sidebar_owns_chat)
+    except Exception:
+        status=ext_call("""
+          const done=arguments[arguments.length-1];
+          browser.runtime.sendMessage({type:"UI_SURFACE_STATUS"})
+            .then(done,error=>done({ok:false,error:String(error)}));
+        """)
+        view=driver.execute_script("""
+          const button=document.getElementById("ayarime-open-workspace");
+          return {passive:document.body.classList.contains("hub-foreground"),
+            buttonVisible:!!button && getComputedStyle(button).display!=="none",
+            status:document.getElementById("ayarime-passive-surface")?.textContent||""};
+        """)
+        tabs=window_tabs()
+        print("SIDEBAR_HANDOFF_DIAGNOSTIC:",json.dumps({
+            "background":status,"view":view,
+            "tabs":[{"kind":("hub" if t.get("url","").split("#")[0].endswith("/hub.html")
+                       else "sidebar" if t.get("url","").split("#")[0].endswith("/sidebar.html")
+                       else "other"),"id":t.get("id"),"pinned":t.get("pinned")}
+                      for t in tabs]
+        }),flush=True)
+        raise
+    driver.find_element(By.ID,"ayarime-open-workspace").click()
 
 
 def pause_ai_from_station():
-    dashboard=driver.current_url
+    # After a Hub handoff the Selenium tab contains sidebar.html; explicitly
+    # return to the Station page to inspect its legacy passive state marker.
+    home=driver.execute_script('return browser.runtime.getURL("newtab.html")')
     sidebar=driver.execute_script('return browser.runtime.getURL("sidebar.html")')
     driver.get(sidebar)
+    driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      browser.tabs.getCurrent()
+        .then(tab=>browser.tabs.update(tab.id,{active:true}))
+        .then(()=>done(true),error=>done({error:String(error)}));
+    """)
     WebDriverWait(driver,12).until(lambda d:
-        d.find_element(By.ID,"ayarime-sidebar-tab-more").is_displayed())
-    driver.find_element(By.ID,"ayarime-sidebar-tab-more").click()
+        d.find_element(By.ID,"ayarime-sidebar-tab-settings").is_displayed())
+    driver.find_element(By.ID,"ayarime-sidebar-tab-settings").click()
     WebDriverWait(driver,12).until(lambda d:
         d.find_element(By.ID,"unified-ai-pause").is_displayed())
     driver.find_element(By.ID,"unified-ai-pause").click()
-    driver.get(dashboard)
+    driver.get(home)
 
 
 def popup_details():
@@ -164,55 +213,47 @@ try:
     require(isinstance(before,list),"Unable to inspect initial browser tabs")
     hub_url=driver.execute_script('return browser.runtime.getURL("hub.html")')
 
-    # First user gesture: explicit denial must not silently create Hub.
-    launch_from_station()
-    respond_to_permission(False)
-    WebDriverWait(driver,12).until(
-        lambda d:"declined" in
-        d.find_element(By.ID,"workspace-bridge-status").text.lower())
-    check("real Firefox denial leaves tab access ungranted",
-          lambda:require(granted("tabs") is False,"Denied tabs became granted"))
-    check("real Firefox denial creates no Hub or Google tabs",
-          lambda:require({t["id"] for t in window_tabs()}==
-                         {t["id"] for t in before},
-                         "Permission denial changed tab set"))
-
-    # Second user gesture: actual native approval is respected.
-    launch_from_station()
-    respond_to_permission(True)
-    check("native grant is recorded by Firefox",
-          lambda:require(granted("tabs") is True,"Tabs still ungranted after Allow"))
-    WebDriverWait(driver,18).until(
-        lambda d:"ai console ready" in
-        d.find_element(By.ID,"workspace-bridge-status").text.lower())
-    # The native tabs API can momentarily observe the new Hub before pinning
-    # and URL state finish propagating. Poll actual browser state, never mock.
-    WebDriverWait(driver,12,poll_frequency=.15).until(
+    # The only Hub entry is the native-sidebar header. It must not require
+    # unrelated tabs/tabGroups grants, create Google tabs or duplicate Hub tabs.
+    launch_from_sidebar()
+    WebDriverWait(driver,18,poll_frequency=.15).until(
         lambda _:sum(1 for tab in window_tabs()
             if tab["url"].split("#")[0]==hub_url and tab["pinned"])==1)
-    check("Ask Ayarime reaches the integrated Hub after approval",
+    check("sidebar header opens one canonical pinned Hub",
           lambda:require(
             sum(1 for tab in window_tabs()
                 if tab["url"].split("#")[0]==hub_url and tab["pinned"])==1,
-            "Pinned Hub was not created or reused"))
-    check("Ask Ayarime does not restore Google tabs or request tabGroups",
+            "Canonical Hub was not created"))
+    check("Hub handoff requires no unrelated Firefox tab or Google grants",
           lambda:require(
-            granted("tabGroups") is False and
+            not granted("tabs") and not granted("tabGroups") and
             not any("docs.google.com" in tab["url"] or
                     "mail.google.com" in tab["url"] for tab in window_tabs()),
-            "Ask Ayarime unexpectedly used Google or tabGroups"))
+            "Hub handoff requested unrelated privileges"))
 
-    # With the original permission still granted, another click reuses one Hub.
     initial_ids={tab["id"] for tab in window_tabs()}
-    driver.switch_to.window(dashboard)
-    launch_from_station()
-    WebDriverWait(driver,15).until(lambda d:
-        "ai console ready" in
-        d.find_element(By.ID,"workspace-bridge-status").text.lower())
-    check("repeat launch reuses Hub without extra windows or permissions",
+    launch_from_sidebar()
+    try:
+        WebDriverWait(driver,12,poll_frequency=.1).until(lambda _:sum(
+            1 for tab in window_tabs()
+            if tab["url"].split("#")[0]==hub_url and tab["pinned"])==1)
+    except Exception:
+        current=window_tabs()
+        print("CANONICAL_HUB_REUSE_DIAGNOSTIC:",json.dumps({
+            "pages":[{"name":("hub" if tab.get("url","").split("#")[0]==hub_url
+                else "sidebar" if tab.get("url","").split("#")[0].endswith("/sidebar.html")
+                else "other"),
+                "id":tab["id"],"pinned":tab["pinned"]} for tab in current],
+            "sidebarError":driver.execute_script(
+                'return document.getElementById("ayarime-workspace-handoff-status")?.textContent||""'),
+            "sidebarPassive":driver.execute_script(
+                'return document.body.classList.contains("hub-foreground")')
+        }),flush=True)
+        raise
+    check("reopening the full Workspace reuses the exact Hub tab",
           lambda:require(
-             {tab["id"] for tab in window_tabs()}==initial_ids,
-             "Repeat Ask Ayarime created duplicate tabs"))
+            {tab["id"] for tab in window_tabs()}==initial_ids,
+            "A second Hub tab was created"))
 
     # Switching the AI module off does not revoke unrelated browser
     # permissions or alter existing tabs, but it must block any *new* AI launch.
@@ -222,18 +263,16 @@ try:
         d.find_element(By.ID,"ai-module-toggle").get_attribute("aria-pressed")=="false")
     no_new_ai=ext_call("""
       const done=arguments[arguments.length-1];
-      browser.runtime.sendMessage({
-        type:"UNIFIED_OPEN_ASSISTANT",
-        kind:"elfshell.workspace.bridge",version:1
-      }).then(done,error=>done({ok:false,error:String(error)}));
+      browser.runtime.sendMessage({type:"AI_STATUS"})
+        .then(done,error=>done({ok:false,error:String(error)}));
     """)
-    check("disabling AI blocks new assistant launches despite prior tab grant",
+    check("disabling AI blocks provider status even when the Hub exists",
           lambda:require(isinstance(no_new_ai,dict) and
             no_new_ai.get("ok") is False and
             "ayarime is paused" in no_new_ai.get("error","").lower(),
             "Disabling AI did not enforce the background guard"))
     check("turning AI off leaves Firefox permission and existing Hub untouched",
-          lambda:require(granted("tabs") is True and
+          lambda:require(granted("tabs") is False and
             {tab["id"] for tab in window_tabs()}==initial_ids,
             "Disabling AI unexpectedly revoked tabs or destroyed the Hub"))
 

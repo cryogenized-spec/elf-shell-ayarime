@@ -8,7 +8,6 @@
   if(!isHub&&!isSidebar)return;
   const KEY="elfshell.mcp.registry.v1";
   const AI_KEY="elfshell.unified.aiEnabled.v1";
-  const LAUNCHER_KEY="elfshell.station.launcherVisible.v1";
   const google=Object.freeze({
     gmail:["Google Gmail","https://gmailmcp.googleapis.com/mcp/v1"],
     drive:["Google Drive","https://drivemcp.googleapis.com/mcp/v1"],
@@ -30,20 +29,16 @@
     box.innerHTML='<h2>Ayarime controls</h2>'+
       '<p class="quiet">One Firefox sidebar. Pausing the model clears its session key; it does not delete workspace data or permissions.</p>'+
       '<button type="button" class="mini" id="unified-ai-pause">Checking Ayarime…</button>'+
-      '<p class="quiet" id="unified-ai-pause-status" role="status"></p>'+
-      '<label class="unified-control-check"><input type="checkbox" id="unified-launcher-visible"> Show neon Ayarime launcher on Station</label>'+
-      '<p class="quiet">If the launcher is hidden, use the Firefox sidebar selector or Alt+Shift+A on Station.</p>';
+      '<p class="quiet" id="unified-ai-pause-status" role="status"></p>';
     parent.append(box);
     const pause=box.querySelector("#unified-ai-pause");
     const status=box.querySelector("#unified-ai-pause-status");
-    const launcher=box.querySelector("#unified-launcher-visible");
     let enabled=true;
     async function sync() {
       try {
-        const values=await browser.storage.local.get([AI_KEY,LAUNCHER_KEY]);
+        const values=await browser.storage.local.get(AI_KEY);
         enabled=values[AI_KEY]!==false;
         pause.textContent=enabled?"Pause Ayarime AI":"Resume Ayarime AI";
-        launcher.checked=values[LAUNCHER_KEY]!==false;
       } catch { status.textContent="Could not load local preferences."; }
     }
     pause.addEventListener("click",async()=>{
@@ -57,28 +52,15 @@
       } catch {status.textContent="Could not change Ayarime setting."; }
       finally{pause.disabled=false;}
     });
-    launcher.addEventListener("change",async()=>{
-      try {await browser.storage.local.set({[LAUNCHER_KEY]:launcher.checked});}
-      catch {launcher.checked=!launcher.checked;status.textContent="Could not save launcher visibility.";}
-    });
     browser.storage.onChanged?.addListener((changes,area)=>{
-      if(area==="local"&&(Object.hasOwn(changes,AI_KEY)||Object.hasOwn(changes,LAUNCHER_KEY)))
+      if(area==="local"&&Object.hasOwn(changes,AI_KEY))
         void sync();
     });
     void sync();
   }
   if(isSidebar) {
-    const more=document.getElementById("ayarime-sidebar-pane-more");
-    createPrefs(more);
-    const link=make("button","mini","Manage MCP connections in Workspace");
-    link.type="button";
-    link.id="unified-open-connections";
-    link.addEventListener("click",()=>{
-      try {browser.sidebarAction?.close?.().catch(()=>{});}catch{}
-      browser.tabs.create({url:browser.runtime.getURL("hub.html#connections")})
-        .catch(()=>{link.textContent="Open Workspace → Connections using the Hub.";});
-    });
-    more?.append(link);
+    // Sidebar Settings only. Opening the Hub is centralized in its header.
+    createPrefs(document.getElementById("ayarime-sidebar-pane-settings"));
     return;
   }
   createPrefs(document.getElementById("unified-hub-pane-settings"));

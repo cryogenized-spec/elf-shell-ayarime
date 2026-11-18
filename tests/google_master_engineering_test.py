@@ -70,8 +70,10 @@ class PrivateMcpOptIn(unittest.TestCase):
     def test_only_one_sidebar_with_tabbed_workspace(self):
         station=(STAGE / "newtab.html").read_text()
         hub=(STAGE / "hub.html").read_text()
-        self.assertIn('id="ayarime-sidebar-launcher"',station)
-        self.assertIn('id="ayarime-workspace-launcher"',station)
+        self.assertNotIn('id="ayarime-sidebar-launcher"',station)
+        self.assertNotIn('id="ayarime-workspace-launcher"',station)
+        self.assertIn('id="ayarime-open-workspace"',(STAGE/"unified/sidebar-handoff.js").read_text())
+        self.assertIn('src="unified/surface-exclusive.js"',hub)
         self.assertNotIn('id="station-drawer"',station)
         self.assertNotIn('station-drawer.js',station)
         self.assertIn('src="unified/workspace-settings.js"',hub)

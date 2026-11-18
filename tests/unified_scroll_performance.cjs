@@ -33,7 +33,7 @@ assert.match(source, /<section id="ai-console"/);
 assert.match(builder, /"ui\.css"/);
 
 // Avoid a regression that intercepts the browser's scroll wheel in script.
-for (const file of ["newtab.js", "unified-preview/station-launcher.js",
+for (const file of ["newtab.js", "unified-preview/sidebar-handoff.js",
                     "assistant/ui.js", "assistant/sidebar-tabs.js"]) {
   const code = fs.readFileSync(path.join(root, file), "utf8");
   assert.doesNotMatch(code, /addEventListener\s*\(\s*["']wheel["']/, file);

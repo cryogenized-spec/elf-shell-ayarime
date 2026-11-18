@@ -1,0 +1,12 @@
+/* Never show two simultaneous chat surfaces even when Firefox's own
+   sidebar chooser is used manually while the full Hub tab is foreground. */
+body[data-view="sidebar"].hub-foreground .side-shell > :not(.sidebar-header):not(#ayarime-passive-surface){display:none!important}
+body[data-view="sidebar"].hub-foreground #ayarime-open-workspace{display:none!important}
+#ayarime-passive-surface{margin:15px 8px;padding:14px;border:1px solid #638c92;border-radius:8px;font:12px/1.5 system-ui,sans-serif;color:#d2e7e5}
+#ayarime-passive-surface[hidden]{display:none!important}
+
+/* Legacy Station slots are retained for old DOM hooks, but no additional
+   Ayarime opener may appear in the unified extension. */
+#ask-ayarime-toggle[hidden],
+#workspace-companion-toggle[hidden],
+#ai-module-toggle[hidden]{display:none!important}
